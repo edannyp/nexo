@@ -32,7 +32,7 @@ stateDiagram-v2
    operador. La equivalencia **no** es requisito: el código equivalente de los fabricados se captura en la revisión de fabricados y
    se valida con foto propia, sin afectar el estado (ADR 0018).
    Al confirmar la equivalencia, el Fabricado hereda la parte emparejada y recibe las aplicaciones del Importado como sugerencias.
-   Una aplicación **de vehículo** solo se confirma con **submodelo y motor** (decisión UX 4, 2026-10-19; pendiente de llevar a la base).
+   Una aplicación **de vehículo** solo se confirma con **submodelo y motor** (decisión UX 4, 2026-10-19; la base lo exige desde la migración 0009: `aplicacion_vehiculo_completa`).
 5. **Regla de checksum**: si `fn_procesar_staging` detecta otro `hash_control` en un artículo `VALIDADO` o `SINCRONIZADO`, lo regresa
    a `PENDIENTE` (actor `PROCESO:ETL`, motivo `HASH_CAMBIO`) **conservando** el emparejamiento y los datos ya confirmados, y mostrando
    al operador qué campos de SAP cambiaron. En `PENDIENTE`, `POR_VALIDAR` o `RECHAZADO` solo se actualizan los datos y el hash.

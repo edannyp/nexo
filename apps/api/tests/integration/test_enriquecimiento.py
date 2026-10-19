@@ -74,14 +74,17 @@ def test_02_atributos_sap_son_sugerencia_hasta_confirmar(conn, u):
 
 def test_03_aplicaciones_vehiculo_o_equipo(conn, u):
     a = aid(conn, "RAD00253")
-    ins = ("insert into app.articulo_aplicacion (articulo_id, base_vehicle_id, equipment_base_id, origen, parte_id, confirmado_por, confirmado_en) "
-           "values (%s, %s, %s, 'CONSOLIDACION', 7001, %s, now())")
+    ins = ("insert into app.articulo_aplicacion (articulo_id, base_vehicle_id, equipment_base_id, sub_model_id, engine_config_id, origen, "
+           "parte_id, confirmado_por, confirmado_en) values (%s, %s, %s, %s, %s, 'CONSOLIDACION', 7001, %s, now())")
     for bv in (5001995, 5001996, 1000000007):                            # AutoCare y MercadoExterno (≥ 1e9)
-        conn.execute(ins, (a, bv, None, u["op"]))
+        conn.execute(ins, (a, bv, None, 20, 4704, u["op"]))
     with pytest.raises(psycopg.errors.CheckViolation):
-        conn.execute(ins, (a, 5001997, 700001, u["op"]))                 # vehículo y equipo a la vez
+        conn.execute(ins, (a, 5001997, 700001, None, None, u["op"]))     # vehículo y equipo a la vez
+    with pytest.raises(psycopg.errors.CheckViolation, match="aplicacion_vehiculo_completa"):
+        conn.execute(ins, (a, 5001997, None, None, 4704, u["op"]))       # vehículo confirmado sin submodelo (decisión UX 4)
+    conn.execute(ins, (a, None, 700001, None, None, u["op"]))            # equipo: no lleva submodelo ni motor
     with pytest.raises(psycopg.errors.UniqueViolation):
-        conn.execute(ins, (a, 5001995, None, u["op"]))                   # duplicada
+        conn.execute(ins, (a, 5001995, None, 20, 4704, u["op"]))         # duplicada
     conn.execute("insert into app.articulo_parte (articulo_id, parte_id, es_principal, origen, confirmado_por) "
                  "values (%s, 7001, true, 'CONSOLIDACION', %s)", (a, u["op"]))
     with pytest.raises(psycopg.errors.UniqueViolation):                  # solo una parte principal
@@ -105,11 +108,11 @@ def test_04_equivalencia_y_herencia(conn, u):
     conn.execute("update app.articulo_equivalencia set estado = 'CONFIRMADA', confirmado_por = %s, confirmado_en = now() "
                  "where fabricado_id = %s", (u["op"], aid(conn, "RLT00496")))
     r = conn.execute("select app.fn_heredar_de_equivalente(%s, %s)", (aid(conn, "RLT00496"), u["op"])).fetchone()[0]
-    assert r["partes"] == 1 and r["aplicaciones_sugeridas"] == 3
+    assert r["partes"] == 1 and r["aplicaciones_sugeridas"] == 4             # 3 vehículos + 1 equipo
     f = aid(conn, "RLT00496")
     sugeridas = conn.execute("select count(*) from app.articulo_aplicacion where articulo_id = %s and origen = 'HEREDADO_EQUIVALENTE' "
                              "and confirmado_por is null", (f,)).fetchone()[0]
-    assert sugeridas == 3                                                # el operador las confirma
+    assert sugeridas == 4                                                # el operador las confirma
     falta = requisitos(conn, "RLT00496")
     assert "APLICACION_O_EMPAREJAMIENTO" not in falta                   # heredó la parte
 

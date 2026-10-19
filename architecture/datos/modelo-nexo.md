@@ -15,6 +15,8 @@
 > - `0007_bandejas.sql`: "Siguiente" con prioridad y doble control, reservas (`fn_reservar`, `fn_renovar_reserva`,
 >   `fn_soltar_reserva`), índices trigram para la búsqueda y vistas guardadas (`app.vista_guardada`).
 > - `0008_ficha.sql`: traducción al español de los valores PIES (`meta.traduccion_valor`, auditada), decisión UX 5.
+> - `0009_aplicaciones.sql`: una aplicación de vehículo confirmada debe tener submodelo y motor (`aplicacion_vehiculo_completa`);
+>   las sugeridas pueden llegar incompletas y se completan en el selector (decisión UX 4).
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones
