@@ -43,7 +43,7 @@ def por_etiqueta(ficha: dict) -> dict:
 def test_01_sugerencias_de_sap_y_opciones_traducidas(entorno):
     _, _, bd = entorno
     f = como(entorno, "op1").get(URL).json()
-    assert not f["editable"] and f["razon_no_editable"] == "Toma el artículo para editar la ficha."
+    assert not f["editable"] and f["razon_no_editable"] == "Toma el artículo para editarlo."
     a = por_etiqueta(f)
     assert a["Alto"]["valor_sap"] == "400" and a["Alto"]["valor"]["valor_num"] == "400.00" and a["Alto"]["origen"] == "SAP"
     assert a["Alto"]["tipo"] == "numero" and a["Alto"]["requiere_uom"] and not a["Alto"]["confirmado"]

@@ -18,12 +18,12 @@ from sqlalchemy import Connection, text
 from ..auth.dependencias import Usuario, UsuarioActual
 from ..auth.registro import fijar_actor
 from ..core.bd import Conexion
-from ..core.errores import Problema
 from ..core.negocio import reglas_de_negocio
+from .edicion import ESTADOS_EDITABLES, bloquear_para_editar, razon_no_editable, subir_version
+from .edicion import articulo as _articulo
 
 router = APIRouter(prefix="/articulos/{item_code}/ficha", tags=["ficha"])
 
-ESTADOS_EDITABLES = {"PENDIENTE", "RECHAZADO"}
 _IDENTIFICADOR = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
@@ -90,28 +90,6 @@ class Guardado(BaseModel):
     quitar: list[int] = Field([], description="paid de los atributos que se dejan sin valor")
 
 
-def _editable(a, usuario: Usuario) -> str | None:
-    """None si el usuario puede editar; si no, la razón para mostrarla."""
-    if not a.activo:
-        return "El artículo está inactivo."
-    if a.estado not in ESTADOS_EDITABLES:
-        return "La ficha solo se edita en Pendiente o Rechazado."
-    if not (a.asignado_a == usuario.id and a.reservado):
-        return "Toma el artículo para editar la ficha." if not a.reservado else f"{a.reservado_por} lo está trabajando."
-    return None
-
-
-def _articulo(c: Connection, item_code: str, bloquear: bool = False):
-    a = c.execute(text(f"""
-        select a.*, a.estado::text as estado, coalesce(a.asignado_hasta > now(), false) as reservado, u.nombre as reservado_por
-        from app.articulo a left join app.usuario u on u.id = a.asignado_a
-        where a.item_code = upper(:ic) {'for update of a' if bloquear else ''}
-    """), {"ic": item_code}).one_or_none()
-    if a is None:
-        raise Problema(404, "El artículo no existe")
-    return a
-
-
 def _texto_sap(v: object) -> str | None:
     if v is None:
         return None
@@ -168,7 +146,7 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
                                 valor_texto=f.valor_texto) if hay_valor else None,
             origen=f.origen, confirmado=f.confirmado, confirmado_por=f.confirmado_por, confirmado_en=f.confirmado_en,
         ))
-    razon = _editable(a, usuario)
+    razon = razon_no_editable(a, usuario)
     return Ficha(version=a.version, editable=razon is None, razon_no_editable=razon, atributos=atributos)
 
 
@@ -183,12 +161,7 @@ def obtener_ficha(item_code: str, usuario: UsuarioActual, c: Conexion) -> Ficha:
 def guardar_ficha(item_code: str, datos: Guardado, usuario: UsuarioActual, c: Conexion) -> Ficha:
     with c.begin():
         fijar_actor(c, usuario.id)
-        a = _articulo(c, item_code, bloquear=True)
-        razon = _editable(a, usuario)
-        if razon:
-            raise Problema(409, "No puedes editar la ficha ahora", razon)
-        if a.version != datos.version:
-            raise Problema(409, "Otro usuario cambió este artículo", "Recarga para ver los cambios antes de guardar.")
+        a = bloquear_para_editar(c, item_code, usuario, datos.version)
         for cambio in datos.cambios:
             nuevo = cambio.model_dump(exclude={"paid"})
             actual = c.execute(text("""select valor_num, uom_code, valid_value_id, valor_texto from app.articulo_atributo
@@ -209,5 +182,5 @@ def guardar_ficha(item_code: str, datos: Guardado, usuario: UsuarioActual, c: Co
                     """), {"a": a.id, "p": cambio.paid, "u": usuario.id, **nuevo})
         if datos.quitar:
             c.execute(text("delete from app.articulo_atributo where articulo_id = :a and paid = any(:p)"), {"a": a.id, "p": datos.quitar})
-        c.execute(text("update app.articulo set version = version + 1, actualizado_en = now() where id = :a"), {"a": a.id})
+        subir_version(c, a.id)
     return cargar_ficha(c, item_code, usuario)
