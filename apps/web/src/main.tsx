@@ -1,14 +1,17 @@
 import './styles.css';
 
 import { alPerderSesion, getObtenerSesionQueryKey, ProblemaError } from '@nexo/api-client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { router } from './app/router';
+import { invalidarArticulos } from './shared/consultas';
 
-const consultas = new QueryClient({
+const consultas: QueryClient = new QueryClient({
+  // Cualquier cambio (estado, reserva, ficha…) deja viejas las listas, conteos y el panorama: se refrescan
+  mutationCache: new MutationCache({ onSuccess: () => invalidarArticulos(consultas) }),
   defaultOptions: {
     queries: {
       staleTime: 30_000,
