@@ -480,10 +480,454 @@
           }
         }
       }
+    },
+    "/api/v1/panorama": {
+      "get": {
+        "tags": [
+          "panorama"
+        ],
+        "summary": "Panorama del tipo de artículo (filtro global)",
+        "operationId": "obtener_panorama",
+        "parameters": [
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Panorama"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hallazgos-sap": {
+      "get": {
+        "tags": [
+          "calidad-sap"
+        ],
+        "summary": "Hallazgos abiertos del tipo de artículo, agrupados",
+        "operationId": "listar_hallazgos_sap",
+        "parameters": [
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HallazgosSap"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hallazgos-sap/csv": {
+      "get": {
+        "tags": [
+          "calidad-sap"
+        ],
+        "summary": "Hallazgos abiertos en CSV (se abre en Excel)",
+        "operationId": "exportar_hallazgos_sap",
+        "parameters": [
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ventas": {
+      "get": {
+        "tags": [
+          "ventas"
+        ],
+        "summary": "Análisis de ventas del tipo de artículo (requiere permiso)",
+        "operationId": "analizar_ventas",
+        "parameters": [
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalisisVentas"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AnalisisVentas": {
+        "properties": {
+          "meses": {
+            "type": "integer",
+            "title": "Meses"
+          },
+          "actualizado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actualizado En"
+          },
+          "serie": {
+            "items": {
+              "$ref": "#/components/schemas/PuntoSerie"
+            },
+            "type": "array",
+            "title": "Serie"
+          },
+          "articulos": {
+            "items": {
+              "$ref": "#/components/schemas/ArticuloVenta"
+            },
+            "type": "array",
+            "title": "Articulos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "meses",
+          "actualizado_en",
+          "serie",
+          "articulos"
+        ],
+        "title": "AnalisisVentas"
+      },
+      "ArticuloVenta": {
+        "properties": {
+          "articulo_id": {
+            "type": "integer",
+            "title": "Articulo Id"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/Estado"
+          },
+          "clase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clase"
+          },
+          "unidades": {
+            "type": "string",
+            "title": "Unidades"
+          },
+          "unidades_previas": {
+            "type": "string",
+            "title": "Unidades Previas"
+          },
+          "participacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participacion"
+          },
+          "top_pct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Pct"
+          },
+          "tendencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tendencia"
+          },
+          "abcxyz_empresa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abcxyz Empresa"
+          },
+          "serie": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Serie"
+          }
+        },
+        "type": "object",
+        "required": [
+          "articulo_id",
+          "item_code",
+          "descripcion",
+          "estado",
+          "clase",
+          "unidades",
+          "unidades_previas",
+          "participacion",
+          "top_pct",
+          "tendencia",
+          "abcxyz_empresa",
+          "serie"
+        ],
+        "title": "ArticuloVenta"
+      },
+      "Atencion": {
+        "properties": {
+          "rechazados": {
+            "type": "integer",
+            "title": "Rechazados"
+          },
+          "verificaciones_abiertas": {
+            "type": "integer",
+            "title": "Verificaciones Abiertas"
+          },
+          "hallazgos_sap": {
+            "type": "integer",
+            "title": "Hallazgos Sap"
+          },
+          "reservados": {
+            "type": "integer",
+            "title": "Reservados"
+          },
+          "reservas_por_vencer": {
+            "type": "integer",
+            "title": "Reservas Por Vencer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rechazados",
+          "verificaciones_abiertas",
+          "hallazgos_sap",
+          "reservados",
+          "reservas_por_vencer"
+        ],
+        "title": "Atencion"
+      },
+      "AtributoFicha": {
+        "properties": {
+          "paid": {
+            "type": "integer",
+            "title": "Paid"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "confirmados": {
+            "type": "integer",
+            "title": "Confirmados"
+          },
+          "sugeridos": {
+            "type": "integer",
+            "title": "Sugeridos"
+          },
+          "faltan": {
+            "type": "integer",
+            "title": "Faltan"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paid",
+          "etiqueta",
+          "confirmados",
+          "sugeridos",
+          "faltan"
+        ],
+        "title": "AtributoFicha"
+      },
       "CambioPassword": {
         "properties": {
           "actual": {
@@ -623,6 +1067,57 @@
         ],
         "title": "Categoria"
       },
+      "ClaseVenta": {
+        "properties": {
+          "clase": {
+            "type": "string",
+            "title": "Clase"
+          },
+          "articulos": {
+            "type": "integer",
+            "title": "Articulos"
+          },
+          "participacion": {
+            "type": "string",
+            "title": "Participacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clase",
+          "articulos",
+          "participacion"
+        ],
+        "title": "ClaseVenta"
+      },
+      "Cobertura": {
+        "properties": {
+          "con_foto": {
+            "type": "integer",
+            "title": "Con Foto"
+          },
+          "fotos": {
+            "type": "integer",
+            "title": "Fotos"
+          },
+          "emparejados": {
+            "type": "integer",
+            "title": "Emparejados"
+          },
+          "con_aplicacion": {
+            "type": "integer",
+            "title": "Con Aplicacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "con_foto",
+          "fotos",
+          "emparejados",
+          "con_aplicacion"
+        ],
+        "title": "Cobertura"
+      },
       "Credenciales": {
         "properties": {
           "usuario": {
@@ -645,6 +1140,66 @@
         ],
         "title": "Credenciales"
       },
+      "Estado": {
+        "type": "string",
+        "enum": [
+          "PENDIENTE",
+          "POR_VALIDAR",
+          "RECHAZADO",
+          "VALIDADO",
+          "SINCRONIZADO"
+        ],
+        "title": "Estado"
+      },
+      "Ficha": {
+        "properties": {
+          "completos": {
+            "type": "integer",
+            "title": "Completos"
+          },
+          "atributos": {
+            "items": {
+              "$ref": "#/components/schemas/AtributoFicha"
+            },
+            "type": "array",
+            "title": "Atributos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "completos",
+          "atributos"
+        ],
+        "title": "Ficha"
+      },
+      "Grupo": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "campo_sap": {
+            "type": "string",
+            "title": "Campo Sap"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "descripcion",
+          "campo_sap",
+          "n"
+        ],
+        "title": "Grupo"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -657,6 +1212,88 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "Hallazgo": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "campo_sap": {
+            "type": "string",
+            "title": "Campo Sap"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion_articulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion Articulo"
+          },
+          "detectado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detectado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "campo_sap",
+          "valor",
+          "item_code",
+          "descripcion_articulo",
+          "detectado_en"
+        ],
+        "title": "Hallazgo"
+      },
+      "HallazgosSap": {
+        "properties": {
+          "grupos": {
+            "items": {
+              "$ref": "#/components/schemas/Grupo"
+            },
+            "type": "array",
+            "title": "Grupos"
+          },
+          "hallazgos": {
+            "items": {
+              "$ref": "#/components/schemas/Hallazgo"
+            },
+            "type": "array",
+            "title": "Hallazgos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grupos",
+          "hallazgos"
+        ],
+        "title": "HallazgosSap"
       },
       "Linea": {
         "type": "string",
@@ -736,6 +1373,54 @@
         ],
         "title": "NuevoUsuario"
       },
+      "Panorama": {
+        "properties": {
+          "activos": {
+            "type": "integer",
+            "title": "Activos"
+          },
+          "por_estado": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Estado"
+            },
+            "type": "object",
+            "title": "Por Estado"
+          },
+          "ficha": {
+            "$ref": "#/components/schemas/Ficha"
+          },
+          "cobertura": {
+            "$ref": "#/components/schemas/Cobertura"
+          },
+          "atencion": {
+            "$ref": "#/components/schemas/Atencion"
+          },
+          "productividad": {
+            "items": {
+              "$ref": "#/components/schemas/Productividad"
+            },
+            "type": "array",
+            "title": "Productividad"
+          },
+          "ventas": {
+            "$ref": "#/components/schemas/VentasResumen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activos",
+          "por_estado",
+          "ficha",
+          "cobertura",
+          "atencion",
+          "productividad",
+          "ventas"
+        ],
+        "title": "Panorama"
+      },
       "PasswordTemporal": {
         "properties": {
           "password_temporal": {
@@ -774,6 +1459,119 @@
           "linea"
         ],
         "title": "Preferencias"
+      },
+      "Prioridad": {
+        "properties": {
+          "articulo_id": {
+            "type": "integer",
+            "title": "Articulo Id"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/Estado"
+          },
+          "clase": {
+            "type": "string",
+            "title": "Clase"
+          },
+          "participacion": {
+            "type": "string",
+            "title": "Participacion"
+          },
+          "top_pct": {
+            "type": "string",
+            "title": "Top Pct"
+          },
+          "tendencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tendencia"
+          }
+        },
+        "type": "object",
+        "required": [
+          "articulo_id",
+          "item_code",
+          "descripcion",
+          "estado",
+          "clase",
+          "participacion",
+          "top_pct",
+          "tendencia"
+        ],
+        "title": "Prioridad"
+      },
+      "Productividad": {
+        "properties": {
+          "usuario_id": {
+            "type": "integer",
+            "title": "Usuario Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "enviados": {
+            "type": "integer",
+            "title": "Enviados"
+          },
+          "validados": {
+            "type": "integer",
+            "title": "Validados"
+          },
+          "rechazados": {
+            "type": "integer",
+            "title": "Rechazados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario_id",
+          "nombre",
+          "enviados",
+          "validados",
+          "rechazados"
+        ],
+        "title": "Productividad"
+      },
+      "PuntoSerie": {
+        "properties": {
+          "mes": {
+            "type": "string",
+            "format": "date",
+            "title": "Mes"
+          },
+          "unidades": {
+            "type": "string",
+            "title": "Unidades"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mes",
+          "unidades"
+        ],
+        "title": "PuntoSerie"
       },
       "Rol": {
         "type": "string",
@@ -1003,6 +1801,58 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VentasResumen": {
+        "properties": {
+          "disponible": {
+            "type": "boolean",
+            "title": "Disponible"
+          },
+          "actualizado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actualizado En"
+          },
+          "meses": {
+            "type": "integer",
+            "title": "Meses"
+          },
+          "por_clase": {
+            "items": {
+              "$ref": "#/components/schemas/ClaseVenta"
+            },
+            "type": "array",
+            "title": "Por Clase"
+          },
+          "sin_venta": {
+            "type": "integer",
+            "title": "Sin Venta"
+          },
+          "prioridad": {
+            "items": {
+              "$ref": "#/components/schemas/Prioridad"
+            },
+            "type": "array",
+            "title": "Prioridad"
+          }
+        },
+        "type": "object",
+        "required": [
+          "disponible",
+          "actualizado_en",
+          "meses",
+          "por_clase",
+          "sin_venta",
+          "prioridad"
+        ],
+        "title": "VentasResumen"
       },
       "Viva": {
         "properties": {

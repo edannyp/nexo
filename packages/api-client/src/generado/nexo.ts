@@ -26,6 +26,60 @@ import type {
 
 import { nexoFetch } from '../fetcher';
 import type { ErrorType } from '../fetcher';
+export interface PuntoSerie {
+  mes: string;
+  unidades: string;
+}
+
+export type Estado = typeof Estado[keyof typeof Estado];
+
+
+export const Estado = {
+  PENDIENTE: 'PENDIENTE',
+  POR_VALIDAR: 'POR_VALIDAR',
+  RECHAZADO: 'RECHAZADO',
+  VALIDADO: 'VALIDADO',
+  SINCRONIZADO: 'SINCRONIZADO',
+} as const;
+
+export interface ArticuloVenta {
+  articulo_id: number;
+  item_code: string;
+  descripcion: string | null;
+  estado: Estado;
+  clase: string | null;
+  unidades: string;
+  unidades_previas: string;
+  participacion: string | null;
+  top_pct: string | null;
+  tendencia: string | null;
+  abcxyz_empresa: string | null;
+  serie: string[];
+}
+
+export interface AnalisisVentas {
+  meses: number;
+  actualizado_en: string | null;
+  serie: PuntoSerie[];
+  articulos: ArticuloVenta[];
+}
+
+export interface Atencion {
+  rechazados: number;
+  verificaciones_abiertas: number;
+  hallazgos_sap: number;
+  reservados: number;
+  reservas_por_vencer: number;
+}
+
+export interface AtributoFicha {
+  paid: number;
+  etiqueta: string;
+  confirmados: number;
+  sugeridos: number;
+  faltan: number;
+}
+
 export interface CambioPassword {
   /**
      * @minLength 1
@@ -80,6 +134,19 @@ export interface Categoria {
   activos: Partial<Record<Linea, number>>;
 }
 
+export interface ClaseVenta {
+  clase: string;
+  articulos: number;
+  participacion: string;
+}
+
+export interface Cobertura {
+  con_foto: number;
+  fotos: number;
+  emparejados: number;
+  con_aplicacion: number;
+}
+
 export interface Credenciales {
   /**
      * @minLength 1
@@ -91,6 +158,18 @@ export interface Credenciales {
      * @maxLength 200
      */
   password: string;
+}
+
+export interface Ficha {
+  completos: number;
+  atributos: AtributoFicha[];
+}
+
+export interface Grupo {
+  tipo: string;
+  descripcion: string;
+  campo_sap: string;
+  n: number;
 }
 
 export type ValidationErrorCtx = { [key: string]: unknown };
@@ -105,6 +184,21 @@ export interface ValidationError {
 
 export interface HTTPValidationError {
   detail?: ValidationError[];
+}
+
+export interface Hallazgo {
+  id: number;
+  tipo: string;
+  campo_sap: string;
+  valor: string | null;
+  item_code: string;
+  descripcion_articulo: string | null;
+  detectado_en: string;
+}
+
+export interface HallazgosSap {
+  grupos: Grupo[];
+  hallazgos: Hallazgo[];
 }
 
 export interface Lista {
@@ -128,6 +222,44 @@ export interface NuevoUsuario {
   /** @minItems 1 */
   roles: Rol[];
   permisos?: Permiso[];
+}
+
+export interface Productividad {
+  usuario_id: number;
+  nombre: string;
+  enviados: number;
+  validados: number;
+  rechazados: number;
+}
+
+export interface Prioridad {
+  articulo_id: number;
+  item_code: string;
+  descripcion: string | null;
+  estado: Estado;
+  clase: string;
+  participacion: string;
+  top_pct: string;
+  tendencia: string | null;
+}
+
+export interface VentasResumen {
+  disponible: boolean;
+  actualizado_en: string | null;
+  meses: number;
+  por_clase: ClaseVenta[];
+  sin_venta: number;
+  prioridad: Prioridad[];
+}
+
+export interface Panorama {
+  activos: number;
+  por_estado: Partial<Record<Estado, number>>;
+  ficha: Ficha;
+  cobertura: Cobertura;
+  atencion: Atencion;
+  productividad: Productividad[];
+  ventas: VentasResumen;
 }
 
 export interface PasswordTemporal {
@@ -182,6 +314,54 @@ export interface Viva {
   estado: string;
   version: string;
 }
+
+export type ObtenerPanoramaParams = {
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type ListarHallazgosSapParams = {
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type ExportarHallazgosSapParams = {
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type AnalizarVentasParams = {
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -1538,6 +1718,438 @@ export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCate
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListarCategoriasQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getObtenerPanoramaUrl = (params?: ObtenerPanoramaParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/panorama?${stringifiedParams}` : `/api/v1/panorama`
+}
+
+/**
+ * @summary Panorama del tipo de artículo (filtro global)
+ */
+export const obtenerPanorama = async (params?: ObtenerPanoramaParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Panorama> => {
+
+  return nexoFetch<Panorama>(getObtenerPanoramaUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerPanoramaQueryKey = (params?: ObtenerPanoramaParams,) => {
+    return [
+    `/api/v1/panorama`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getObtenerPanoramaQueryOptions = <TData = Awaited<ReturnType<typeof obtenerPanorama>>, TError = ErrorType<HTTPValidationError>>(params?: ObtenerPanoramaParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPanorama>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerPanoramaQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerPanorama>>> = ({ signal }) => obtenerPanorama(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerPanorama>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerPanoramaQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerPanorama>>>
+export type ObtenerPanoramaQueryError = ErrorType<HTTPValidationError>
+
+
+export function useObtenerPanorama<TData = Awaited<ReturnType<typeof obtenerPanorama>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  ObtenerPanoramaParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPanorama>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerPanorama>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerPanorama>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerPanorama<TData = Awaited<ReturnType<typeof obtenerPanorama>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ObtenerPanoramaParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPanorama>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerPanorama>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerPanorama>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerPanorama<TData = Awaited<ReturnType<typeof obtenerPanorama>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ObtenerPanoramaParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPanorama>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Panorama del tipo de artículo (filtro global)
+ */
+
+export function useObtenerPanorama<TData = Awaited<ReturnType<typeof obtenerPanorama>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ObtenerPanoramaParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPanorama>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerPanoramaQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListarHallazgosSapUrl = (params?: ListarHallazgosSapParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/hallazgos-sap?${stringifiedParams}` : `/api/v1/hallazgos-sap`
+}
+
+/**
+ * @summary Hallazgos abiertos del tipo de artículo, agrupados
+ */
+export const listarHallazgosSap = async (params?: ListarHallazgosSapParams, options?: Parameters<typeof nexoFetch>[1]): Promise<HallazgosSap> => {
+
+  return nexoFetch<HallazgosSap>(getListarHallazgosSapUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarHallazgosSapQueryKey = (params?: ListarHallazgosSapParams,) => {
+    return [
+    `/api/v1/hallazgos-sap`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarHallazgosSapQueryOptions = <TData = Awaited<ReturnType<typeof listarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(params?: ListarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarHallazgosSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarHallazgosSapQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarHallazgosSap>>> = ({ signal }) => listarHallazgosSap(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarHallazgosSap>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarHallazgosSapQueryResult = NonNullable<Awaited<ReturnType<typeof listarHallazgosSap>>>
+export type ListarHallazgosSapQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarHallazgosSap<TData = Awaited<ReturnType<typeof listarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  ListarHallazgosSapParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarHallazgosSap>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarHallazgosSap>>,
+          TError,
+          Awaited<ReturnType<typeof listarHallazgosSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarHallazgosSap<TData = Awaited<ReturnType<typeof listarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarHallazgosSap>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarHallazgosSap>>,
+          TError,
+          Awaited<ReturnType<typeof listarHallazgosSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarHallazgosSap<TData = Awaited<ReturnType<typeof listarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarHallazgosSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Hallazgos abiertos del tipo de artículo, agrupados
+ */
+
+export function useListarHallazgosSap<TData = Awaited<ReturnType<typeof listarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarHallazgosSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarHallazgosSapQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getExportarHallazgosSapUrl = (params?: ExportarHallazgosSapParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/hallazgos-sap/csv?${stringifiedParams}` : `/api/v1/hallazgos-sap/csv`
+}
+
+/**
+ * @summary Hallazgos abiertos en CSV (se abre en Excel)
+ */
+export const exportarHallazgosSap = async (params?: ExportarHallazgosSapParams, options?: Parameters<typeof nexoFetch>[1]): Promise<unknown> => {
+
+  return nexoFetch<unknown>(getExportarHallazgosSapUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportarHallazgosSapQueryKey = (params?: ExportarHallazgosSapParams,) => {
+    return [
+    `/api/v1/hallazgos-sap/csv`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getExportarHallazgosSapQueryOptions = <TData = Awaited<ReturnType<typeof exportarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(params?: ExportarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportarHallazgosSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportarHallazgosSapQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportarHallazgosSap>>> = ({ signal }) => exportarHallazgosSap(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportarHallazgosSap>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ExportarHallazgosSapQueryResult = NonNullable<Awaited<ReturnType<typeof exportarHallazgosSap>>>
+export type ExportarHallazgosSapQueryError = ErrorType<HTTPValidationError>
+
+
+export function useExportarHallazgosSap<TData = Awaited<ReturnType<typeof exportarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  ExportarHallazgosSapParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportarHallazgosSap>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportarHallazgosSap>>,
+          TError,
+          Awaited<ReturnType<typeof exportarHallazgosSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportarHallazgosSap<TData = Awaited<ReturnType<typeof exportarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ExportarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportarHallazgosSap>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportarHallazgosSap>>,
+          TError,
+          Awaited<ReturnType<typeof exportarHallazgosSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportarHallazgosSap<TData = Awaited<ReturnType<typeof exportarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ExportarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportarHallazgosSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Hallazgos abiertos en CSV (se abre en Excel)
+ */
+
+export function useExportarHallazgosSap<TData = Awaited<ReturnType<typeof exportarHallazgosSap>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ExportarHallazgosSapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportarHallazgosSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getExportarHallazgosSapQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAnalizarVentasUrl = (params?: AnalizarVentasParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/ventas?${stringifiedParams}` : `/api/v1/ventas`
+}
+
+/**
+ * @summary Análisis de ventas del tipo de artículo (requiere permiso)
+ */
+export const analizarVentas = async (params?: AnalizarVentasParams, options?: Parameters<typeof nexoFetch>[1]): Promise<AnalisisVentas> => {
+
+  return nexoFetch<AnalisisVentas>(getAnalizarVentasUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAnalizarVentasQueryKey = (params?: AnalizarVentasParams,) => {
+    return [
+    `/api/v1/ventas`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAnalizarVentasQueryOptions = <TData = Awaited<ReturnType<typeof analizarVentas>>, TError = ErrorType<HTTPValidationError>>(params?: AnalizarVentasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analizarVentas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalizarVentasQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analizarVentas>>> = ({ signal }) => analizarVentas(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analizarVentas>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalizarVentasQueryResult = NonNullable<Awaited<ReturnType<typeof analizarVentas>>>
+export type AnalizarVentasQueryError = ErrorType<HTTPValidationError>
+
+
+export function useAnalizarVentas<TData = Awaited<ReturnType<typeof analizarVentas>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  AnalizarVentasParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analizarVentas>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analizarVentas>>,
+          TError,
+          Awaited<ReturnType<typeof analizarVentas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalizarVentas<TData = Awaited<ReturnType<typeof analizarVentas>>, TError = ErrorType<HTTPValidationError>>(
+ params?: AnalizarVentasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analizarVentas>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analizarVentas>>,
+          TError,
+          Awaited<ReturnType<typeof analizarVentas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalizarVentas<TData = Awaited<ReturnType<typeof analizarVentas>>, TError = ErrorType<HTTPValidationError>>(
+ params?: AnalizarVentasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analizarVentas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Análisis de ventas del tipo de artículo (requiere permiso)
+ */
+
+export function useAnalizarVentas<TData = Awaited<ReturnType<typeof analizarVentas>>, TError = ErrorType<HTTPValidationError>>(
+ params?: AnalizarVentasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analizarVentas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalizarVentasQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
