@@ -1,0 +1,13 @@
+{
+  "name": "nexo",
+  "private": true,
+  "packageManager": "pnpm@12.14.0",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "dev": "pnpm --filter @nexo/web dev",
+    "build": "pnpm --filter @nexo/api-client generar && pnpm --filter @nexo/web build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "api-client": "cd apps/api && uv run -q python -m nexo_api.openapi ../../packages/api-client/openapi.json && pnpm --filter @nexo/api-client generar"
+  }
+}

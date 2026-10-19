@@ -6,6 +6,8 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 node_modules/
+.pnpm-store/
+*.tsbuildinfo
 dist/
 coverage/
 storybook-static/

@@ -1,0 +1,7 @@
+packages:
+  - apps/web
+  - packages/*
+
+# Scripts de instalación permitidos. esbuild trae su binario como dependencia opcional: su postinstall no hace falta.
+allowBuilds:
+  esbuild: false
