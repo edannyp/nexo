@@ -145,6 +145,22 @@ export interface Aplicaciones {
   grupos: GrupoAplicacion[];
 }
 
+export interface MedidasPanal {
+  alto: string | null;
+  largo: string | null;
+  ancho: string | null;
+}
+
+export interface ArticuloCandidato {
+  item_code: string;
+  descripcion: string | null;
+  estado: string;
+  linea: string;
+  medidas: MedidasPanal;
+  puntaje: number;
+  razones: string[];
+}
+
 export type ArticuloDetalleDatosSap = { [key: string]: unknown };
 
 export interface Requisito {
@@ -213,6 +229,33 @@ export interface ArticuloFila {
   reservado_por: string | null;
   reservado_hasta: string | null;
   actualizado_en: string;
+}
+
+export interface ArticuloVinculado {
+  item_code: string;
+  descripcion: string | null;
+  estado: string;
+  linea: string;
+  es_principal: boolean;
+}
+
+export interface ParteCatalogo {
+  parte_id: number;
+  tipo_parte: string | null;
+  descripcion: string | null;
+  numeros: string | null;
+  medidas: MedidasPanal;
+  n_aplicaciones: number;
+  n_fuentes: number;
+  imagen_url: string | null;
+  estado: string;
+  fusionada_en_id: number | null;
+}
+
+export interface ArticulosDeParte {
+  parte: ParteCatalogo;
+  vinculados: ArticuloVinculado[];
+  candidatos: ArticuloCandidato[];
 }
 
 export interface Atencion {
@@ -323,25 +366,6 @@ export interface CambiosUsuario {
   activo?: boolean | null;
 }
 
-export interface MedidasPanal {
-  alto: string | null;
-  largo: string | null;
-  ancho: string | null;
-}
-
-export interface ParteCatalogo {
-  parte_id: number;
-  tipo_parte: string | null;
-  descripcion: string | null;
-  numeros: string | null;
-  medidas: MedidasPanal;
-  n_aplicaciones: number;
-  n_fuentes: number;
-  imagen_url: string | null;
-  estado: string;
-  fusionada_en_id: number | null;
-}
-
 export interface CandidatoParte {
   parte: ParteCatalogo;
   puntaje: number;
@@ -376,6 +400,11 @@ export interface Cobertura {
   fotos: number;
   emparejados: number;
   con_aplicacion: number;
+}
+
+export interface Codigo {
+  /** Vacío para quitarlo */
+  codigo?: string | null;
 }
 
 export type Coincidencia = typeof Coincidencia[keyof typeof Coincidencia];
@@ -479,6 +508,11 @@ export interface ConfiguracionAgrupada {
   catalogo: string;
 }
 
+export interface Confirmar {
+  version: number;
+  heredar?: boolean;
+}
+
 export interface Creadas {
   creadas: number;
 }
@@ -523,6 +557,47 @@ export interface Emparejamiento {
   traidos?: Traidos | null;
 }
 
+export interface TarjetaImportado {
+  item_code: string;
+  descripcion: string | null;
+  estado: string;
+  medidas: MedidasPanal;
+  foto_url: string | null;
+  aplicaciones: number;
+  partes: number;
+  equivalencia: string;
+  confirmada_por: string | null;
+}
+
+export interface Equivalencia {
+  item_code: string;
+  version: number;
+  es_fabricado: boolean;
+  codigo_equivalente: string | null;
+  sugerencias: string[];
+  estado_codigo: string;
+  capturado_por: string | null;
+  capturado_en: string | null;
+  validado_por: string | null;
+  validado_en: string | null;
+  fotos_validadas: number;
+  puede_capturar: boolean;
+  puede_validar: boolean;
+  editable: boolean;
+  razon_no_editable: string | null;
+  importado: TarjetaImportado | null;
+}
+
+export interface Herencia {
+  partes: number;
+  aplicaciones_sugeridas: number;
+}
+
+export interface EquivalenciaConfirmada {
+  equivalencia: Equivalencia;
+  heredado: Herencia | null;
+}
+
 export type EventoHistorialDetalle = { [key: string]: unknown } | null;
 
 export interface EventoHistorial {
@@ -534,6 +609,17 @@ export interface EventoHistorial {
   motivo: string | null;
   detalle: EventoHistorialDetalle;
   creado_en: string;
+}
+
+export interface Fabricado {
+  item_code: string;
+  descripcion: string | null;
+  estado: string;
+  codigo_anterior: string[];
+  codigo_equivalente: string | null;
+  estado_codigo: string;
+  fotos_validadas: number;
+  importado: string | null;
 }
 
 export interface Ficha {
@@ -700,6 +786,18 @@ export interface PaginaArticulos {
   next_cursor: string | null;
 }
 
+export interface ParteConArticulos {
+  parte: ParteCatalogo;
+  articulos: number;
+}
+
+export interface PaginaCatalogo {
+  disponible: boolean;
+  part_terminology_id: number | null;
+  total: number;
+  partes: ParteConArticulos[];
+}
+
 export interface ResumenAtributo {
   paid: number;
   etiqueta: string;
@@ -820,6 +918,14 @@ export interface Resultados {
   consulta: string;
   medidas: string[] | null;
   articulos: Resultado[];
+}
+
+export type RevisionFabricadosPorEstado = {[key: string]: number};
+
+export interface RevisionFabricados {
+  total: number;
+  por_estado: RevisionFabricadosPorEstado;
+  fabricados: Fabricado[];
 }
 
 export interface UsuarioSesion {
@@ -1200,6 +1306,76 @@ linea?: Linea;
 };
 
 export type GenerarMuestreoParams = {
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type ListarFabricadosParams = {
+estado_codigo?: string | null;
+q?: string | null;
+/**
+ * @minimum 1
+ * @maximum 200
+ */
+limite?: number;
+/**
+ * @minimum 0
+ */
+desde?: number;
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type ListarCatalogoParams = {
+q?: string | null;
+sin_articulo?: boolean;
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limite?: number;
+/**
+ * @minimum 0
+ */
+desde?: number;
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type ArticulosDeParteParams = {
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
 /**
  * Código SAP de la categoría
  * @pattern ^\d{2}$
@@ -6467,3 +6643,682 @@ export const useGenerarMuestreo = <TError = ErrorType<HTTPValidationError>,
       > => {
       return useMutation(getGenerarMuestreoMutationOptions(options), queryClient);
     }
+
+export const getObtenerEquivalenciaUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/equivalencia`
+}
+
+/**
+ * @summary Código equivalente del fabricado, su estado y la tarjeta del importado equivalente
+ */
+export const obtenerEquivalencia = async (itemCode: string, options?: Parameters<typeof nexoFetch>[1]): Promise<Equivalencia> => {
+
+  return nexoFetch<Equivalencia>(getObtenerEquivalenciaUrl(itemCode),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerEquivalenciaQueryKey = (itemCode: string,) => {
+    return [
+    `/api/v1/articulos/${itemCode}/equivalencia`
+    ] as const;
+    }
+
+
+export const getObtenerEquivalenciaQueryOptions = <TData = Awaited<ReturnType<typeof obtenerEquivalencia>>, TError = ErrorType<HTTPValidationError>>(itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEquivalencia>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerEquivalenciaQueryKey(itemCode);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerEquivalencia>>> = ({ signal }) => obtenerEquivalencia(itemCode, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemCode !== null && itemCode !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerEquivalencia>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerEquivalenciaQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerEquivalencia>>>
+export type ObtenerEquivalenciaQueryError = ErrorType<HTTPValidationError>
+
+
+export function useObtenerEquivalencia<TData = Awaited<ReturnType<typeof obtenerEquivalencia>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEquivalencia>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerEquivalencia>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerEquivalencia>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerEquivalencia<TData = Awaited<ReturnType<typeof obtenerEquivalencia>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEquivalencia>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerEquivalencia>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerEquivalencia>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerEquivalencia<TData = Awaited<ReturnType<typeof obtenerEquivalencia>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEquivalencia>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Código equivalente del fabricado, su estado y la tarjeta del importado equivalente
+ */
+
+export function useObtenerEquivalencia<TData = Awaited<ReturnType<typeof obtenerEquivalencia>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEquivalencia>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerEquivalenciaQueryOptions(itemCode,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCapturarCodigoEquivalenteUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/equivalencia`
+}
+
+/**
+ * @summary Capturar o cambiar el código equivalente (borra su validación; no cambia el estado del artículo)
+ */
+export const capturarCodigoEquivalente = async (itemCode: string,
+    codigo: Codigo, options?: Parameters<typeof nexoFetch>[1]): Promise<Equivalencia> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Equivalencia>(getCapturarCodigoEquivalenteUrl(itemCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(codigo)
+  }
+);}
+
+
+
+
+
+export const getCapturarCodigoEquivalenteMutationKey = () => ['capturarCodigoEquivalente'] as const;
+
+export const getCapturarCodigoEquivalenteMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof capturarCodigoEquivalente>>, TError,CapturarCodigoEquivalenteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof capturarCodigoEquivalente>>, TError,CapturarCodigoEquivalenteMutationVariables, TContext> => {
+
+const mutationKey = getCapturarCodigoEquivalenteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof capturarCodigoEquivalente>>, CapturarCodigoEquivalenteMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  capturarCodigoEquivalente(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CapturarCodigoEquivalenteMutationResult = NonNullable<Awaited<ReturnType<typeof capturarCodigoEquivalente>>>
+    export type CapturarCodigoEquivalenteMutationBody = Codigo
+    export type CapturarCodigoEquivalenteMutationError = ErrorType<void | HTTPValidationError>
+    export type CapturarCodigoEquivalenteMutationVariables = {itemCode: string;data: Codigo}
+
+    /**
+ * @summary Capturar o cambiar el código equivalente (borra su validación; no cambia el estado del artículo)
+ */
+export const useCapturarCodigoEquivalente = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof capturarCodigoEquivalente>>, TError,CapturarCodigoEquivalenteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof capturarCodigoEquivalente>>,
+        TError,
+        CapturarCodigoEquivalenteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCapturarCodigoEquivalenteMutationOptions(options), queryClient);
+    }
+
+export const getValidarCodigoEquivalenteUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/equivalencia/validar`
+}
+
+/**
+ * @summary Validar el código equivalente (supervisor o administrador; requiere foto propia validada)
+ */
+export const validarCodigoEquivalente = async (itemCode: string, options?: Parameters<typeof nexoFetch>[1]): Promise<Equivalencia> => {
+
+  return nexoFetch<Equivalencia>(getValidarCodigoEquivalenteUrl(itemCode),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getValidarCodigoEquivalenteMutationKey = () => ['validarCodigoEquivalente'] as const;
+
+export const getValidarCodigoEquivalenteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validarCodigoEquivalente>>, TError,ValidarCodigoEquivalenteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof validarCodigoEquivalente>>, TError,ValidarCodigoEquivalenteMutationVariables, TContext> => {
+
+const mutationKey = getValidarCodigoEquivalenteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof validarCodigoEquivalente>>, ValidarCodigoEquivalenteMutationVariables> = (props) => {
+          const {itemCode} = props ?? {};
+
+          return  validarCodigoEquivalente(itemCode,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ValidarCodigoEquivalenteMutationResult = NonNullable<Awaited<ReturnType<typeof validarCodigoEquivalente>>>
+
+    export type ValidarCodigoEquivalenteMutationError = ErrorType<void>
+    export type ValidarCodigoEquivalenteMutationVariables = {itemCode: string}
+
+    /**
+ * @summary Validar el código equivalente (supervisor o administrador; requiere foto propia validada)
+ */
+export const useValidarCodigoEquivalente = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validarCodigoEquivalente>>, TError,ValidarCodigoEquivalenteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof validarCodigoEquivalente>>,
+        TError,
+        ValidarCodigoEquivalenteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getValidarCodigoEquivalenteMutationOptions(options), queryClient);
+    }
+
+export const getConfirmarEquivalenciaUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/equivalencia/confirmar`
+}
+
+/**
+ * @summary Confirmar la equivalencia con el importado y, opcionalmente, heredar su parte y aplicaciones como sugerencias
+ */
+export const confirmarEquivalencia = async (itemCode: string,
+    confirmar: Confirmar, options?: Parameters<typeof nexoFetch>[1]): Promise<EquivalenciaConfirmada> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<EquivalenciaConfirmada>(getConfirmarEquivalenciaUrl(itemCode),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(confirmar)
+  }
+);}
+
+
+
+
+
+export const getConfirmarEquivalenciaMutationKey = () => ['confirmarEquivalencia'] as const;
+
+export const getConfirmarEquivalenciaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmarEquivalencia>>, TError,ConfirmarEquivalenciaMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmarEquivalencia>>, TError,ConfirmarEquivalenciaMutationVariables, TContext> => {
+
+const mutationKey = getConfirmarEquivalenciaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmarEquivalencia>>, ConfirmarEquivalenciaMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  confirmarEquivalencia(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmarEquivalenciaMutationResult = NonNullable<Awaited<ReturnType<typeof confirmarEquivalencia>>>
+    export type ConfirmarEquivalenciaMutationBody = Confirmar
+    export type ConfirmarEquivalenciaMutationError = ErrorType<void>
+    export type ConfirmarEquivalenciaMutationVariables = {itemCode: string;data: Confirmar}
+
+    /**
+ * @summary Confirmar la equivalencia con el importado y, opcionalmente, heredar su parte y aplicaciones como sugerencias
+ */
+export const useConfirmarEquivalencia = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmarEquivalencia>>, TError,ConfirmarEquivalenciaMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmarEquivalencia>>,
+        TError,
+        ConfirmarEquivalenciaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConfirmarEquivalenciaMutationOptions(options), queryClient);
+    }
+
+export const getListarFabricadosUrl = (params?: ListarFabricadosParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/fabricados?${stringifiedParams}` : `/api/v1/fabricados`
+}
+
+/**
+ * @summary Revisión de fabricados de la categoría: código equivalente y su estado
+ */
+export const listarFabricados = async (params?: ListarFabricadosParams, options?: Parameters<typeof nexoFetch>[1]): Promise<RevisionFabricados> => {
+
+  return nexoFetch<RevisionFabricados>(getListarFabricadosUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarFabricadosQueryKey = (params?: ListarFabricadosParams,) => {
+    return [
+    `/api/v1/fabricados`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarFabricadosQueryOptions = <TData = Awaited<ReturnType<typeof listarFabricados>>, TError = ErrorType<HTTPValidationError>>(params?: ListarFabricadosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFabricados>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarFabricadosQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarFabricados>>> = ({ signal }) => listarFabricados(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarFabricados>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarFabricadosQueryResult = NonNullable<Awaited<ReturnType<typeof listarFabricados>>>
+export type ListarFabricadosQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarFabricados<TData = Awaited<ReturnType<typeof listarFabricados>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  ListarFabricadosParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFabricados>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarFabricados>>,
+          TError,
+          Awaited<ReturnType<typeof listarFabricados>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarFabricados<TData = Awaited<ReturnType<typeof listarFabricados>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarFabricadosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFabricados>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarFabricados>>,
+          TError,
+          Awaited<ReturnType<typeof listarFabricados>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarFabricados<TData = Awaited<ReturnType<typeof listarFabricados>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarFabricadosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFabricados>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Revisión de fabricados de la categoría: código equivalente y su estado
+ */
+
+export function useListarFabricados<TData = Awaited<ReturnType<typeof listarFabricados>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarFabricadosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFabricados>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarFabricadosQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListarCatalogoUrl = (params?: ListarCatalogoParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/catalogo?${stringifiedParams}` : `/api/v1/catalogo`
+}
+
+/**
+ * @summary Partes del catálogo maestro del tipo elegido, con cuántos artículos las usan
+ */
+export const listarCatalogo = async (params?: ListarCatalogoParams, options?: Parameters<typeof nexoFetch>[1]): Promise<PaginaCatalogo> => {
+
+  return nexoFetch<PaginaCatalogo>(getListarCatalogoUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarCatalogoQueryKey = (params?: ListarCatalogoParams,) => {
+    return [
+    `/api/v1/catalogo`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarCatalogoQueryOptions = <TData = Awaited<ReturnType<typeof listarCatalogo>>, TError = ErrorType<HTTPValidationError>>(params?: ListarCatalogoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCatalogo>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarCatalogoQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarCatalogo>>> = ({ signal }) => listarCatalogo(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarCatalogo>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarCatalogoQueryResult = NonNullable<Awaited<ReturnType<typeof listarCatalogo>>>
+export type ListarCatalogoQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarCatalogo<TData = Awaited<ReturnType<typeof listarCatalogo>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  ListarCatalogoParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCatalogo>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarCatalogo>>,
+          TError,
+          Awaited<ReturnType<typeof listarCatalogo>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarCatalogo<TData = Awaited<ReturnType<typeof listarCatalogo>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarCatalogoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCatalogo>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarCatalogo>>,
+          TError,
+          Awaited<ReturnType<typeof listarCatalogo>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarCatalogo<TData = Awaited<ReturnType<typeof listarCatalogo>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarCatalogoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCatalogo>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Partes del catálogo maestro del tipo elegido, con cuántos artículos las usan
+ */
+
+export function useListarCatalogo<TData = Awaited<ReturnType<typeof listarCatalogo>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarCatalogoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCatalogo>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarCatalogoQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getArticulosDeParteUrl = (parteId: number,
+    params?: ArticulosDeParteParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/catalogo/${parteId}/articulos?${stringifiedParams}` : `/api/v1/catalogo/${parteId}/articulos`
+}
+
+/**
+ * @summary Artículos de Nexo vinculados a la parte y los que podrían serlo (medidas, números, vehículos)
+ */
+export const articulosDeParte = async (parteId: number,
+    params?: ArticulosDeParteParams, options?: Parameters<typeof nexoFetch>[1]): Promise<ArticulosDeParte> => {
+
+  return nexoFetch<ArticulosDeParte>(getArticulosDeParteUrl(parteId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getArticulosDeParteQueryKey = (parteId: number,
+    params?: ArticulosDeParteParams,) => {
+    return [
+    `/api/v1/catalogo/${parteId}/articulos`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getArticulosDeParteQueryOptions = <TData = Awaited<ReturnType<typeof articulosDeParte>>, TError = ErrorType<HTTPValidationError>>(parteId: number,
+    params?: ArticulosDeParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof articulosDeParte>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getArticulosDeParteQueryKey(parteId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof articulosDeParte>>> = ({ signal }) => articulosDeParte(parteId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: parteId !== null && parteId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof articulosDeParte>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ArticulosDeParteQueryResult = NonNullable<Awaited<ReturnType<typeof articulosDeParte>>>
+export type ArticulosDeParteQueryError = ErrorType<HTTPValidationError>
+
+
+export function useArticulosDeParte<TData = Awaited<ReturnType<typeof articulosDeParte>>, TError = ErrorType<HTTPValidationError>>(
+ parteId: number,
+    params: undefined |  ArticulosDeParteParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof articulosDeParte>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof articulosDeParte>>,
+          TError,
+          Awaited<ReturnType<typeof articulosDeParte>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useArticulosDeParte<TData = Awaited<ReturnType<typeof articulosDeParte>>, TError = ErrorType<HTTPValidationError>>(
+ parteId: number,
+    params?: ArticulosDeParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof articulosDeParte>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof articulosDeParte>>,
+          TError,
+          Awaited<ReturnType<typeof articulosDeParte>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useArticulosDeParte<TData = Awaited<ReturnType<typeof articulosDeParte>>, TError = ErrorType<HTTPValidationError>>(
+ parteId: number,
+    params?: ArticulosDeParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof articulosDeParte>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Artículos de Nexo vinculados a la parte y los que podrían serlo (medidas, números, vehículos)
+ */
+
+export function useArticulosDeParte<TData = Awaited<ReturnType<typeof articulosDeParte>>, TError = ErrorType<HTTPValidationError>>(
+ parteId: number,
+    params?: ArticulosDeParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof articulosDeParte>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getArticulosDeParteQueryOptions(parteId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

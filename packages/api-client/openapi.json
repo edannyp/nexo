@@ -2830,6 +2830,499 @@
           }
         }
       }
+    },
+    "/api/v1/articulos/{item_code}/equivalencia": {
+      "get": {
+        "tags": [
+          "equivalencia"
+        ],
+        "summary": "Código equivalente del fabricado, su estado y la tarjeta del importado equivalente",
+        "operationId": "obtener_equivalencia",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Equivalencia"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "equivalencia"
+        ],
+        "summary": "Capturar o cambiar el código equivalente (borra su validación; no cambia el estado del artículo)",
+        "operationId": "capturar_codigo_equivalente",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Codigo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Equivalencia"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Reservado por otro o no es fabricado"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/equivalencia/validar": {
+      "post": {
+        "tags": [
+          "equivalencia"
+        ],
+        "summary": "Validar el código equivalente (supervisor o administrador; requiere foto propia validada)",
+        "operationId": "validar_codigo_equivalente",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Equivalencia"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin código o sin foto validada"
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/equivalencia/confirmar": {
+      "post": {
+        "tags": [
+          "equivalencia"
+        ],
+        "summary": "Confirmar la equivalencia con el importado y, opcionalmente, heredar su parte y aplicaciones como sugerencias",
+        "operationId": "confirmar_equivalencia",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Confirmar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquivalenciaConfirmada"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No editable o versión distinta"
+          },
+          "422": {
+            "description": "Sin importado sugerido"
+          }
+        }
+      }
+    },
+    "/api/v1/fabricados": {
+      "get": {
+        "tags": [
+          "equivalencia"
+        ],
+        "summary": "Revisión de fabricados de la categoría: código equivalente y su estado",
+        "operationId": "listar_fabricados",
+        "parameters": [
+          {
+            "name": "estado_codigo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(SIN_CODIGO|ESPERA_FOTO|LISTO_PARA_VALIDAR|VALIDADO)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado Codigo"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 60
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionFabricados"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalogo": {
+      "get": {
+        "tags": [
+          "catalogo"
+        ],
+        "summary": "Partes del catálogo maestro del tipo elegido, con cuántos artículos las usan",
+        "operationId": "listar_catalogo",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "sin_articulo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Sin Articulo"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaCatalogo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalogo/{parte_id}/articulos": {
+      "get": {
+        "tags": [
+          "catalogo"
+        ],
+        "summary": "Artículos de Nexo vinculados a la parte y los que podrían serlo (medidas, números, vehículos)",
+        "operationId": "articulos_de_parte",
+        "parameters": [
+          {
+            "name": "parte_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Parte Id"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticulosDeParte"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3114,6 +3607,58 @@
           "grupos"
         ],
         "title": "Aplicaciones"
+      },
+      "ArticuloCandidato": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "linea": {
+            "type": "string",
+            "title": "Linea"
+          },
+          "medidas": {
+            "$ref": "#/components/schemas/MedidasPanal"
+          },
+          "puntaje": {
+            "type": "integer",
+            "title": "Puntaje"
+          },
+          "razones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Razones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "descripcion",
+          "estado",
+          "linea",
+          "medidas",
+          "puntaje",
+          "razones"
+        ],
+        "title": "ArticuloCandidato"
       },
       "ArticuloDetalle": {
         "properties": {
@@ -3631,6 +4176,74 @@
         ],
         "title": "ArticuloVenta"
       },
+      "ArticuloVinculado": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "linea": {
+            "type": "string",
+            "title": "Linea"
+          },
+          "es_principal": {
+            "type": "boolean",
+            "title": "Es Principal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "descripcion",
+          "estado",
+          "linea",
+          "es_principal"
+        ],
+        "title": "ArticuloVinculado"
+      },
+      "ArticulosDeParte": {
+        "properties": {
+          "parte": {
+            "$ref": "#/components/schemas/ParteCatalogo"
+          },
+          "vinculados": {
+            "items": {
+              "$ref": "#/components/schemas/ArticuloVinculado"
+            },
+            "type": "array",
+            "title": "Vinculados"
+          },
+          "candidatos": {
+            "items": {
+              "$ref": "#/components/schemas/ArticuloCandidato"
+            },
+            "type": "array",
+            "title": "Candidatos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parte",
+          "vinculados",
+          "candidatos"
+        ],
+        "title": "ArticulosDeParte"
+      },
       "Atencion": {
         "properties": {
           "rechazados": {
@@ -4105,6 +4718,25 @@
         ],
         "title": "Cobertura"
       },
+      "Codigo": {
+        "properties": {
+          "codigo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo",
+            "description": "Vacío para quitarlo"
+          }
+        },
+        "type": "object",
+        "title": "Codigo"
+      },
       "Coincidencia": {
         "type": "string",
         "enum": [
@@ -4257,6 +4889,24 @@
         "title": "ConfiguracionAgrupada",
         "description": "Un submodelo + motor (como lo lee el operador) y los años en que existe; cada año lleva su propio motor de VCdb."
       },
+      "Confirmar": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "heredar": {
+            "type": "boolean",
+            "title": "Heredar",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "Confirmar"
+      },
       "Creadas": {
         "properties": {
           "creadas": {
@@ -4374,6 +5024,170 @@
         ],
         "title": "Emparejamiento"
       },
+      "Equivalencia": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "es_fabricado": {
+            "type": "boolean",
+            "title": "Es Fabricado"
+          },
+          "codigo_equivalente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Equivalente"
+          },
+          "sugerencias": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sugerencias"
+          },
+          "estado_codigo": {
+            "type": "string",
+            "title": "Estado Codigo"
+          },
+          "capturado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capturado Por"
+          },
+          "capturado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capturado En"
+          },
+          "validado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validado Por"
+          },
+          "validado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validado En"
+          },
+          "fotos_validadas": {
+            "type": "integer",
+            "title": "Fotos Validadas"
+          },
+          "puede_capturar": {
+            "type": "boolean",
+            "title": "Puede Capturar"
+          },
+          "puede_validar": {
+            "type": "boolean",
+            "title": "Puede Validar"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable"
+          },
+          "razon_no_editable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razon No Editable"
+          },
+          "importado": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TarjetaImportado"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "version",
+          "es_fabricado",
+          "codigo_equivalente",
+          "sugerencias",
+          "estado_codigo",
+          "capturado_por",
+          "capturado_en",
+          "validado_por",
+          "validado_en",
+          "fotos_validadas",
+          "puede_capturar",
+          "puede_validar",
+          "editable",
+          "razon_no_editable",
+          "importado"
+        ],
+        "title": "Equivalencia"
+      },
+      "EquivalenciaConfirmada": {
+        "properties": {
+          "equivalencia": {
+            "$ref": "#/components/schemas/Equivalencia"
+          },
+          "heredado": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Herencia"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "equivalencia",
+          "heredado"
+        ],
+        "title": "EquivalenciaConfirmada"
+      },
       "Estado": {
         "type": "string",
         "enum": [
@@ -4460,6 +5274,78 @@
           "creado_en"
         ],
         "title": "EventoHistorial"
+      },
+      "Fabricado": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "codigo_anterior": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Codigo Anterior"
+          },
+          "codigo_equivalente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Equivalente"
+          },
+          "estado_codigo": {
+            "type": "string",
+            "title": "Estado Codigo"
+          },
+          "fotos_validadas": {
+            "type": "integer",
+            "title": "Fotos Validadas"
+          },
+          "importado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Importado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "descripcion",
+          "estado",
+          "codigo_anterior",
+          "codigo_equivalente",
+          "estado_codigo",
+          "fotos_validadas",
+          "importado"
+        ],
+        "title": "Fabricado"
       },
       "Ficha": {
         "properties": {
@@ -4952,6 +5838,24 @@
         ],
         "title": "HallazgosSap"
       },
+      "Herencia": {
+        "properties": {
+          "partes": {
+            "type": "integer",
+            "title": "Partes"
+          },
+          "aplicaciones_sugeridas": {
+            "type": "integer",
+            "title": "Aplicaciones Sugeridas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "partes",
+          "aplicaciones_sugeridas"
+        ],
+        "title": "Herencia"
+      },
       "ImagenCatalogo": {
         "properties": {
           "tipo": {
@@ -5330,6 +6234,44 @@
         ],
         "title": "PaginaArticulos"
       },
+      "PaginaCatalogo": {
+        "properties": {
+          "disponible": {
+            "type": "boolean",
+            "title": "Disponible"
+          },
+          "part_terminology_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Terminology Id"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "partes": {
+            "items": {
+              "$ref": "#/components/schemas/ParteConArticulos"
+            },
+            "type": "array",
+            "title": "Partes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "disponible",
+          "part_terminology_id",
+          "total",
+          "partes"
+        ],
+        "title": "PaginaCatalogo"
+      },
       "Panorama": {
         "properties": {
           "activos": {
@@ -5469,6 +6411,23 @@
           "fusionada_en_id"
         ],
         "title": "ParteCatalogo"
+      },
+      "ParteConArticulos": {
+        "properties": {
+          "parte": {
+            "$ref": "#/components/schemas/ParteCatalogo"
+          },
+          "articulos": {
+            "type": "integer",
+            "title": "Articulos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parte",
+          "articulos"
+        ],
+        "title": "ParteConArticulos"
       },
       "ParteVinculada": {
         "properties": {
@@ -5997,6 +6956,35 @@
         ],
         "title": "ResumenFicha"
       },
+      "RevisionFabricados": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "por_estado": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Por Estado"
+          },
+          "fabricados": {
+            "items": {
+              "$ref": "#/components/schemas/Fabricado"
+            },
+            "type": "array",
+            "title": "Fabricados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "por_estado",
+          "fabricados"
+        ],
+        "title": "RevisionFabricados"
+      },
       "Rol": {
         "type": "string",
         "enum": [
@@ -6234,6 +7222,79 @@
           "fotos_validadas"
         ],
         "title": "TareaVerificacion"
+      },
+      "TarjetaImportado": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "medidas": {
+            "$ref": "#/components/schemas/MedidasPanal"
+          },
+          "foto_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foto Url"
+          },
+          "aplicaciones": {
+            "type": "integer",
+            "title": "Aplicaciones"
+          },
+          "partes": {
+            "type": "integer",
+            "title": "Partes"
+          },
+          "equivalencia": {
+            "type": "string",
+            "title": "Equivalencia"
+          },
+          "confirmada_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmada Por"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "descripcion",
+          "estado",
+          "medidas",
+          "foto_url",
+          "aplicaciones",
+          "partes",
+          "equivalencia",
+          "confirmada_por"
+        ],
+        "title": "TarjetaImportado"
       },
       "TipoCampo": {
         "type": "string",
