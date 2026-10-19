@@ -3,8 +3,8 @@
 Consola y base de datos para validar y enriquecer el catálogo de artículos automotrices de SAP
 (radiadores, intercoolers, condensadores…) con AutoCare (ACES/PIES), el catálogo maestro de Consolidación y MercadoExterno.
 
-> Estado: **arquitectura planificada**; migraciones de la base `nexo` y contratos de Consolidación/MercadoExterno probados.
-> La API y la consola web aún no se implementan.
+> Estado: **esqueleto en construcción**: migraciones de la base `nexo`, contratos de Consolidación/MercadoExterno, API base y
+> consola con filtro global. Ruta de construcción en architecture/ux/propuesta.md.
 
 ## Por dónde empezar
 1. [context/negocio.md](context/negocio.md) y [context/alcance.md](context/alcance.md): qué se construye y qué no (el ETL es otro proyecto).
@@ -20,8 +20,10 @@ architecture/    Técnica: diagramas, capas, modelo de datos, contratos, convenc
 connections/     Clientes de prueba y exploración: Postgres, SAP HANA, MinIO, ClickHouse
 db/              Esquemas que gobernamos fuera de Nexo: Consolidación y MercadoExterno (migraciones, contrato, pruebas)
 data/            Referencias versionadas, muestras y perfiles de fuentes (no versionados)
-apps/            api (FastAPI) y web (React) — se crean tras la planificación
-packages/        ui (design system) y api-client (generado)
+apps/            api (FastAPI) y web (React): ver apps/README.md
+packages/        ui (design system) y api-client (generado desde el OpenAPI)
+deploy/          Despliegue en el servidor: Caddyfile y guía (docker-compose.yml en la raíz)
+.github/         Integración continua (GitHub Actions)
 ```
 
 ## Arranque
