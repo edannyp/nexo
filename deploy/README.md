@@ -35,8 +35,13 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    ```bash
    uv run db/ref/cargar_ref.py nexo     # usa AUTOCARE_* y NEXO_* del .env
    ```
-5. **Comprobar**: `http://<servidor>/` muestra la consola; `http://<servidor>/api/v1/salud/lista` responde `{"estado":"ok","migracion":"0004"}`.
-   La documentación de la API está en `http://<servidor>/api/docs`.
+5. **Primer administrador** (una sola vez). Imprime una contraseña temporal que se cambia al entrar:
+   ```bash
+   docker compose exec api python -m nexo_api.cli crear-admin <usuario> "<Nombre completo>"
+   ```
+   El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
+6. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
+   `{"estado":"ok","migracion":"0005"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Actualizar
 ```bash
@@ -49,3 +54,5 @@ docker compose up -d --build
 - **Respaldos**: la base `nexo` guardará trabajo humano que no se puede regenerar. Antes de operar en serio, programar al menos un
   `pg_dump` diario (riesgo aceptado en el ADR 0016).
 - Registros: `docker compose logs -f api` · `docker compose logs -f web`.
+- **Sesiones** en Redis (volumen `redis-datos`): reiniciar Redis no cierra sesiones; borrar el volumen sí.
+- La cookie de sesión se marca `Secure` cuando el sitio se sirve por HTTPS (`NEXO_SITIO` con un nombre y `tls internal`).

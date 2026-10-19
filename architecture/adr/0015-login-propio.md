@@ -1,6 +1,6 @@
 # 0015. Login propio de la APP (por ahora)
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Implementada en la migración 0005 y en `apps/api/src/nexo_api/auth/` (2026-10-19).
 - **Fecha:** 2026-10-15
 
 ## Contexto

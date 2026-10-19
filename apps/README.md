@@ -2,8 +2,8 @@
 
 | App | Qué es | Estructura |
 |---|---|---|
-| `api/` | API FastAPI y migraciones de la base `nexo` | `src/nexo_api/{core (config, bd, errores), modules/{salud, catalogos, …}}`, `alembic/` (DDL en `alembic/sql/`), `tests/{unit, integration}` |
-| `web/` | Consola React + Vite (SPA) | `src/{app (armazón, router, filtro global, navegación), features/{panorama, pendiente, …}, shared}` |
+| `api/` | API FastAPI y migraciones de la base `nexo` | `src/nexo_api/{core (config, bd, errores), auth (sesiones, contraseñas, usuarios), modules/{salud, catalogos, preferencias, …}, cli}`, `alembic/` (DDL en `alembic/sql/`), `tests/{unit, integration}` |
+| `web/` | Consola React + Vite (SPA) | `src/{app (armazón, router, sesión, filtro global, navegación), features/{auth, admin, panorama, pendiente, …}, shared (ui, tema)}` |
 
 Hacia dónde crecen (architecture/ux/propuesta.md): `modules/{auth, articulos, workflow, aplicaciones, diagramas, matching, auditoria}`,
 `adapters/{autocare, consolidacion, mercado_externo, minio, clickhouse}` en la API; `features/{auth, busqueda, explorar, trabajo,
@@ -27,7 +27,8 @@ pnpm lint                           # ESLint + Prettier
 pnpm api-client
 ```
 
-Migraciones: 0001 núcleo, 0002 enriquecimiento, 0003 código equivalente, 0004 catálogo de atributos.
+Migraciones: 0001 núcleo, 0002 enriquecimiento, 0003 código equivalente, 0004 catálogo de atributos, 0005 autenticación.
+Primer administrador local: `cd apps/api && uv run python -m nexo_api.cli crear-admin <usuario> "<Nombre>"`.
 Despliegue: [deploy/README.md](../deploy/README.md).
 
 > TypeScript queda en 6.x: `typescript-eslint` aún no soporta TypeScript 7.

@@ -8,6 +8,8 @@
 >   bandeja `v_revision_fabricados`; la equivalencia deja de ser requisito para `POR_VALIDAR` (ADR 0018).
 > - `0004_catalogo_atributos.sql`: catálogo configurable de atributos PIES por tipo de parte (ADR 0019), que reemplaza
 >   `meta.atributo_requerido` y `meta.atributo_desde_sap`. Siembra la ficha del radiador; `db/ref/cargar_ref.py nexo` carga el resto desde PAdb.
+> - `0005_auth.sql`: permisos especiales por usuario (`app.usuario_permiso`, ADR 0022), registro de accesos (`audit.evento_acceso`)
+>   y auditoría de usuarios, roles y permisos sin el hash de la contraseña (ADR 0015).
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones
