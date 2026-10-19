@@ -24,6 +24,15 @@
   PIES con su traducción y si se puede editar); `PUT` con `{ version, cambios, quitar }` guarda todo junto y lo deja confirmado por el
   usuario (aceptar lo sugerido conserva el origen `SAP`). Solo quien tiene la reserva, en Pendiente o Rechazado. Las sugerencias de
   SAP se materializan al abrir la ficha (idempotente).
+- **Vehículos** (selector; AutoCare + MercadoExterno vía adaptadores, `503` si la API no los tiene configurados):
+  `GET /vehiculos/marcas?desde&hasta`, `GET /vehiculos/modelos?marca_id&desde&hasta` y `GET /vehiculos/configuraciones?marca_id&
+  modelo_id&desde&hasta` (un renglón por submodelo + motor como se lee, con cada año, su `base_vehicle_id`, su `engine_config_id`
+  y regiones; `completa` si existe en todos los años). `POST /vehiculos/externos` registra en MercadoExterno lo que no está en
+  AutoCare (fuente obligatoria; ADR 0014).
+- **Aplicaciones**: `GET /articulos/{item_code}/aplicaciones` (agrupadas por vehículo, con lo que dice SAP traducido al catálogo:
+  marca por homologación confirmada o por nombre, modelos candidatos por parecido); `POST` `{ version, items }` agrega desde el
+  selector ya confirmadas (si estaba sugerida, la confirma); `POST …/confirmar` y `POST …/quitar` con `{ version, ids }`. Misma
+  regla de edición que la ficha. Confirmar una sugerida sin submodelo o motor → `422`.
 - **Autenticación** (ADR 0015, implementada en `apps/api/src/nexo_api/auth/`): `POST /sesion` (entrar), `GET /sesion` (usuario,
   roles, permisos y token CSRF), `DELETE /sesion` (salir), `POST /sesion/password` (cambiar la propia; cierra las demás sesiones).
   Sesión en Redis con cookie `nexo_sesion` `httpOnly`, `SameSite=Lax` y `Secure` bajo HTTPS; en Redis se guarda el SHA-256 del token.

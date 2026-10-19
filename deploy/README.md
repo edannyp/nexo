@@ -41,7 +41,7 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    ```
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
 6. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0008"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0009"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Tareas programadas
 En el servidor, con `cron` (o el programador que se use), desde la carpeta del repositorio:
@@ -54,6 +54,11 @@ Una sola vez (repetible sin duplicar), la importación inicial de las fotos que 
 docker compose exec api python -m nexo_api.cli importar-fotos
 ```
 Requieren `CLICKHOUSE_*` y `MINIO_*` (con `MINIO_SECURE=false` para el MinIO interno) en el `.env`.
+
+## Catálogo de vehículos (pestaña Aplicaciones)
+La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y `MERCADO_EXTERNO_*` en el `.env` (el usuario de
+MercadoExterno con `grp_mercado_registro`). MercadoExterno debe tener aplicada la migración `V003__configuraciones.sql`
+(`uv run db/aplicar.py mercado_externo --servidor`). Sin estas variables, la pestaña muestra las aplicaciones pero no permite buscar.
 
 ## Actualizar
 ```bash
