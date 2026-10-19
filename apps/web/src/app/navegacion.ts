@@ -120,3 +120,10 @@ export const SECCIONES: Seccion[] = [
     descripcion: 'Usuarios, ficha de atributos, traducciones y homologación.',
   },
 ];
+
+/** Ruta de una sección por su ruta conocida (las rutas de secciones se generan desde esta lista). */
+export function rutaSeccion(ruta: string): string {
+  const s = SECCIONES.find((x) => x.ruta === ruta);
+  if (!s) throw new Error(`Sección desconocida: ${ruta}`);
+  return s.ruta;
+}

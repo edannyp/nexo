@@ -4,9 +4,11 @@ import type { ReactNode } from 'react';
 
 import { Usuarios } from '@/features/admin/Usuarios';
 import { CambiarContrasena } from '@/features/auth/CambiarContrasena';
+import { CalidadSap } from '@/features/calidad-sap/CalidadSap';
 import { Entrar } from '@/features/auth/Entrar';
 import { EnConstruccion } from '@/features/pendiente/EnConstruccion';
 import { Panorama } from '@/features/panorama/Panorama';
+import { Ventas } from '@/features/ventas/Ventas';
 
 import { Armazon } from './Armazon';
 import { useUsuario } from './contexto-usuario';
@@ -60,6 +62,8 @@ function Protegida({ seccion, children }: { seccion: Seccion; children: ReactNod
 const PANTALLAS: Record<string, () => ReactNode> = {
   '/': () => <Panorama />,
   '/admin': () => <Usuarios />,
+  '/calidad-sap': () => <CalidadSap />,
+  '/ventas': () => <Ventas />,
 };
 
 const secciones = SECCIONES.map((s) =>
