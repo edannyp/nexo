@@ -4,7 +4,7 @@ import { useRef } from 'react';
 
 import { cn } from '@/shared/cn';
 
-import { SECCIONES, type Seccion } from './navegacion';
+import type { Seccion } from './navegacion';
 
 const enlace =
   'flex items-center gap-3 rounded-md px-3 py-2 text-sm text-suave hover:bg-superficie-2 hover:text-texto ' +
@@ -21,11 +21,11 @@ function Entrada({ s, alPulsar }: { s: Seccion; alPulsar?: () => void }) {
 }
 
 /** Escritorio (lg+): menú lateral fijo. */
-export function NavegacionLateral() {
+export function NavegacionLateral({ secciones }: { secciones: Seccion[] }) {
   return (
     <nav aria-label="Secciones" className="hidden w-56 shrink-0 border-r border-borde p-3 lg:block">
       <ul className="sticky top-17 space-y-0.5">
-        {SECCIONES.map((s) => (
+        {secciones.map((s) => (
           <li key={s.ruta}>
             <Entrada s={s} />
           </li>
@@ -36,11 +36,13 @@ export function NavegacionLateral() {
 }
 
 /** Celular y tableta: menú inferior con las entradas principales y "Más" para el resto. */
-export function NavegacionInferior() {
+export function NavegacionInferior({ secciones }: { secciones: Seccion[] }) {
   const mas = useRef<HTMLDialogElement>(null);
   const cerrar = () => mas.current?.close();
-  const principales = SECCIONES.filter((s) => s.movil);
-  const resto = SECCIONES.filter((s) => !s.movil);
+  // Las 4 primeras que el rol puede ver (prioridad a las marcadas para celular); el resto va en "Más"
+  const ordenadas = [...secciones.filter((s) => s.movil), ...secciones.filter((s) => !s.movil)];
+  const principales = ordenadas.slice(0, 4);
+  const resto = ordenadas.slice(4);
 
   return (
     <>
@@ -61,16 +63,18 @@ export function NavegacionInferior() {
               </Link>
             </li>
           ))}
-          <li>
-            <button
-              type="button"
-              onClick={() => mas.current?.showModal()}
-              className="flex w-full flex-col items-center gap-0.5 py-2 text-[11px] text-suave"
-            >
-              <Menu className="size-5" aria-hidden />
-              Más
-            </button>
-          </li>
+          {resto.length > 0 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => mas.current?.showModal()}
+                className="flex w-full flex-col items-center gap-0.5 py-2 text-[11px] text-suave"
+              >
+                <Menu className="size-5" aria-hidden />
+                Más
+              </button>
+            </li>
+          )}
         </ul>
       </nav>
       <dialog

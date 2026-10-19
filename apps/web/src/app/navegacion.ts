@@ -13,6 +13,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import type { Permiso, Rol } from '@nexo/api-client';
+
 /** Entradas del menú (architecture/ux/propuesta.md §3). `paso` = paso de la ruta de construcción que la entrega. */
 export interface Seccion {
   ruta: string;
@@ -22,6 +24,8 @@ export interface Seccion {
   paso: number;
   movil?: boolean; // visible en el menú inferior del celular
   restringida?: boolean; // requiere un permiso especial
+  roles?: Rol[]; // si se indica, solo estos roles la ven
+  permiso?: Permiso; // permiso especial por usuario (ADR 0022)
 }
 
 export const SECCIONES: Seccion[] = [
@@ -35,6 +39,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/trabajar',
+    roles: ['OPERADOR', 'SUPERVISOR'],
     etiqueta: 'Trabajar',
     icono: Play,
     paso: 5,
@@ -51,6 +56,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/validar',
+    roles: ['SUPERVISOR', 'ADMINISTRADOR'],
     etiqueta: 'Validar',
     icono: CheckCheck,
     paso: 5,
@@ -59,6 +65,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/verificacion',
+    roles: ['SUPERVISOR', 'ADMINISTRADOR'],
     etiqueta: 'Verificación',
     icono: ShieldCheck,
     paso: 8,
@@ -66,6 +73,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/fabricados',
+    roles: ['OPERADOR', 'SUPERVISOR'],
     etiqueta: 'Fabricados',
     icono: Factory,
     paso: 6,
@@ -80,6 +88,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/fotos',
+    roles: ['FOTOS', 'ADMINISTRADOR'],
     etiqueta: 'Fotos',
     icono: Camera,
     paso: 8,
@@ -87,6 +96,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/calidad-sap',
+    roles: ['SUPERVISOR', 'ADMINISTRADOR'],
     etiqueta: 'Calidad SAP',
     icono: TriangleAlert,
     paso: 4,
@@ -94,6 +104,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/ventas',
+    permiso: 'VER_ANALISIS_VENTAS',
     etiqueta: 'Ventas',
     icono: TrendingUp,
     paso: 4,
@@ -102,6 +113,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     ruta: '/admin',
+    roles: ['ADMINISTRADOR'],
     etiqueta: 'Administración',
     icono: Settings,
     paso: 3,

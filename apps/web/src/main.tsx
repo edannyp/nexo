@@ -1,6 +1,6 @@
 import './styles.css';
 
-import { ProblemaError } from '@nexo/api-client';
+import { alPerderSesion, getObtenerSesionQueryKey, ProblemaError } from '@nexo/api-client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
@@ -17,6 +17,9 @@ const consultas = new QueryClient({
     },
   },
 });
+
+// Si la sesión vence o la cierra un administrador, se vuelve a consultar: el armazón lleva a /entrar.
+alPerderSesion(() => void consultas.resetQueries({ queryKey: getObtenerSesionQueryKey() }));
 
 createRoot(document.getElementById('raiz')!).render(
   <StrictMode>
