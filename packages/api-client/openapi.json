@@ -1,0 +1,174 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nexo API",
+    "description": "Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/salud": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "El proceso responde",
+        "operationId": "obtener_salud",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Viva"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/salud/lista": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "La base responde y está migrada",
+        "operationId": "obtener_salud_lista",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lista"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Base no disponible"
+          }
+        }
+      }
+    },
+    "/api/v1/categorias": {
+      "get": {
+        "tags": [
+          "catalogos"
+        ],
+        "summary": "Categorías en alcance con artículos activos por línea",
+        "operationId": "listar_categorias",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Categoria"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Categorias"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Categoria": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "part_terminology_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Terminology Id"
+          },
+          "activos": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Linea"
+            },
+            "type": "object",
+            "title": "Activos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "part_terminology_id",
+          "activos"
+        ],
+        "title": "Categoria"
+      },
+      "Linea": {
+        "type": "string",
+        "enum": [
+          "IMPORTADO",
+          "FABRICADO"
+        ],
+        "title": "Linea"
+      },
+      "Lista": {
+        "properties": {
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "migracion": {
+            "type": "string",
+            "title": "Migracion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estado",
+          "migracion"
+        ],
+        "title": "Lista"
+      },
+      "Viva": {
+        "properties": {
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estado",
+          "version"
+        ],
+        "title": "Viva"
+      }
+    }
+  }
+}
