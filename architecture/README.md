@@ -6,5 +6,6 @@
 | [capas/](capas/) | Una página por capa del diagrama: Extracción, Ingeniería de fuentes, Integración |
 | [datos/](datos/) | Modelos de Nexo, Consolidación y MercadoExterno (borradores), mapeo campo a campo por fuente, contratos con procesos externos |
 | [api/](api/) | Convenciones REST del backend |
+| [ux/](ux/) | Propuesta de experiencia de usuario: navegación, pantallas, patrones de interacción |
 | [adr/](adr/) | Decisiones de arquitectura numeradas. Una decisión = un archivo |
 | [stack.md](stack.md) | Stack elegido y herramientas de calidad |
