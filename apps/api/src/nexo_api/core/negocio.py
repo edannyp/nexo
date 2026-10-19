@@ -26,6 +26,8 @@ ERRORES = {
     "ATRIBUTO_NO_HABILITADO": (422, "Ese atributo no se usa en este tipo de parte"),
     "VALOR_NO_VALIDO": (422, "Ese valor no está en la lista de PIES"),
     "REQUIERE_UOM": (422, "Falta la unidad de la medida"),
+    "TAREA_NO_ABIERTA": (409, "Esa verificación ya se resolvió"),
+    "RESULTADO_INVALIDO": (422, "Resultado no válido"),
 }
 _CODIGO = re.compile(r"^([A-Z_]+): ?(.*)$", re.S)
 

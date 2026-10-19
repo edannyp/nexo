@@ -17,11 +17,13 @@ from .modules import (
     catalogos,
     emparejamiento,
     ficha,
+    fotos,
     panorama,
     preferencias,
     salud,
     vehiculos,
     ventas,
+    verificacion,
     vistas,
 )
 
@@ -44,7 +46,8 @@ def crear_app() -> FastAPI:
     errores.registrar(app)
     v1 = APIRouter(prefix="/api/v1")
     for modulo in (salud, sesion, usuarios, preferencias, catalogos, panorama, calidad_sap, ventas,
-                   articulos, bandejas, busqueda, vistas, ficha, vehiculos, aplicaciones, emparejamiento):
+                   articulos, bandejas, busqueda, vistas, ficha, vehiculos, aplicaciones, emparejamiento,
+                   fotos, verificacion):
         v1.include_router(modulo.router)
     app.include_router(v1)
     return app

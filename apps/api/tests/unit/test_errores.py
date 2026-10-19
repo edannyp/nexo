@@ -27,6 +27,7 @@ def test_openapi_publicado_con_operaciones_legibles_y_unicas():
 
 
 def test_openapi_sin_nombres_de_modelo_duplicados():
-    """Dos modelos con el mismo nombre en módulos distintos se publican como `nexo_api__modules__…`: el cliente queda ilegible."""
+    """Dos modelos con el mismo nombre en módulos distintos se publican como `nexo_api__modules__…` (o `X-Input`/`X-Output` si uno
+    solo entra y el otro solo sale): el cliente queda ilegible o cambia de nombre sin aviso."""
     esquemas = cliente.get("/api/openapi.json").json()["components"]["schemas"]
-    assert not [n for n in esquemas if n.startswith("nexo_api")]
+    assert not [n for n in esquemas if n.startswith("nexo_api") or n.endswith(("-Input", "-Output"))]
