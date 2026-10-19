@@ -198,7 +198,7 @@ def puntuar(art: Medidas, c: Candidato, tol: int) -> tuple[int, list[str], bool]
 # ---------------------------------------------------------------------------------------------------------------------------
 # Lectura
 # ---------------------------------------------------------------------------------------------------------------------------
-def _parte(r: ResumenParte) -> ParteCatalogo:
+def parte_catalogo(r: ResumenParte) -> ParteCatalogo:
     return ParteCatalogo(parte_id=r.parte_id, tipo_parte=r.tipo_parte, descripcion=r.descripcion, numeros=r.numeros,
                          medidas=MedidasPanal(alto=r.medidas.alto, largo=r.medidas.largo, ancho=r.medidas.ancho),
                          n_aplicaciones=r.n_aplicaciones, n_fuentes=r.n_fuentes, imagen_url=r.imagen_url, estado=r.estado,
@@ -242,7 +242,8 @@ def cargar(c: Connection, item_code: str, usuario: Usuario, m: CatalogoMaestro |
                     if cand.parte.parte_id in ya:
                         continue
                     puntaje, razones, invertida = puntuar(medidas, cand, tolerancia)
-                    candidatos.append(CandidatoParte(parte=_parte(cand.parte), puntaje=puntaje, razones=razones, invertida=invertida))
+                    candidatos.append(CandidatoParte(parte=parte_catalogo(cand.parte), puntaje=puntaje, razones=razones,
+                                                     invertida=invertida))
         except Problema:
             m = None
     candidatos.sort(key=lambda x: (-x.puntaje, -x.parte.n_fuentes, x.parte.parte_id))
@@ -253,7 +254,7 @@ def cargar(c: Connection, item_code: str, usuario: Usuario, m: CatalogoMaestro |
         medidas=MedidasPanal(alto=medidas.alto, largo=medidas.largo, ancho=medidas.ancho), tolerancia=tolerancia,
         vinculadas=[ParteVinculada(parte_id=v.parte_id, es_principal=v.es_principal, origen=v.origen, confirmado_por=v.confirmado_por,
                                    confirmado_en=v.confirmado_en.isoformat(),
-                                   parte=_parte(resumenes[v.parte_id]) if v.parte_id in resumenes else None) for v in vinculadas],
+                                   parte=parte_catalogo(resumenes[v.parte_id]) if v.parte_id in resumenes else None) for v in vinculadas],
         candidatos=candidatos[:20], traidos=traidos)
 
 
@@ -268,7 +269,7 @@ def obtener_emparejamiento(item_code: str, usuario: UsuarioActual, c: Conexion, 
             summary="Búsqueda manual en el catálogo maestro: medidas (400x518x26), número o descripción")
 def buscar_partes(_: UsuarioActual, m: Maestro, q: Annotated[str, Query(min_length=2, max_length=80)],
                   part_terminology_id: int | None = None, tolerancia: Tolerancia = 10) -> list[ParteCatalogo]:
-    return [_parte(r) for r in requerir(m).buscar(part_terminology_id, q.strip(), tolerancia)]
+    return [parte_catalogo(r) for r in requerir(m).buscar(part_terminology_id, q.strip(), tolerancia)]
 
 
 def _texto_valor(f, opciones: dict[int, str]) -> str | None:
@@ -355,7 +356,7 @@ def comparar_parte(item_code: str, parte_id: int, _: UsuarioActual, c: Conexion,
             imagenes.append(ImagenCatalogo(tipo=i.tipo, url=url))
     _, _, invertida = puntuar(medidas, Candidato(d.parte), tolerancia)
     return Comparacion(
-        parte=_parte(d.parte), invertida=invertida,
+        parte=parte_catalogo(d.parte), invertida=invertida,
         filas=comparar_filas(config_filas, art, {x.paid: x for x in d.atributos}, opciones, tolerancia),
         numeros=[NumeroCatalogo(tipo=n.tipo, marca=n.marca, numero=n.numero) for n in d.numeros], imagenes=imagenes,
         fuentes=[FuenteCatalogo(fuente=f.fuente, id_en_fuente=f.id_en_fuente, url=f.url) for f in d.fuentes],

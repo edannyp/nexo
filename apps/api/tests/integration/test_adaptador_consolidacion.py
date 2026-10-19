@@ -74,3 +74,13 @@ def test_detalle_y_resumenes(maestro):
     assert len(suzuki.aplicaciones) == 11
     assert maestro.detalle(999999) is None and maestro.resumenes([]) == {}
     assert maestro.resumenes([hyundai])[hyundai].estado == "ACTIVA"
+
+
+def test_listar_para_la_vista_inversa(maestro):
+    total, partes = maestro.listar(2172, None, 10, [], 2, 0)
+    assert total == 3 and len(partes) == 2
+    hyundai = ids(maestro)["Hyundai"]
+    total, partes = maestro.listar(2172, None, 10, [hyundai], 10, 0)
+    assert total == 2 and hyundai not in [p.parte_id for p in partes]
+    assert [p.descripcion for p in maestro.listar(2172, "608x335", 10, [], 10, 0)[1]] == ["Radiador Hyundai panal 335x608x16"]
+    assert maestro.listar(6708, None, 10, [], 10, 0) == (0, [])

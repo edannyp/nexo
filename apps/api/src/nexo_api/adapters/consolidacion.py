@@ -104,6 +104,8 @@ class CatalogoMaestro(Protocol):
                    base_vehicle_ids: Iterable[int], limite: int = 60) -> list[Candidato]: ...
     def buscar(self, part_terminology_id: int | None, q: str, tolerancia: int, limite: int = 30) -> list[ResumenParte]: ...
     def resumenes(self, ids: Iterable[int]) -> dict[int, ResumenParte]: ...
+    def listar(self, part_terminology_id: int, q: str | None, tolerancia: int, excluir: Iterable[int], limite: int,
+               desde: int) -> tuple[int, list[ResumenParte]]: ...
     def detalle(self, parte_id: int) -> DetalleParte | None: ...
 
 
@@ -177,6 +179,28 @@ class Consolidacion:
             order by b.n_fuentes desc, b.parte_id limit :lim
         """, p)
         return [_resumen(f) for f in filas]
+
+    def listar(self, part_terminology_id: int, q: str | None, tolerancia: int, excluir: Iterable[int], limite: int,
+               desde: int) -> tuple[int, list[ResumenParte]]:
+        """Catálogo (vista inversa): partes activas del tipo, opcionalmente filtradas como la búsqueda manual y sin las de `excluir`."""
+        p: dict = {"pt": part_terminology_id, "excluir": sorted(set(excluir)), "lim": limite, "off": desde, "tol": tolerancia}
+        filtro = "true"
+        if q and q.strip():
+            medidas = medidas_de_texto(q)
+            if medidas:
+                filtro = _MEDIDAS + " and (cast(:ancho as numeric) is null or abs(b.panal_ancho_mm - cast(:ancho as numeric)) <= :tol)"
+                p |= {"alto": medidas.alto, "largo": medidas.largo, "ancho": medidas.ancho}
+            else:
+                num = normalizar_numero(q)
+                filtro = """(exists (select 1 from catalogo.parte_numero n where n.parte_id = b.parte_id and n.numero_norm like :num)
+                             or b.descripcion ilike all (cast(:palabras as text[])))"""
+                p |= {"num": f"%{num}%" if len(num) >= 3 else "", "palabras": [f"%{w}%" for w in q.split()]}
+        filas = self._filas(f"""
+            select {_RESUMEN}, count(*) over () as total from catalogo.v_parte_busqueda b
+            where b.part_terminology_id = :pt and b.parte_id <> all(cast(:excluir as bigint[])) and {filtro}
+            order by b.n_fuentes desc, b.parte_id limit :lim offset :off
+        """, p)
+        return (filas[0].total if filas else 0), [_resumen(f) for f in filas]
 
     def resumenes(self, ids: Iterable[int]) -> dict[int, ResumenParte]:
         """También partes fusionadas o descartadas (para avisar en lo ya emparejado)."""
