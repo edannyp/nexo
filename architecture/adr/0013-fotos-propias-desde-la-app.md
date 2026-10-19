@@ -1,6 +1,6 @@
 # 0013. Las fotos propias se suben desde la APP
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Importación inicial implementada: `python -m nexo_api.cli importar-fotos` (2026-10-19; 1 490 fotos de 485 artículos).
 - **Fecha:** 2026-10-15
 
 ## Contexto

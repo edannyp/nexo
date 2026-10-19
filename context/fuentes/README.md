@@ -11,6 +11,7 @@ Una ficha por sistema. Completa cada sección al explorar la fuente con los scri
 | JJRadiators / n_fuentes | Scraping | Indirecto: llega vía Consolidación y Diagrams | [scraping.md](scraping.md) |
 | MercadoExterno | PostgreSQL | Vehículos y marcas fuera de AutoCare (estándar ACES) | [mercado-externo.md](mercado-externo.md) |
 | MinIO | Object storage (S3) | Fotos propias de artículos (parcial) | [minio.md](minio.md) |
+| ClickHouse | Almacén analítico | Unidades vendidas por artículo (apoyo, solo lectura) | [clickhouse.md](clickhouse.md) |
 | ClickHouse | ClickHouse | Volumen de venta y parque vehicular (uso por definir) | _pendiente_ |
 
 Plantilla de cada ficha: **Qué es · Quién la mantiene · Acceso · Tablas/entidades clave · Llaves para cruzar con SAP · Volumen · Calidad observada · Cómo la usa la APP**.

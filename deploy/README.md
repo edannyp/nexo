@@ -41,7 +41,19 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    ```
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
 6. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0005"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0006"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+
+## Tareas programadas
+En el servidor, con `cron` (o el programador que se use), desde la carpeta del repositorio:
+```bash
+# Ventas de apoyo desde ClickHouse, a diario (ADR 0022)
+0 6 * * *  cd /ruta/a/nexo && docker compose exec -T api python -m nexo_api.cli actualizar-ventas
+```
+Una sola vez (repetible sin duplicar), la importación inicial de las fotos que ya están en MinIO (ADR 0013):
+```bash
+docker compose exec api python -m nexo_api.cli importar-fotos
+```
+Requieren `CLICKHOUSE_*` y `MINIO_*` (con `MINIO_SECURE=false` para el MinIO interno) en el `.env`.
 
 ## Actualizar
 ```bash

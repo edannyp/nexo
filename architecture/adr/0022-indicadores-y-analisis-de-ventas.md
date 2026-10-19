@@ -1,6 +1,6 @@
 # 0022. Indicadores de venta relativos y análisis con permiso
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Implementada en la migración 0006, `modules/{panorama,ventas}.py` y la tarea `actualizar-ventas` (2026-10-19).
 - **Fecha:** 2026-10-19
 
 ## Contexto
@@ -21,5 +21,7 @@ de ventas es información sensible que no todos los usuarios deben ver.
 
 ## Consecuencias
 - Nexo necesita una tabla de permisos por usuario (por ejemplo, `app.usuario_permiso`) y la API valida el permiso en `/ventas/*`.
-- Los indicadores pueden calcularse en ClickHouse bajo demanda o guardarse en una tabla de resumen en Nexo, refrescada periódicamente; se
-  decide al implementar según el tiempo de respuesta.
+- **Implementación (2026-10-19):** copia de apoyo en Nexo (`app.venta_mensual`, unidades por artículo y mes) refrescada con
+  `python -m nexo_api.cli actualizar-ventas`, y una vista (`app.v_indicador_venta`) que calcula los indicadores dentro de cada tipo.
+  Así se pueden ordenar bandejas y filtrar por clase sin consultar ClickHouse en cada petición. Periodo y umbrales en `meta.parametro`.
+  La clasificación ABC-XYZ global de la empresa se muestra solo como referencia.
