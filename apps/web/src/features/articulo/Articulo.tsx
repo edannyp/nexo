@@ -28,6 +28,7 @@ import { Aviso, Boton, Dialogo } from '@/shared/ui';
 import { Aplicaciones } from './Aplicaciones';
 import { Emparejamiento } from './Emparejamiento';
 import { Ficha } from './Ficha';
+import { FotosDelArticulo } from '@/features/fotos/FotosDelArticulo';
 
 const LATIDO_MS = 5 * 60_000;
 const PESTANAS = [
@@ -35,7 +36,7 @@ const PESTANAS = [
   { id: 'aplicaciones', etiqueta: 'Aplicaciones' },
   { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas' },
   { id: 'equivalencia', etiqueta: 'Equivalencia', paso: 6, soloFabricado: true },
-  { id: 'fotos', etiqueta: 'Fotos', paso: 8 },
+  { id: 'fotos', etiqueta: 'Fotos' },
   { id: 'sap', etiqueta: 'Datos SAP' },
   { id: 'historial', etiqueta: 'Historial' },
 ] as const;
@@ -496,6 +497,7 @@ export function Articulo() {
         {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
         {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
         {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} />}
+        {pestana === 'fotos' && <FotosDelArticulo itemCode={itemCode} />}
         {pestana === 'sap' && <DatosSap a={a} />}
         {pestana === 'historial' && <Historial itemCode={itemCode} />}
         {PESTANAS.filter((p) => 'paso' in p && p.id === pestana).map((p) => (
@@ -504,9 +506,6 @@ export function Articulo() {
             <p className="mt-2">
               «{p.etiqueta}» llega en el paso {'paso' in p ? p.paso : ''} de la ruta de construcción.
             </p>
-            {a.fotos > 0 && p.id === 'fotos' && (
-              <p className="mt-1 text-sm">Este artículo ya tiene {a.fotos} fotos propias en MinIO.</p>
-            )}
           </div>
         ))}
       </div>

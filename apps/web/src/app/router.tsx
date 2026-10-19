@@ -8,11 +8,13 @@ import { CambiarContrasena } from '@/features/auth/CambiarContrasena';
 import { CalidadSap } from '@/features/calidad-sap/CalidadSap';
 import { Entrar } from '@/features/auth/Entrar';
 import { Explorar } from '@/features/explorar/Explorar';
+import { PantallaFotos } from '@/features/fotos/PantallaFotos';
 import { busquedaExplorar } from '@/features/explorar/filtros';
 import { EnConstruccion } from '@/features/pendiente/EnConstruccion';
 import { Panorama } from '@/features/panorama/Panorama';
 import { Bandeja } from '@/features/trabajo/Bandeja';
 import { Ventas } from '@/features/ventas/Ventas';
+import { Verificacion } from '@/features/verificacion/Verificacion';
 
 import { Armazon } from './Armazon';
 import { useUsuario } from './contexto-usuario';
@@ -71,6 +73,8 @@ const PANTALLAS: Record<string, () => ReactNode> = {
   '/articulos': () => <Explorar />,
   '/trabajar': () => <Bandeja bandeja="operador" />,
   '/validar': () => <Bandeja bandeja="supervisor" />,
+  '/verificacion': () => <Verificacion />,
+  '/fotos': () => <PantallaFotos />,
 };
 
 // Parámetros de búsqueda propios de algunas pantallas (además del filtro global de la raíz)
