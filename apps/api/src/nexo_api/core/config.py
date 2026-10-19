@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -21,6 +22,12 @@ class Config(BaseSettings):
     user: str
     password: str = ""
     sslmode: str = "prefer"
+
+    # Sesiones (ADR 0015). REDIS_URL no lleva el prefijo NEXO_ (lo comparte el entorno).
+    redis_url: str = Field("redis://localhost:6379/0", validation_alias="REDIS_URL")
+    horas_sesion: int = 8               # expira tras este tiempo sin actividad
+    intentos_maximos: int = 5           # intentos fallidos antes del bloqueo
+    minutos_bloqueo: int = 15
 
     @property
     def url_bd(self) -> URL:

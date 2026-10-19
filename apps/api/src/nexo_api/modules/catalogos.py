@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from ..auth.dependencias import UsuarioActual
 from ..core.bd import Conexion
 
 router = APIRouter(tags=["catalogos"])
@@ -25,7 +26,7 @@ class Categoria(BaseModel):
 
 
 @router.get("/categorias", response_model=list[Categoria], summary="Categorías en alcance con artículos activos por línea")
-def listar_categorias(c: Conexion) -> list[Categoria]:
+def listar_categorias(_: UsuarioActual, c: Conexion) -> list[Categoria]:
     filas = c.execute(text("""
         select c.id, c.codigo_sap, c.nombre, c.part_terminology_id_defecto,
                count(a.id) filter (where a.linea = 'IMPORTADO') as importados,

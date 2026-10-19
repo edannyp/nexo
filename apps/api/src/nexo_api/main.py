@@ -5,8 +5,10 @@ from importlib.metadata import version
 from fastapi import APIRouter, FastAPI
 from fastapi.routing import APIRoute
 
+from .auth import router as sesion
+from .auth import usuarios
 from .core import errores
-from .modules import catalogos, salud
+from .modules import catalogos, preferencias, salud
 
 
 def nombre_operacion(ruta: APIRoute) -> str:
@@ -26,8 +28,8 @@ def crear_app() -> FastAPI:
     )
     errores.registrar(app)
     v1 = APIRouter(prefix="/api/v1")
-    v1.include_router(salud.router)
-    v1.include_router(catalogos.router)
+    for modulo in (salud, sesion, usuarios, preferencias, catalogos):
+        v1.include_router(modulo.router)
     app.include_router(v1)
     return app
 
