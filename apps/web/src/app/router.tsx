@@ -3,11 +3,15 @@ import { ShieldX } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { Usuarios } from '@/features/admin/Usuarios';
+import { Articulo } from '@/features/articulo/Articulo';
 import { CambiarContrasena } from '@/features/auth/CambiarContrasena';
 import { CalidadSap } from '@/features/calidad-sap/CalidadSap';
 import { Entrar } from '@/features/auth/Entrar';
+import { Explorar } from '@/features/explorar/Explorar';
+import { busquedaExplorar } from '@/features/explorar/filtros';
 import { EnConstruccion } from '@/features/pendiente/EnConstruccion';
 import { Panorama } from '@/features/panorama/Panorama';
+import { Bandeja } from '@/features/trabajo/Bandeja';
 import { Ventas } from '@/features/ventas/Ventas';
 
 import { Armazon } from './Armazon';
@@ -64,15 +68,33 @@ const PANTALLAS: Record<string, () => ReactNode> = {
   '/admin': () => <Usuarios />,
   '/calidad-sap': () => <CalidadSap />,
   '/ventas': () => <Ventas />,
+  '/articulos': () => <Explorar />,
+  '/trabajar': () => <Bandeja bandeja="operador" />,
+  '/validar': () => <Bandeja bandeja="supervisor" />,
+};
+
+// Parámetros de búsqueda propios de algunas pantallas (además del filtro global de la raíz)
+const BUSQUEDAS: Record<string, (s: Record<string, unknown>) => object> = {
+  '/articulos': busquedaExplorar,
 };
 
 const secciones = SECCIONES.map((s) =>
   createRoute({
     getParentRoute: () => app,
     path: s.ruta,
+    ...(BUSQUEDAS[s.ruta] ? { validateSearch: BUSQUEDAS[s.ruta] } : {}),
     component: () => <Protegida seccion={s}>{PANTALLAS[s.ruta]?.() ?? <EnConstruccion seccion={s} />}</Protegida>,
   }),
 );
+
+// Espacio de trabajo del artículo. `bandeja` indica que se llegó con "Siguiente" (al terminar, abre el siguiente).
+const articulo = createRoute({
+  getParentRoute: () => app,
+  path: '/articulos/$itemCode',
+  validateSearch: (s: Record<string, unknown>): { bandeja?: 'operador' | 'supervisor' } =>
+    s.bandeja === 'operador' || s.bandeja === 'supervisor' ? { bandeja: s.bandeja } : {},
+  component: Articulo,
+});
 
 /**
  * Parámetros de búsqueda planos (`?cat=25&linea=IMPORTADO`). El serializador por defecto usa JSON y escribe `?cat=%2225%22`
@@ -90,7 +112,7 @@ export function escribirBusqueda(busqueda: Record<string, unknown>): string {
 }
 
 export const router = createRouter({
-  routeTree: raiz.addChildren([entrar, cambiarContrasena, app.addChildren(secciones)]),
+  routeTree: raiz.addChildren([entrar, cambiarContrasena, app.addChildren([...secciones, articulo])]),
   defaultPreload: 'intent',
   parseSearch: leerBusqueda,
   stringifySearch: escribirBusqueda,

@@ -12,7 +12,12 @@ const enlace =
 
 function Entrada({ s, alPulsar }: { s: Seccion; alPulsar?: () => void }) {
   return (
-    <Link to={s.ruta} activeOptions={{ exact: s.ruta === '/' }} className={enlace} onClick={alPulsar}>
+    <Link
+      to={s.ruta}
+      activeOptions={{ exact: s.ruta === '/' || s.ruta === '/articulos' }}
+      className={enlace}
+      onClick={alPulsar}
+    >
       <s.icono className="size-4 shrink-0" aria-hidden />
       <span className="truncate">{s.etiqueta}</span>
       {s.restringida && <Lock className="ml-auto size-3.5" aria-label="Requiere permiso" />}
@@ -55,7 +60,7 @@ export function NavegacionInferior({ secciones }: { secciones: Seccion[] }) {
             <li key={s.ruta}>
               <Link
                 to={s.ruta}
-                activeOptions={{ exact: s.ruta === '/' }}
+                activeOptions={{ exact: s.ruta === '/' || s.ruta === '/articulos' }}
                 className="flex flex-col items-center gap-0.5 py-2 text-[11px] text-suave data-[status=active]:text-primario"
               >
                 <s.icono className="size-5" aria-hidden />
