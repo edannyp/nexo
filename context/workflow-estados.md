@@ -41,6 +41,8 @@ stateDiagram-v2
 8. **Concurrencia**: un artículo solo puede editarlo un usuario a la vez. El usuario toma el siguiente artículo de su bandeja con
    **"Siguiente"** (respetando el filtro global); queda **reservado 30 minutos** y la reserva se renueva sola mientras trabaja en él.
    Al vencer, vuelve a la bandeja. Además, cada fila lleva `version` (control optimista). El administrador puede liberar o reasignar.
+   **Implementado (migración 0007):** "Siguiente" entrega primero los `RECHAZADO` y luego por clase de venta; en `POR_VALIDAR` nunca
+   entrega lo que el propio usuario envió (no podría validarlo). Las transiciones se rechazan si el artículo está reservado por otro.
 9. **Inactivos** (ADR 0008): la bandera `activo` es independiente del estado. Un artículo inactivo conserva su estado, pero no aparece
    en la APP, no se asigna ni cambia de estado y no se publica.
 

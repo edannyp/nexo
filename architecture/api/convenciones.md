@@ -4,11 +4,22 @@
 - `operationId` = nombre de la función (`listar_categorias` → hook `useListarCategorias`); los errores de todos los hooks son `ProblemaError`.
 - Contrato **OpenAPI** generado por FastAPI; el cliente del frontend se genera desde él (nunca tipos a mano).
 - **Errores**: RFC 9457 `application/problem+json` con `type`, `title`, `status`, `detail`, `errors[]`.
-- **Paginación**: por cursor (`?cursor=&limit=`) en bandejas; respuesta `{ items, next_cursor }`.
+- **Paginación**: por cursor opaco (`?cursor=&limit=`); respuesta `{ items, total, next_cursor }`.
+- **Filtro global**: los recursos por tipo de artículo reciben `?cat=25&linea=IMPORTADO` (validado; `422` si la categoría no existe).
 - **Filtros**: query params simples (`?estado=POR_VALIDAR&categoria=…`).
 - **Concurrencia**: los recursos editables devuelven `version`; los `PATCH` la envían y reciben `409` si cambió.
-- **Transiciones de estado**: endpoint de acción, no PATCH del campo: `POST /articulos/{id}/transiciones` con `{ destino, motivo }`.
-- **Asignación**: `POST /bandejas/{bandeja}/siguiente` reserva y devuelve el siguiente artículo (30 min); `PUT /articulos/{id}/asignacion` renueva (latido del frontend); `DELETE` suelta. Expira sola.
+- **Artículos** (por `ItemCode`): `GET /articulos` (filtros `q`, `estado`, `completitud`, `con_foto`, `emparejado`, `con_hallazgo`,
+  `clase`, `reserva`, `orden`), `GET /articulos/{item_code}` (datos SAP, requisitos con etiqueta y pestaña, acciones posibles con la
+  razón si no se pueden hacer, reserva, último motivo), `GET /articulos/{item_code}/historial`.
+- **Transiciones de estado**: endpoint de acción, no PATCH del campo: `POST /articulos/{item_code}/transiciones` con
+  `{ destino, motivo, version }`. `409` si otro usuario lo cambió o lo tiene reservado; `422` si falta motivo o requisitos; `403` por
+  rol o doble control. Los códigos de error de la base (`DOBLE_CONTROL`, `REQUISITOS_INCOMPLETOS`…) se traducen en `core/negocio.py`.
+- **Asignación**: `POST /bandejas/{operador|supervisor}/siguiente` reserva y devuelve el siguiente (30 min; prioridad: rechazados,
+  luego clase de venta; el supervisor nunca recibe lo que él envió). `POST /articulos/{item_code}/asignacion` toma uno concreto,
+  `PUT` renueva (latido cada 5 min), `DELETE` suelta. Expira sola.
+- **Búsqueda**: `GET /busqueda?q=` (código, código anterior, número de parte, medidas `400x518x26` con ±10 mm sin importar el orden
+  de alto y largo, o palabras de la descripción en cualquier orden); `todos=true` busca fuera del filtro global.
+- **Vistas guardadas**: `GET/PUT /vistas`, `DELETE /vistas/{id}` (por usuario).
 - **Autenticación** (ADR 0015, implementada en `apps/api/src/nexo_api/auth/`): `POST /sesion` (entrar), `GET /sesion` (usuario,
   roles, permisos y token CSRF), `DELETE /sesion` (salir), `POST /sesion/password` (cambiar la propia; cierra las demás sesiones).
   Sesión en Redis con cookie `nexo_sesion` `httpOnly`, `SameSite=Lax` y `Secure` bajo HTTPS; en Redis se guarda el SHA-256 del token.
