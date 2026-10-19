@@ -1,0 +1,44 @@
+# Despliegue de Nexo en el servidor interno (ADR 0016). Uso: deploy/README.md
+name: nexo
+
+services:
+  api:
+    build: ./apps/api
+    env_file: .env
+    environment:
+      NEXO_MIGRAR_AL_ARRANCAR: ${NEXO_MIGRAR_AL_ARRANCAR:-true}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NEXO_SITIO: ${NEXO_SITIO:-:80}
+    ports:
+      - "${NEXO_PUERTO:-80}:80"
+      - "${NEXO_PUERTO_HTTPS:-443}:443"
+    volumes:
+      - caddy-datos:/data
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-datos:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+    restart: unless-stopped
+
+volumes:
+  caddy-datos:
+  redis-datos:
