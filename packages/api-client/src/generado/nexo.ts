@@ -87,7 +87,7 @@ export interface ReservaInfo {
   mia: boolean;
 }
 
-export interface NexoApiModulesArticulosHallazgo {
+export interface HallazgoArticulo {
   tipo: string;
   campo_sap: string;
   valor: string | null;
@@ -110,7 +110,7 @@ export interface ArticuloDetalle {
   acciones: AccionEstado[];
   reserva: ReservaInfo | null;
   ultimo_motivo: string | null;
-  hallazgos: NexoApiModulesArticulosHallazgo[];
+  hallazgos: HallazgoArticulo[];
   fotos: number;
   clase: string | null;
   participacion: string | null;
@@ -150,12 +150,45 @@ export interface Atencion {
   reservas_por_vencer: number;
 }
 
+export type TipoCampo = typeof TipoCampo[keyof typeof TipoCampo];
+
+
+export const TipoCampo = {
+  numero: 'numero',
+  lista: 'lista',
+  texto: 'texto',
+} as const;
+
+export interface Opcion {
+  valid_value_id: number;
+  valor: string;
+  valor_es: string | null;
+}
+
+export interface ValorAtributo {
+  valor_num?: string | null;
+  uom_code?: string | null;
+  valid_value_id?: number | null;
+  valor_texto?: string | null;
+}
+
 export interface AtributoFicha {
   paid: number;
   etiqueta: string;
-  confirmados: number;
-  sugeridos: number;
-  faltan: number;
+  nombre_pies: string;
+  grupo: string;
+  obligatorio: boolean;
+  tipo: TipoCampo;
+  requiere_uom: boolean;
+  uom_defecto: string | null;
+  opciones: Opcion[];
+  sugerencias: string[];
+  valor_sap: string | null;
+  valor: ValorAtributo | null;
+  origen: string | null;
+  confirmado: boolean;
+  confirmado_por: string | null;
+  confirmado_en: string | null;
 }
 
 export type Bandeja = typeof Bandeja[keyof typeof Bandeja];
@@ -165,6 +198,14 @@ export const Bandeja = {
   operador: 'operador',
   supervisor: 'supervisor',
 } as const;
+
+export interface Cambio {
+  valor_num?: number | string | null;
+  uom_code?: string | null;
+  valid_value_id?: number | null;
+  valor_texto?: string | null;
+  paid: number;
+}
 
 export interface CambioPassword {
   /**
@@ -279,7 +320,9 @@ export interface EventoHistorial {
 }
 
 export interface Ficha {
-  completos: number;
+  version: number;
+  editable: boolean;
+  razon_no_editable: string | null;
   atributos: AtributoFicha[];
 }
 
@@ -288,6 +331,14 @@ export interface Grupo {
   descripcion: string;
   campo_sap: string;
   n: number;
+}
+
+export interface Guardado {
+  /** Versión del artículo que ve el usuario: si otro lo cambió, responde 409 */
+  version: number;
+  cambios?: Cambio[];
+  /** paid de los atributos que se dejan sin valor */
+  quitar?: number[];
 }
 
 export type ValidationErrorCtx = { [key: string]: unknown };
@@ -304,7 +355,7 @@ export interface HTTPValidationError {
   detail?: ValidationError[];
 }
 
-export interface NexoApiModulesCalidadSapHallazgo {
+export interface Hallazgo {
   id: number;
   tipo: string;
   campo_sap: string;
@@ -316,7 +367,7 @@ export interface NexoApiModulesCalidadSapHallazgo {
 
 export interface HallazgosSap {
   grupos: Grupo[];
-  hallazgos: NexoApiModulesCalidadSapHallazgo[];
+  hallazgos: Hallazgo[];
 }
 
 export interface Lista {
@@ -377,6 +428,19 @@ export interface PaginaArticulos {
   next_cursor: string | null;
 }
 
+export interface ResumenAtributo {
+  paid: number;
+  etiqueta: string;
+  confirmados: number;
+  sugeridos: number;
+  faltan: number;
+}
+
+export interface ResumenFicha {
+  completos: number;
+  atributos: ResumenAtributo[];
+}
+
 export interface Productividad {
   usuario_id: number;
   nombre: string;
@@ -408,7 +472,7 @@ export interface VentasResumen {
 export interface Panorama {
   activos: number;
   por_estado: Partial<Record<Estado, number>>;
-  ficha: Ficha;
+  ficha: ResumenFicha;
   cobertura: Cobertura;
   atencion: Atencion;
   productividad: Productividad[];
@@ -3534,4 +3598,194 @@ export const useBorrarVista = <TError = ErrorType<HTTPValidationError>,
         TContext
       > => {
       return useMutation(getBorrarVistaMutationOptions(options), queryClient);
+    }
+
+export const getObtenerFichaUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/ficha`
+}
+
+/**
+ * @summary Ficha de atributos del artículo (con las sugerencias de SAP)
+ */
+export const obtenerFicha = async (itemCode: string, options?: Parameters<typeof nexoFetch>[1]): Promise<Ficha> => {
+
+  return nexoFetch<Ficha>(getObtenerFichaUrl(itemCode),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerFichaQueryKey = (itemCode: string,) => {
+    return [
+    `/api/v1/articulos/${itemCode}/ficha`
+    ] as const;
+    }
+
+
+export const getObtenerFichaQueryOptions = <TData = Awaited<ReturnType<typeof obtenerFicha>>, TError = ErrorType<HTTPValidationError>>(itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerFicha>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerFichaQueryKey(itemCode);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerFicha>>> = ({ signal }) => obtenerFicha(itemCode, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemCode !== null && itemCode !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerFicha>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerFichaQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerFicha>>>
+export type ObtenerFichaQueryError = ErrorType<HTTPValidationError>
+
+
+export function useObtenerFicha<TData = Awaited<ReturnType<typeof obtenerFicha>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerFicha>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerFicha>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerFicha>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerFicha<TData = Awaited<ReturnType<typeof obtenerFicha>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerFicha>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerFicha>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerFicha>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerFicha<TData = Awaited<ReturnType<typeof obtenerFicha>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerFicha>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Ficha de atributos del artículo (con las sugerencias de SAP)
+ */
+
+export function useObtenerFicha<TData = Awaited<ReturnType<typeof obtenerFicha>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerFicha>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerFichaQueryOptions(itemCode,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGuardarFichaUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/ficha`
+}
+
+/**
+ * @summary Guardar la ficha (botón Guardar): todo lo guardado queda confirmado
+ */
+export const guardarFicha = async (itemCode: string,
+    guardado: Guardado, options?: Parameters<typeof nexoFetch>[1]): Promise<Ficha> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Ficha>(getGuardarFichaUrl(itemCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(guardado)
+  }
+);}
+
+
+
+
+
+export const getGuardarFichaMutationKey = () => ['guardarFicha'] as const;
+
+export const getGuardarFichaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof guardarFicha>>, TError,GuardarFichaMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof guardarFicha>>, TError,GuardarFichaMutationVariables, TContext> => {
+
+const mutationKey = getGuardarFichaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof guardarFicha>>, GuardarFichaMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  guardarFicha(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GuardarFichaMutationResult = NonNullable<Awaited<ReturnType<typeof guardarFicha>>>
+    export type GuardarFichaMutationBody = Guardado
+    export type GuardarFichaMutationError = ErrorType<void>
+    export type GuardarFichaMutationVariables = {itemCode: string;data: Guardado}
+
+    /**
+ * @summary Guardar la ficha (botón Guardar): todo lo guardado queda confirmado
+ */
+export const useGuardarFicha = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof guardarFicha>>, TError,GuardarFichaMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof guardarFicha>>,
+        TError,
+        GuardarFichaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGuardarFichaMutationOptions(options), queryClient);
     }

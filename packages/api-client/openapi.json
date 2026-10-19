@@ -1466,6 +1466,94 @@
           }
         }
       }
+    },
+    "/api/v1/articulos/{item_code}/ficha": {
+      "get": {
+        "tags": [
+          "ficha"
+        ],
+        "summary": "Ficha de atributos del artículo (con las sugerencias de SAP)",
+        "operationId": "obtener_ficha",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ficha"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ficha"
+        ],
+        "summary": "Guardar la ficha (botón Guardar): todo lo guardado queda confirmado",
+        "operationId": "guardar_ficha",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Guardado"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ficha"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Versión distinta, no reservado o estado no editable"
+          },
+          "422": {
+            "description": "Valor no válido para PIES"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1675,7 +1763,7 @@
           },
           "hallazgos": {
             "items": {
-              "$ref": "#/components/schemas/nexo_api__modules__articulos__Hallazgo"
+              "$ref": "#/components/schemas/HallazgoArticulo"
             },
             "type": "array",
             "title": "Hallazgos"
@@ -2109,26 +2197,128 @@
             "type": "string",
             "title": "Etiqueta"
           },
-          "confirmados": {
-            "type": "integer",
-            "title": "Confirmados"
+          "nombre_pies": {
+            "type": "string",
+            "title": "Nombre Pies"
           },
-          "sugeridos": {
-            "type": "integer",
-            "title": "Sugeridos"
+          "grupo": {
+            "type": "string",
+            "title": "Grupo"
           },
-          "faltan": {
-            "type": "integer",
-            "title": "Faltan"
+          "obligatorio": {
+            "type": "boolean",
+            "title": "Obligatorio"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoCampo"
+          },
+          "requiere_uom": {
+            "type": "boolean",
+            "title": "Requiere Uom"
+          },
+          "uom_defecto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uom Defecto"
+          },
+          "opciones": {
+            "items": {
+              "$ref": "#/components/schemas/Opcion"
+            },
+            "type": "array",
+            "title": "Opciones"
+          },
+          "sugerencias": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sugerencias"
+          },
+          "valor_sap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Sap"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValorAtributo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "origen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origen"
+          },
+          "confirmado": {
+            "type": "boolean",
+            "title": "Confirmado"
+          },
+          "confirmado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmado Por"
+          },
+          "confirmado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmado En"
           }
         },
         "type": "object",
         "required": [
           "paid",
           "etiqueta",
-          "confirmados",
-          "sugeridos",
-          "faltan"
+          "nombre_pies",
+          "grupo",
+          "obligatorio",
+          "tipo",
+          "requiere_uom",
+          "uom_defecto",
+          "opciones",
+          "sugerencias",
+          "valor_sap",
+          "valor",
+          "origen",
+          "confirmado",
+          "confirmado_por",
+          "confirmado_en"
         ],
         "title": "AtributoFicha"
       },
@@ -2139,6 +2329,66 @@
           "supervisor"
         ],
         "title": "Bandeja"
+      },
+      "Cambio": {
+        "properties": {
+          "valor_num": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Num"
+          },
+          "uom_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uom Code"
+          },
+          "valid_value_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Value Id"
+          },
+          "valor_texto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Texto"
+          },
+          "paid": {
+            "type": "integer",
+            "title": "Paid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paid"
+        ],
+        "title": "Cambio"
       },
       "CambioPassword": {
         "properties": {
@@ -2460,9 +2710,24 @@
       },
       "Ficha": {
         "properties": {
-          "completos": {
+          "version": {
             "type": "integer",
-            "title": "Completos"
+            "title": "Version"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable"
+          },
+          "razon_no_editable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razon No Editable"
           },
           "atributos": {
             "items": {
@@ -2474,7 +2739,9 @@
         },
         "type": "object",
         "required": [
-          "completos",
+          "version",
+          "editable",
+          "razon_no_editable",
           "atributos"
         ],
         "title": "Ficha"
@@ -2507,6 +2774,37 @@
         ],
         "title": "Grupo"
       },
+      "Guardado": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Versión del artículo que ve el usuario: si otro lo cambió, responde 409"
+          },
+          "cambios": {
+            "items": {
+              "$ref": "#/components/schemas/Cambio"
+            },
+            "type": "array",
+            "title": "Cambios",
+            "default": []
+          },
+          "quitar": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Quitar",
+            "description": "paid de los atributos que se dejan sin valor",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "Guardado"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2520,6 +2818,94 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "Hallazgo": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "campo_sap": {
+            "type": "string",
+            "title": "Campo Sap"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion_articulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion Articulo"
+          },
+          "detectado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detectado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "campo_sap",
+          "valor",
+          "item_code",
+          "descripcion_articulo",
+          "detectado_en"
+        ],
+        "title": "Hallazgo"
+      },
+      "HallazgoArticulo": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "campo_sap": {
+            "type": "string",
+            "title": "Campo Sap"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "campo_sap",
+          "valor"
+        ],
+        "title": "HallazgoArticulo"
+      },
       "HallazgosSap": {
         "properties": {
           "grupos": {
@@ -2531,7 +2917,7 @@
           },
           "hallazgos": {
             "items": {
-              "$ref": "#/components/schemas/nexo_api__modules__calidad_sap__Hallazgo"
+              "$ref": "#/components/schemas/Hallazgo"
             },
             "type": "array",
             "title": "Hallazgos"
@@ -2649,6 +3035,36 @@
         ],
         "title": "NuevoUsuario"
       },
+      "Opcion": {
+        "properties": {
+          "valid_value_id": {
+            "type": "integer",
+            "title": "Valid Value Id"
+          },
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          },
+          "valor_es": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Es"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_value_id",
+          "valor",
+          "valor_es"
+        ],
+        "title": "Opcion"
+      },
       "Orden": {
         "type": "string",
         "enum": [
@@ -2712,7 +3128,7 @@
             "title": "Por Estado"
           },
           "ficha": {
-            "$ref": "#/components/schemas/Ficha"
+            "$ref": "#/components/schemas/ResumenFicha"
           },
           "cobertura": {
             "$ref": "#/components/schemas/Cobertura"
@@ -3092,6 +3508,60 @@
         ],
         "title": "Resultados"
       },
+      "ResumenAtributo": {
+        "properties": {
+          "paid": {
+            "type": "integer",
+            "title": "Paid"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "confirmados": {
+            "type": "integer",
+            "title": "Confirmados"
+          },
+          "sugeridos": {
+            "type": "integer",
+            "title": "Sugeridos"
+          },
+          "faltan": {
+            "type": "integer",
+            "title": "Faltan"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paid",
+          "etiqueta",
+          "confirmados",
+          "sugeridos",
+          "faltan"
+        ],
+        "title": "ResumenAtributo"
+      },
+      "ResumenFicha": {
+        "properties": {
+          "completos": {
+            "type": "integer",
+            "title": "Completos"
+          },
+          "atributos": {
+            "items": {
+              "$ref": "#/components/schemas/ResumenAtributo"
+            },
+            "type": "array",
+            "title": "Atributos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "completos",
+          "atributos"
+        ],
+        "title": "ResumenFicha"
+      },
       "Rol": {
         "type": "string",
         "enum": [
@@ -3139,6 +3609,15 @@
           "articulo"
         ],
         "title": "Siguiente"
+      },
+      "TipoCampo": {
+        "type": "string",
+        "enum": [
+          "numero",
+          "lista",
+          "texto"
+        ],
+        "title": "TipoCampo"
       },
       "Transicion": {
         "properties": {
@@ -3371,6 +3850,56 @@
         ],
         "title": "ValidationError"
       },
+      "ValorAtributo": {
+        "properties": {
+          "valor_num": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Num"
+          },
+          "uom_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uom Code"
+          },
+          "valid_value_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Value Id"
+          },
+          "valor_texto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Texto"
+          }
+        },
+        "type": "object",
+        "title": "ValorAtributo"
+      },
       "VentasResumen": {
         "properties": {
           "disponible": {
@@ -3478,94 +4007,6 @@
           "version"
         ],
         "title": "Viva"
-      },
-      "nexo_api__modules__articulos__Hallazgo": {
-        "properties": {
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "campo_sap": {
-            "type": "string",
-            "title": "Campo Sap"
-          },
-          "valor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valor"
-          }
-        },
-        "type": "object",
-        "required": [
-          "tipo",
-          "campo_sap",
-          "valor"
-        ],
-        "title": "Hallazgo"
-      },
-      "nexo_api__modules__calidad_sap__Hallazgo": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "campo_sap": {
-            "type": "string",
-            "title": "Campo Sap"
-          },
-          "valor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valor"
-          },
-          "item_code": {
-            "type": "string",
-            "title": "Item Code"
-          },
-          "descripcion_articulo": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descripcion Articulo"
-          },
-          "detectado_en": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Detectado En"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "tipo",
-          "campo_sap",
-          "valor",
-          "item_code",
-          "descripcion_articulo",
-          "detectado_en"
-        ],
-        "title": "Hallazgo"
       }
     }
   }
