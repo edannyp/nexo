@@ -29,6 +29,18 @@ class Config(BaseSettings):
     intentos_maximos: int = 5           # intentos fallidos antes del bloqueo
     minutos_bloqueo: int = 15
 
+    # Fuentes de apoyo de solo lectura (sin prefijo NEXO_: las comparte el entorno). Opcionales: sin ellas, las tareas
+    # que las usan avisan y la APP sigue funcionando.
+    clickhouse_host: str | None = Field(None, validation_alias="CLICKHOUSE_HOST")
+    clickhouse_port: int = Field(8123, validation_alias="CLICKHOUSE_PORT")
+    clickhouse_user: str = Field("default", validation_alias="CLICKHOUSE_USER")
+    clickhouse_password: str = Field("", validation_alias="CLICKHOUSE_PASSWORD")
+    minio_endpoint: str | None = Field(None, validation_alias="MINIO_ENDPOINT")
+    minio_access_key: str | None = Field(None, validation_alias="MINIO_ACCESS_KEY")
+    minio_secret_key: str | None = Field(None, validation_alias="MINIO_SECRET_KEY")
+    minio_bucket: str = Field("rlt-dru", validation_alias="MINIO_BUCKET")
+    minio_secure: bool = Field(True, validation_alias="MINIO_SECURE")
+
     @property
     def url_bd(self) -> URL:
         return URL.create(
