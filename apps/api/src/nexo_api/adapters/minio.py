@@ -31,3 +31,8 @@ class FotosMinio:
         for pagina in self.s3.get_paginator("list_objects_v2").paginate(Bucket=self.bucket, Prefix=prefijo):
             for obj in pagina.get("Contents", []):
                 yield obj["Key"]
+
+    def firmar(self, objeto: str, bucket: str | None = None, segundos: int = 3600) -> str:
+        """URL temporal para ver un objeto (p. ej. diagramas en rlt-diagramas) sin exponer las llaves."""
+        return self.s3.generate_presigned_url("get_object", Params={"Bucket": bucket or self.bucket, "Key": objeto},
+                                              ExpiresIn=segundos)
