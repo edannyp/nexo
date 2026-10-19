@@ -25,9 +25,11 @@ import { momento, porcentaje } from '@/shared/formato';
 import { Tendencia } from '@/shared/graficos';
 import { Aviso, Boton, Dialogo } from '@/shared/ui';
 
+import { Ficha } from './Ficha';
+
 const LATIDO_MS = 5 * 60_000;
 const PESTANAS = [
-  { id: 'ficha', etiqueta: 'Ficha', paso: 6 },
+  { id: 'ficha', etiqueta: 'Ficha' },
   { id: 'aplicaciones', etiqueta: 'Aplicaciones', paso: 6 },
   { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas', paso: 7 },
   { id: 'equivalencia', etiqueta: 'Equivalencia', paso: 6, soloFabricado: true },
@@ -215,7 +217,19 @@ export function Articulo() {
   const clave = getObtenerArticuloQueryKey(itemCode);
   const fijar = (d: ArticuloDetalle) => consultas.setQueryData(clave, d);
 
-  const [pestana, setPestana] = useState<Pestana>('sap');
+  const [pestana, setPestanaDirecta] = useState<Pestana>('ficha');
+  const [pendientesFicha, setPendientesFicha] = useState(0);
+  // Cambiar de pestaña desmonta la ficha: si hay cambios sin guardar, se pregunta antes
+  const setPestana = (p: Pestana) => {
+    if (
+      p !== pestana &&
+      pestana === 'ficha' &&
+      pendientesFicha > 0 &&
+      !confirm('Tienes cambios sin guardar en la ficha. ¿Cambiar de pestaña sin guardar?')
+    )
+      return;
+    setPestanaDirecta(p);
+  };
   const [motivoPara, setMotivoPara] = useState<AccionEstado | null>(null);
   const [aviso, setAviso] = useState<{ tono: 'error' | 'exito' | 'info'; titulo: string; detalle?: string } | null>(
     null,
@@ -477,6 +491,7 @@ export function Articulo() {
       </div>
 
       <div role="tabpanel">
+        {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
         {pestana === 'sap' && <DatosSap a={a} />}
         {pestana === 'historial' && <Historial itemCode={itemCode} />}
         {PESTANAS.filter((p) => 'paso' in p && p.id === pestana).map((p) => (
