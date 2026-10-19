@@ -1,0 +1,15 @@
+[project]
+name = "connections"
+version = "0.1.0"
+description = "Clientes de prueba y exploración de fuentes"
+requires-python = ">=3.12"
+dependencies = [
+  "psycopg[binary]>=3.2",
+  "hdbcli>=2.22",
+  "clickhouse-connect>=0.8",
+  "python-dotenv>=1.0",
+  "boto3>=1.43.114",
+]
+
+[tool.uv]
+package = false
