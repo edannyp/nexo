@@ -45,6 +45,21 @@ export interface AccionEstado {
   razon?: string | null;
 }
 
+export interface NuevaAplicacion {
+  base_vehicle_id: number;
+  sub_model_id: number;
+  engine_config_id: number;
+}
+
+export interface Agregar {
+  version: number;
+  /**
+     * @minItems 1
+     * @maxItems 200
+     */
+  items: NuevaAplicacion[];
+}
+
 export interface PuntoSerie {
   mes: string;
   unidades: string;
@@ -70,6 +85,64 @@ export interface AnalisisVentas {
   actualizado_en: string | null;
   serie: PuntoSerie[];
   articulos: ArticuloVenta[];
+}
+
+export interface AnioConfiguracion {
+  anio: number;
+  base_vehicle_id: number;
+  engine_config_id: number;
+  regiones: string[];
+  catalogo: string;
+}
+
+export interface AplicacionItem {
+  id: number;
+  anio: number | null;
+  base_vehicle_id: number | null;
+  sub_model_id: number | null;
+  engine_config_id: number | null;
+  equipment_base_id: number | null;
+  origen: string;
+  confirmado: boolean;
+  completa: boolean;
+}
+
+export interface OpcionVehiculo {
+  id: number;
+  nombre: string;
+}
+
+/**
+ * Lo que SAP dice del vehículo, y su traducción al catálogo cuando se encuentra.
+ */
+export interface SugerenciaSap {
+  marca: string | null;
+  modelo: string | null;
+  desde: number | null;
+  hasta: number | null;
+  marca_catalogo: OpcionVehiculo | null;
+  modelos_candidatos: OpcionVehiculo[];
+}
+
+/**
+ * Un mismo vehículo (marca, modelo, submodelo, motor) en uno o varios años.
+ */
+export interface GrupoAplicacion {
+  titulo: string;
+  detalle: string;
+  anios: string;
+  confirmados: number;
+  sugeridos: number;
+  items: AplicacionItem[];
+}
+
+export interface Aplicaciones {
+  version: number;
+  editable: boolean;
+  razon_no_editable: string | null;
+  catalogo_disponible: boolean;
+  sugerencia_sap: SugerenciaSap | null;
+  grupos: GrupoAplicacion[];
 }
 
 export type ArticuloDetalleDatosSap = { [key: string]: unknown };
@@ -293,6 +366,18 @@ export const Completitud = {
   incompleta: 'incompleta',
 } as const;
 
+/**
+ * Un submodelo + motor (como lo lee el operador) y los años en que existe; cada año lleva su propio motor de VCdb.
+ */
+export interface ConfiguracionAgrupada {
+  sub_model_id: number;
+  submodelo: string;
+  motor: string;
+  anios: AnioConfiguracion[];
+  completa: boolean;
+  catalogo: string;
+}
+
 export interface Credenciales {
   /**
      * @minLength 1
@@ -483,6 +568,15 @@ export interface PasswordTemporal {
   password_temporal: string;
 }
 
+export interface PorIds {
+  version: number;
+  /**
+     * @minItems 1
+     * @maxItems 500
+     */
+  ids: number[];
+}
+
 export interface Preferencias {
   /**
      * Código SAP de la categoría (dos dígitos)
@@ -568,6 +662,49 @@ export interface UsuarioCreado {
   usuario: UsuarioAdmin;
   /** Se muestra una sola vez; el usuario debe cambiarla al entrar */
   password_temporal: string;
+}
+
+export interface VehiculoExterno {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  marca: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  modelo: string;
+  /**
+     * @minimum 1900
+     * @maximum 2100
+     */
+  desde: number;
+  /**
+     * @minimum 1900
+     * @maximum 2100
+     */
+  hasta: number;
+  /**
+     * «Base» si no tiene otro nombre
+     * @minLength 1
+     * @maxLength 80
+     */
+  submodelo: string;
+  litros?: number | string | null;
+  cilindros?: number | null;
+  combustible?: string | null;
+  aspiracion?: string | null;
+  /** Código del motor, p. ej. 4G63 */
+  designacion?: string | null;
+  /**
+     * URL o ficha técnica que respalda el vehículo
+     * @minLength 5
+     * @maxLength 500
+     */
+  fuente: string;
+  /** Abreviaturas VCdb: GTM, SLV… */
+  regiones?: string[] | null;
 }
 
 /**
@@ -709,6 +846,48 @@ linea?: Linea;
 
 export type ListarVistasParams = {
 pantalla?: string;
+};
+
+export type ListarMarcasParams = {
+/**
+ * @minimum 1900
+ * @maximum 2100
+ */
+desde: number;
+/**
+ * @minimum 1900
+ * @maximum 2100
+ */
+hasta: number;
+};
+
+export type ListarModelosParams = {
+marca_id: number;
+/**
+ * @minimum 1900
+ * @maximum 2100
+ */
+desde: number;
+/**
+ * @minimum 1900
+ * @maximum 2100
+ */
+hasta: number;
+};
+
+export type ListarConfiguracionesParams = {
+marca_id: number;
+modelo_id: number;
+/**
+ * @minimum 1900
+ * @maximum 2100
+ */
+desde: number;
+/**
+ * @minimum 1900
+ * @maximum 2100
+ */
+hasta: number;
 };
 
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -3788,4 +3967,784 @@ export const useGuardarFicha = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getGuardarFichaMutationOptions(options), queryClient);
+    }
+
+export const getListarMarcasUrl = (params: ListarMarcasParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/vehiculos/marcas?${stringifiedParams}` : `/api/v1/vehiculos/marcas`
+}
+
+/**
+ * @summary Marcas con vehículos en esos años (AutoCare + MercadoExterno)
+ */
+export const listarMarcas = async (params: ListarMarcasParams, options?: Parameters<typeof nexoFetch>[1]): Promise<OpcionVehiculo[]> => {
+
+  return nexoFetch<OpcionVehiculo[]>(getListarMarcasUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarMarcasQueryKey = (params?: ListarMarcasParams,) => {
+    return [
+    `/api/v1/vehiculos/marcas`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarMarcasQueryOptions = <TData = Awaited<ReturnType<typeof listarMarcas>>, TError = ErrorType<HTTPValidationError>>(params: ListarMarcasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarMarcas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarMarcasQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarMarcas>>> = ({ signal }) => listarMarcas(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarMarcas>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarMarcasQueryResult = NonNullable<Awaited<ReturnType<typeof listarMarcas>>>
+export type ListarMarcasQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarMarcas<TData = Awaited<ReturnType<typeof listarMarcas>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarMarcasParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarMarcas>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarMarcas>>,
+          TError,
+          Awaited<ReturnType<typeof listarMarcas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarMarcas<TData = Awaited<ReturnType<typeof listarMarcas>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarMarcasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarMarcas>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarMarcas>>,
+          TError,
+          Awaited<ReturnType<typeof listarMarcas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarMarcas<TData = Awaited<ReturnType<typeof listarMarcas>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarMarcasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarMarcas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Marcas con vehículos en esos años (AutoCare + MercadoExterno)
+ */
+
+export function useListarMarcas<TData = Awaited<ReturnType<typeof listarMarcas>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarMarcasParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarMarcas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarMarcasQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListarModelosUrl = (params: ListarModelosParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/vehiculos/modelos?${stringifiedParams}` : `/api/v1/vehiculos/modelos`
+}
+
+/**
+ * @summary Modelos de la marca en esos años
+ */
+export const listarModelos = async (params: ListarModelosParams, options?: Parameters<typeof nexoFetch>[1]): Promise<OpcionVehiculo[]> => {
+
+  return nexoFetch<OpcionVehiculo[]>(getListarModelosUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarModelosQueryKey = (params?: ListarModelosParams,) => {
+    return [
+    `/api/v1/vehiculos/modelos`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarModelosQueryOptions = <TData = Awaited<ReturnType<typeof listarModelos>>, TError = ErrorType<HTTPValidationError>>(params: ListarModelosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarModelos>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarModelosQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarModelos>>> = ({ signal }) => listarModelos(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarModelos>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarModelosQueryResult = NonNullable<Awaited<ReturnType<typeof listarModelos>>>
+export type ListarModelosQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarModelos<TData = Awaited<ReturnType<typeof listarModelos>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarModelosParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarModelos>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarModelos>>,
+          TError,
+          Awaited<ReturnType<typeof listarModelos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarModelos<TData = Awaited<ReturnType<typeof listarModelos>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarModelosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarModelos>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarModelos>>,
+          TError,
+          Awaited<ReturnType<typeof listarModelos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarModelos<TData = Awaited<ReturnType<typeof listarModelos>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarModelosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarModelos>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Modelos de la marca en esos años
+ */
+
+export function useListarModelos<TData = Awaited<ReturnType<typeof listarModelos>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarModelosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarModelos>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarModelosQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListarConfiguracionesUrl = (params: ListarConfiguracionesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/vehiculos/configuraciones?${stringifiedParams}` : `/api/v1/vehiculos/configuraciones`
+}
+
+/**
+ * @summary Combinaciones submodelo + motor del modelo en esos años, con los años y regiones en que existen
+ */
+export const listarConfiguraciones = async (params: ListarConfiguracionesParams, options?: Parameters<typeof nexoFetch>[1]): Promise<ConfiguracionAgrupada[]> => {
+
+  return nexoFetch<ConfiguracionAgrupada[]>(getListarConfiguracionesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarConfiguracionesQueryKey = (params?: ListarConfiguracionesParams,) => {
+    return [
+    `/api/v1/vehiculos/configuraciones`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarConfiguracionesQueryOptions = <TData = Awaited<ReturnType<typeof listarConfiguraciones>>, TError = ErrorType<HTTPValidationError>>(params: ListarConfiguracionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarConfiguraciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarConfiguracionesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarConfiguraciones>>> = ({ signal }) => listarConfiguraciones(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarConfiguraciones>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarConfiguracionesQueryResult = NonNullable<Awaited<ReturnType<typeof listarConfiguraciones>>>
+export type ListarConfiguracionesQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarConfiguraciones<TData = Awaited<ReturnType<typeof listarConfiguraciones>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarConfiguracionesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarConfiguraciones>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarConfiguraciones>>,
+          TError,
+          Awaited<ReturnType<typeof listarConfiguraciones>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarConfiguraciones<TData = Awaited<ReturnType<typeof listarConfiguraciones>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarConfiguracionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarConfiguraciones>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarConfiguraciones>>,
+          TError,
+          Awaited<ReturnType<typeof listarConfiguraciones>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarConfiguraciones<TData = Awaited<ReturnType<typeof listarConfiguraciones>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarConfiguracionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarConfiguraciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Combinaciones submodelo + motor del modelo en esos años, con los años y regiones en que existen
+ */
+
+export function useListarConfiguraciones<TData = Awaited<ReturnType<typeof listarConfiguraciones>>, TError = ErrorType<HTTPValidationError>>(
+ params: ListarConfiguracionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarConfiguraciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarConfiguracionesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegistrarVehiculoExternoUrl = () => {
+
+
+
+
+  return `/api/v1/vehiculos/externos`
+}
+
+/**
+ * @summary Registrar en MercadoExterno un vehículo que no está en AutoCare (marca, modelo, años, submodelo y motor)
+ */
+export const registrarVehiculoExterno = async (vehiculoExterno: VehiculoExterno, options?: Parameters<typeof nexoFetch>[1]): Promise<ConfiguracionAgrupada[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<ConfiguracionAgrupada[]>(getRegistrarVehiculoExternoUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(vehiculoExterno)
+  }
+);}
+
+
+
+
+
+export const getRegistrarVehiculoExternoMutationKey = () => ['registrarVehiculoExterno'] as const;
+
+export const getRegistrarVehiculoExternoMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registrarVehiculoExterno>>, TError,RegistrarVehiculoExternoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registrarVehiculoExterno>>, TError,RegistrarVehiculoExternoMutationVariables, TContext> => {
+
+const mutationKey = getRegistrarVehiculoExternoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registrarVehiculoExterno>>, RegistrarVehiculoExternoMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  registrarVehiculoExterno(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegistrarVehiculoExternoMutationResult = NonNullable<Awaited<ReturnType<typeof registrarVehiculoExterno>>>
+    export type RegistrarVehiculoExternoMutationBody = VehiculoExterno
+    export type RegistrarVehiculoExternoMutationError = ErrorType<HTTPValidationError>
+    export type RegistrarVehiculoExternoMutationVariables = {data: VehiculoExterno}
+
+    /**
+ * @summary Registrar en MercadoExterno un vehículo que no está en AutoCare (marca, modelo, años, submodelo y motor)
+ */
+export const useRegistrarVehiculoExterno = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registrarVehiculoExterno>>, TError,RegistrarVehiculoExternoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof registrarVehiculoExterno>>,
+        TError,
+        RegistrarVehiculoExternoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRegistrarVehiculoExternoMutationOptions(options), queryClient);
+    }
+
+export const getListarAplicacionesUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/aplicaciones`
+}
+
+/**
+ * @summary Aplicaciones del artículo agrupadas por vehículo, con la sugerencia de SAP
+ */
+export const listarAplicaciones = async (itemCode: string, options?: Parameters<typeof nexoFetch>[1]): Promise<Aplicaciones> => {
+
+  return nexoFetch<Aplicaciones>(getListarAplicacionesUrl(itemCode),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarAplicacionesQueryKey = (itemCode: string,) => {
+    return [
+    `/api/v1/articulos/${itemCode}/aplicaciones`
+    ] as const;
+    }
+
+
+export const getListarAplicacionesQueryOptions = <TData = Awaited<ReturnType<typeof listarAplicaciones>>, TError = ErrorType<HTTPValidationError>>(itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAplicaciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarAplicacionesQueryKey(itemCode);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarAplicaciones>>> = ({ signal }) => listarAplicaciones(itemCode, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemCode !== null && itemCode !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarAplicaciones>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarAplicacionesQueryResult = NonNullable<Awaited<ReturnType<typeof listarAplicaciones>>>
+export type ListarAplicacionesQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarAplicaciones<TData = Awaited<ReturnType<typeof listarAplicaciones>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAplicaciones>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAplicaciones>>,
+          TError,
+          Awaited<ReturnType<typeof listarAplicaciones>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarAplicaciones<TData = Awaited<ReturnType<typeof listarAplicaciones>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAplicaciones>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAplicaciones>>,
+          TError,
+          Awaited<ReturnType<typeof listarAplicaciones>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarAplicaciones<TData = Awaited<ReturnType<typeof listarAplicaciones>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAplicaciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Aplicaciones del artículo agrupadas por vehículo, con la sugerencia de SAP
+ */
+
+export function useListarAplicaciones<TData = Awaited<ReturnType<typeof listarAplicaciones>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAplicaciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarAplicacionesQueryOptions(itemCode,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAgregarAplicacionesUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/aplicaciones`
+}
+
+/**
+ * @summary Agregar aplicaciones elegidas en el selector (quedan confirmadas)
+ */
+export const agregarAplicaciones = async (itemCode: string,
+    agregar: Agregar, options?: Parameters<typeof nexoFetch>[1]): Promise<Aplicaciones> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Aplicaciones>(getAgregarAplicacionesUrl(itemCode),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(agregar)
+  }
+);}
+
+
+
+
+
+export const getAgregarAplicacionesMutationKey = () => ['agregarAplicaciones'] as const;
+
+export const getAgregarAplicacionesMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof agregarAplicaciones>>, TError,AgregarAplicacionesMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof agregarAplicaciones>>, TError,AgregarAplicacionesMutationVariables, TContext> => {
+
+const mutationKey = getAgregarAplicacionesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof agregarAplicaciones>>, AgregarAplicacionesMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  agregarAplicaciones(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AgregarAplicacionesMutationResult = NonNullable<Awaited<ReturnType<typeof agregarAplicaciones>>>
+    export type AgregarAplicacionesMutationBody = Agregar
+    export type AgregarAplicacionesMutationError = ErrorType<void | HTTPValidationError>
+    export type AgregarAplicacionesMutationVariables = {itemCode: string;data: Agregar}
+
+    /**
+ * @summary Agregar aplicaciones elegidas en el selector (quedan confirmadas)
+ */
+export const useAgregarAplicaciones = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof agregarAplicaciones>>, TError,AgregarAplicacionesMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof agregarAplicaciones>>,
+        TError,
+        AgregarAplicacionesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAgregarAplicacionesMutationOptions(options), queryClient);
+    }
+
+export const getConfirmarAplicacionesUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/aplicaciones/confirmar`
+}
+
+/**
+ * @summary Confirmar aplicaciones sugeridas (deben tener submodelo y motor)
+ */
+export const confirmarAplicaciones = async (itemCode: string,
+    porIds: PorIds, options?: Parameters<typeof nexoFetch>[1]): Promise<Aplicaciones> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Aplicaciones>(getConfirmarAplicacionesUrl(itemCode),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(porIds)
+  }
+);}
+
+
+
+
+
+export const getConfirmarAplicacionesMutationKey = () => ['confirmarAplicaciones'] as const;
+
+export const getConfirmarAplicacionesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmarAplicaciones>>, TError,ConfirmarAplicacionesMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmarAplicaciones>>, TError,ConfirmarAplicacionesMutationVariables, TContext> => {
+
+const mutationKey = getConfirmarAplicacionesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmarAplicaciones>>, ConfirmarAplicacionesMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  confirmarAplicaciones(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmarAplicacionesMutationResult = NonNullable<Awaited<ReturnType<typeof confirmarAplicaciones>>>
+    export type ConfirmarAplicacionesMutationBody = PorIds
+    export type ConfirmarAplicacionesMutationError = ErrorType<void>
+    export type ConfirmarAplicacionesMutationVariables = {itemCode: string;data: PorIds}
+
+    /**
+ * @summary Confirmar aplicaciones sugeridas (deben tener submodelo y motor)
+ */
+export const useConfirmarAplicaciones = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmarAplicaciones>>, TError,ConfirmarAplicacionesMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmarAplicaciones>>,
+        TError,
+        ConfirmarAplicacionesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConfirmarAplicacionesMutationOptions(options), queryClient);
+    }
+
+export const getQuitarAplicacionesUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/aplicaciones/quitar`
+}
+
+/**
+ * @summary Quitar aplicaciones del artículo
+ */
+export const quitarAplicaciones = async (itemCode: string,
+    porIds: PorIds, options?: Parameters<typeof nexoFetch>[1]): Promise<Aplicaciones> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Aplicaciones>(getQuitarAplicacionesUrl(itemCode),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(porIds)
+  }
+);}
+
+
+
+
+
+export const getQuitarAplicacionesMutationKey = () => ['quitarAplicaciones'] as const;
+
+export const getQuitarAplicacionesMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof quitarAplicaciones>>, TError,QuitarAplicacionesMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof quitarAplicaciones>>, TError,QuitarAplicacionesMutationVariables, TContext> => {
+
+const mutationKey = getQuitarAplicacionesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof quitarAplicaciones>>, QuitarAplicacionesMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  quitarAplicaciones(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type QuitarAplicacionesMutationResult = NonNullable<Awaited<ReturnType<typeof quitarAplicaciones>>>
+    export type QuitarAplicacionesMutationBody = PorIds
+    export type QuitarAplicacionesMutationError = ErrorType<HTTPValidationError>
+    export type QuitarAplicacionesMutationVariables = {itemCode: string;data: PorIds}
+
+    /**
+ * @summary Quitar aplicaciones del artículo
+ */
+export const useQuitarAplicaciones = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof quitarAplicaciones>>, TError,QuitarAplicacionesMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof quitarAplicaciones>>,
+        TError,
+        QuitarAplicacionesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getQuitarAplicacionesMutationOptions(options), queryClient);
     }

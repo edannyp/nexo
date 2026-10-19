@@ -1554,6 +1554,447 @@
           }
         }
       }
+    },
+    "/api/v1/vehiculos/marcas": {
+      "get": {
+        "tags": [
+          "vehiculos"
+        ],
+        "summary": "Marcas con vehículos en esos años (AutoCare + MercadoExterno)",
+        "operationId": "listar_marcas",
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1900,
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1900,
+              "title": "Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OpcionVehiculo"
+                  },
+                  "title": "Response Listar Marcas"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vehiculos/modelos": {
+      "get": {
+        "tags": [
+          "vehiculos"
+        ],
+        "summary": "Modelos de la marca en esos años",
+        "operationId": "listar_modelos",
+        "parameters": [
+          {
+            "name": "marca_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Marca Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1900,
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1900,
+              "title": "Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OpcionVehiculo"
+                  },
+                  "title": "Response Listar Modelos"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vehiculos/configuraciones": {
+      "get": {
+        "tags": [
+          "vehiculos"
+        ],
+        "summary": "Combinaciones submodelo + motor del modelo en esos años, con los años y regiones en que existen",
+        "operationId": "listar_configuraciones",
+        "parameters": [
+          {
+            "name": "marca_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Marca Id"
+            }
+          },
+          {
+            "name": "modelo_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Modelo Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1900,
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1900,
+              "title": "Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConfiguracionAgrupada"
+                  },
+                  "title": "Response Listar Configuraciones"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vehiculos/externos": {
+      "post": {
+        "tags": [
+          "vehiculos"
+        ],
+        "summary": "Registrar en MercadoExterno un vehículo que no está en AutoCare (marca, modelo, años, submodelo y motor)",
+        "operationId": "registrar_vehiculo_externo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehiculoExterno"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConfiguracionAgrupada"
+                  },
+                  "type": "array",
+                  "title": "Response Registrar Vehiculo Externo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/aplicaciones": {
+      "get": {
+        "tags": [
+          "aplicaciones"
+        ],
+        "summary": "Aplicaciones del artículo agrupadas por vehículo, con la sugerencia de SAP",
+        "operationId": "listar_aplicaciones",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aplicaciones"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "aplicaciones"
+        ],
+        "summary": "Agregar aplicaciones elegidas en el selector (quedan confirmadas)",
+        "operationId": "agregar_aplicaciones",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Agregar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aplicaciones"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No editable o versión distinta"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/aplicaciones/confirmar": {
+      "post": {
+        "tags": [
+          "aplicaciones"
+        ],
+        "summary": "Confirmar aplicaciones sugeridas (deben tener submodelo y motor)",
+        "operationId": "confirmar_aplicaciones",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PorIds"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aplicaciones"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Alguna está incompleta"
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/aplicaciones/quitar": {
+      "post": {
+        "tags": [
+          "aplicaciones"
+        ],
+        "summary": "Quitar aplicaciones del artículo",
+        "operationId": "quitar_aplicaciones",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PorIds"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aplicaciones"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1596,6 +2037,29 @@
         ],
         "title": "AccionEstado"
       },
+      "Agregar": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NuevaAplicacion"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "items"
+        ],
+        "title": "Agregar"
+      },
       "AnalisisVentas": {
         "properties": {
           "meses": {
@@ -1637,6 +2101,184 @@
           "articulos"
         ],
         "title": "AnalisisVentas"
+      },
+      "AnioConfiguracion": {
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "title": "Anio"
+          },
+          "base_vehicle_id": {
+            "type": "integer",
+            "title": "Base Vehicle Id"
+          },
+          "engine_config_id": {
+            "type": "integer",
+            "title": "Engine Config Id"
+          },
+          "regiones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Regiones"
+          },
+          "catalogo": {
+            "type": "string",
+            "title": "Catalogo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "anio",
+          "base_vehicle_id",
+          "engine_config_id",
+          "regiones",
+          "catalogo"
+        ],
+        "title": "AnioConfiguracion"
+      },
+      "AplicacionItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "anio": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anio"
+          },
+          "base_vehicle_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Vehicle Id"
+          },
+          "sub_model_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Model Id"
+          },
+          "engine_config_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Config Id"
+          },
+          "equipment_base_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Base Id"
+          },
+          "origen": {
+            "type": "string",
+            "title": "Origen"
+          },
+          "confirmado": {
+            "type": "boolean",
+            "title": "Confirmado"
+          },
+          "completa": {
+            "type": "boolean",
+            "title": "Completa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "anio",
+          "base_vehicle_id",
+          "sub_model_id",
+          "engine_config_id",
+          "equipment_base_id",
+          "origen",
+          "confirmado",
+          "completa"
+        ],
+        "title": "AplicacionItem"
+      },
+      "Aplicaciones": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable"
+          },
+          "razon_no_editable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razon No Editable"
+          },
+          "catalogo_disponible": {
+            "type": "boolean",
+            "title": "Catalogo Disponible"
+          },
+          "sugerencia_sap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SugerenciaSap"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "grupos": {
+            "items": {
+              "$ref": "#/components/schemas/GrupoAplicacion"
+            },
+            "type": "array",
+            "title": "Grupos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "editable",
+          "razon_no_editable",
+          "catalogo_disponible",
+          "sugerencia_sap",
+          "grupos"
+        ],
+        "title": "Aplicaciones"
       },
       "ArticuloDetalle": {
         "properties": {
@@ -2599,6 +3241,48 @@
         ],
         "title": "Completitud"
       },
+      "ConfiguracionAgrupada": {
+        "properties": {
+          "sub_model_id": {
+            "type": "integer",
+            "title": "Sub Model Id"
+          },
+          "submodelo": {
+            "type": "string",
+            "title": "Submodelo"
+          },
+          "motor": {
+            "type": "string",
+            "title": "Motor"
+          },
+          "anios": {
+            "items": {
+              "$ref": "#/components/schemas/AnioConfiguracion"
+            },
+            "type": "array",
+            "title": "Anios"
+          },
+          "completa": {
+            "type": "boolean",
+            "title": "Completa"
+          },
+          "catalogo": {
+            "type": "string",
+            "title": "Catalogo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sub_model_id",
+          "submodelo",
+          "motor",
+          "anios",
+          "completa",
+          "catalogo"
+        ],
+        "title": "ConfiguracionAgrupada",
+        "description": "Un submodelo + motor (como lo lee el operador) y los años en que existe; cada año lleva su propio motor de VCdb."
+      },
       "Credenciales": {
         "properties": {
           "usuario": {
@@ -2773,6 +3457,48 @@
           "n"
         ],
         "title": "Grupo"
+      },
+      "GrupoAplicacion": {
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "detalle": {
+            "type": "string",
+            "title": "Detalle"
+          },
+          "anios": {
+            "type": "string",
+            "title": "Anios"
+          },
+          "confirmados": {
+            "type": "integer",
+            "title": "Confirmados"
+          },
+          "sugeridos": {
+            "type": "integer",
+            "title": "Sugeridos"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AplicacionItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titulo",
+          "detalle",
+          "anios",
+          "confirmados",
+          "sugeridos",
+          "items"
+        ],
+        "title": "GrupoAplicacion",
+        "description": "Un mismo vehículo (marca, modelo, submodelo, motor) en uno o varios años."
       },
       "Guardado": {
         "properties": {
@@ -2956,6 +3682,29 @@
         ],
         "title": "Lista"
       },
+      "NuevaAplicacion": {
+        "properties": {
+          "base_vehicle_id": {
+            "type": "integer",
+            "title": "Base Vehicle Id"
+          },
+          "sub_model_id": {
+            "type": "integer",
+            "title": "Sub Model Id"
+          },
+          "engine_config_id": {
+            "type": "integer",
+            "title": "Engine Config Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "base_vehicle_id",
+          "sub_model_id",
+          "engine_config_id"
+        ],
+        "title": "NuevaAplicacion"
+      },
       "NuevaVista": {
         "properties": {
           "nombre": {
@@ -3064,6 +3813,24 @@
           "valor_es"
         ],
         "title": "Opcion"
+      },
+      "OpcionVehiculo": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "title": "OpcionVehiculo"
       },
       "Orden": {
         "type": "string",
@@ -3178,6 +3945,29 @@
           "VER_ANALISIS_VENTAS"
         ],
         "title": "Permiso"
+      },
+      "PorIds": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "ids"
+        ],
+        "title": "PorIds"
       },
       "Preferencias": {
         "properties": {
@@ -3610,6 +4400,82 @@
         ],
         "title": "Siguiente"
       },
+      "SugerenciaSap": {
+        "properties": {
+          "marca": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca"
+          },
+          "modelo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo"
+          },
+          "desde": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desde"
+          },
+          "hasta": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hasta"
+          },
+          "marca_catalogo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpcionVehiculo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modelos_candidatos": {
+            "items": {
+              "$ref": "#/components/schemas/OpcionVehiculo"
+            },
+            "type": "array",
+            "title": "Modelos Candidatos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "marca",
+          "modelo",
+          "desde",
+          "hasta",
+          "marca_catalogo",
+          "modelos_candidatos"
+        ],
+        "title": "SugerenciaSap",
+        "description": "Lo que SAP dice del vehículo, y su traducción al catálogo cuando se encuentra."
+      },
       "TipoCampo": {
         "type": "string",
         "enum": [
@@ -3899,6 +4765,139 @@
         },
         "type": "object",
         "title": "ValorAtributo"
+      },
+      "VehiculoExterno": {
+        "properties": {
+          "marca": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Marca"
+          },
+          "modelo": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Modelo"
+          },
+          "desde": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 1900.0,
+            "title": "Desde"
+          },
+          "hasta": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 1900.0,
+            "title": "Hasta"
+          },
+          "submodelo": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Submodelo",
+            "description": "«Base» si no tiene otro nombre"
+          },
+          "litros": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 30.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Litros"
+          },
+          "cilindros": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 16.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cilindros"
+          },
+          "combustible": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Combustible"
+          },
+          "aspiracion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aspiracion"
+          },
+          "designacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Designacion",
+            "description": "Código del motor, p. ej. 4G63"
+          },
+          "fuente": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 5,
+            "title": "Fuente",
+            "description": "URL o ficha técnica que respalda el vehículo"
+          },
+          "regiones": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regiones",
+            "description": "Abreviaturas VCdb: GTM, SLV…"
+          }
+        },
+        "type": "object",
+        "required": [
+          "marca",
+          "modelo",
+          "desde",
+          "hasta",
+          "submodelo",
+          "fuente"
+        ],
+        "title": "VehiculoExterno"
       },
       "VentasResumen": {
         "properties": {
