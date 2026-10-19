@@ -28,6 +28,10 @@ ERRORES = {
     "REQUIERE_UOM": (422, "Falta la unidad de la medida"),
     "TAREA_NO_ABIERTA": (409, "Esa verificación ya se resolvió"),
     "RESULTADO_INVALIDO": (422, "Resultado no válido"),
+    "SIN_CODIGO_EQUIVALENTE": (422, "Falta el código equivalente"),
+    "SIN_FOTO_VALIDADA": (422, "Falta una foto propia validada"),
+    "SIN_EQUIVALENTE_CONFIRMADO": (422, "No hay importado equivalente confirmado"),
+    "EQUIVALENCIA_INVALIDA": (422, "Esa equivalencia no es válida"),
 }
 _CODIGO = re.compile(r"^([A-Z_]+): ?(.*)$", re.S)
 
