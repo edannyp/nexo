@@ -26,13 +26,14 @@ import { Tendencia } from '@/shared/graficos';
 import { Aviso, Boton, Dialogo } from '@/shared/ui';
 
 import { Aplicaciones } from './Aplicaciones';
+import { Emparejamiento } from './Emparejamiento';
 import { Ficha } from './Ficha';
 
 const LATIDO_MS = 5 * 60_000;
 const PESTANAS = [
   { id: 'ficha', etiqueta: 'Ficha' },
   { id: 'aplicaciones', etiqueta: 'Aplicaciones' },
-  { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas', paso: 7 },
+  { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas' },
   { id: 'equivalencia', etiqueta: 'Equivalencia', paso: 6, soloFabricado: true },
   { id: 'fotos', etiqueta: 'Fotos', paso: 8 },
   { id: 'sap', etiqueta: 'Datos SAP' },
@@ -494,6 +495,7 @@ export function Articulo() {
       <div role="tabpanel">
         {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
         {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
+        {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} />}
         {pestana === 'sap' && <DatosSap a={a} />}
         {pestana === 'historial' && <Historial itemCode={itemCode} />}
         {PESTANAS.filter((p) => 'paso' in p && p.id === pestana).map((p) => (
