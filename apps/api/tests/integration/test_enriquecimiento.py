@@ -154,7 +154,7 @@ def test_07_auditoria_guarda_antes_y_despues(conn, u):
 
 def revision(c, item_code: str) -> dict:
     cur = c.execute("select * from app.v_revision_fabricados where item_code = %s", (item_code,))
-    return dict(zip([d.name for d in cur.description], cur.fetchone()))
+    return dict(zip([d.name for d in cur.description], cur.fetchone(), strict=True))
 
 
 def capturar_codigo(c, item_code: str, codigo, usuario_id: int) -> None:

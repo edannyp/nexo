@@ -43,7 +43,7 @@ def cargar(c: psycopg.Connection, filas: list[dict]) -> dict:
 
 def art(c, item_code: str) -> dict:
     cur = c.execute("select * from app.articulo where item_code = %s", (item_code,))
-    return dict(zip([d.name for d in cur.description], cur.fetchone()))
+    return dict(zip([d.name for d in cur.description], cur.fetchone(), strict=True))
 
 
 def transicionar(c, item_code: str, destino: str, actor_tipo: str, actor, motivo=None, version=None):
