@@ -6,21 +6,64 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import { nexoFetch } from '../fetcher';
+import type { ErrorType } from '../fetcher';
+export interface CambioPassword {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  actual: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  nueva: string;
+}
+
+export type Rol = typeof Rol[keyof typeof Rol];
+
+
+export const Rol = {
+  OPERADOR: 'OPERADOR',
+  SUPERVISOR: 'SUPERVISOR',
+  ADMINISTRADOR: 'ADMINISTRADOR',
+  FOTOS: 'FOTOS',
+} as const;
+
+export type Permiso = typeof Permiso[keyof typeof Permiso];
+
+
+export const Permiso = {
+  VER_ANALISIS_VENTAS: 'VER_ANALISIS_VENTAS',
+} as const;
+
+export interface CambiosUsuario {
+  nombre?: string | null;
+  correo?: string | null;
+  roles?: Rol[] | null;
+  permisos?: Permiso[] | null;
+  activo?: boolean | null;
+}
+
 export type Linea = typeof Linea[keyof typeof Linea];
 
 
@@ -37,9 +80,102 @@ export interface Categoria {
   activos: Partial<Record<Linea, number>>;
 }
 
+export interface Credenciales {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  usuario: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  password: string;
+}
+
+export type ValidationErrorCtx = { [key: string]: unknown };
+
+export interface ValidationError {
+  loc: (string | number)[];
+  msg: string;
+  type: string;
+  input?: unknown;
+  ctx?: ValidationErrorCtx;
+}
+
+export interface HTTPValidationError {
+  detail?: ValidationError[];
+}
+
 export interface Lista {
   estado: string;
   migracion: string;
+}
+
+export interface NuevoUsuario {
+  /**
+     * @minLength 3
+     * @maxLength 50
+     * @pattern ^[A-Za-z0-9._-]+$
+     */
+  usuario: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nombre: string;
+  correo?: string | null;
+  /** @minItems 1 */
+  roles: Rol[];
+  permisos?: Permiso[];
+}
+
+export interface PasswordTemporal {
+  password_temporal: string;
+}
+
+export interface Preferencias {
+  /**
+     * Código SAP de la categoría (dos dígitos)
+     * @pattern ^\d{2}$
+     */
+  cat: string;
+  linea: Linea;
+}
+
+export interface UsuarioSesion {
+  id: number;
+  usuario: string;
+  nombre: string;
+  correo: string | null;
+  roles: Rol[];
+  permisos: Permiso[];
+  debe_cambiar_password: boolean;
+}
+
+export interface SesionInfo {
+  usuario: UsuarioSesion;
+  /** Enviar en la cabecera X-CSRF-Token en los métodos que escriben */
+  csrf: string;
+}
+
+export interface UsuarioAdmin {
+  id: number;
+  usuario: string;
+  nombre: string;
+  correo: string | null;
+  roles: Rol[];
+  permisos: Permiso[];
+  activo: boolean;
+  debe_cambiar_password: boolean;
+  bloqueado_hasta: string | null;
+  ultimo_acceso_en: string | null;
+}
+
+export interface UsuarioCreado {
+  usuario: UsuarioAdmin;
+  /** Se muestra una sola vez; el usuario debe cambiarla al entrar */
+  password_temporal: string;
 }
 
 export interface Viva {
@@ -104,7 +240,7 @@ export const getObtenerSaludQueryKey = () => {
     }
 
 
-export const getObtenerSaludQueryOptions = <TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSalud>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+export const getObtenerSaludQueryOptions = <TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSalud>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -123,10 +259,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ObtenerSaludQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerSalud>>>
-export type ObtenerSaludQueryError = unknown
+export type ObtenerSaludQueryError = ErrorType<unknown>
 
 
-export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = unknown>(
+export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = ErrorType<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSalud>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof obtenerSalud>>,
@@ -136,7 +272,7 @@ export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>
       >, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = unknown>(
+export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSalud>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof obtenerSalud>>,
@@ -146,7 +282,7 @@ export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>
       >, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = unknown>(
+export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSalud>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -154,7 +290,7 @@ export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>
  * @summary El proceso responde
  */
 
-export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = unknown>(
+export function useObtenerSalud<TData = Awaited<ReturnType<typeof obtenerSalud>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSalud>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -205,7 +341,7 @@ export const getObtenerSaludListaQueryKey = () => {
     }
 
 
-export const getObtenerSaludListaQueryOptions = <TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = void>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSaludLista>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+export const getObtenerSaludListaQueryOptions = <TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSaludLista>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -224,10 +360,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ObtenerSaludListaQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerSaludLista>>>
-export type ObtenerSaludListaQueryError = void
+export type ObtenerSaludListaQueryError = ErrorType<void>
 
 
-export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = void>(
+export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = ErrorType<void>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSaludLista>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof obtenerSaludLista>>,
@@ -237,7 +373,7 @@ export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSa
       >, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = void>(
+export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = ErrorType<void>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSaludLista>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof obtenerSaludLista>>,
@@ -247,7 +383,7 @@ export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSa
       >, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = void>(
+export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = ErrorType<void>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSaludLista>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -255,7 +391,7 @@ export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSa
  * @summary La base responde y está migrada
  */
 
-export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = void>(
+export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSaludLista>>, TError = ErrorType<void>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSaludLista>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -272,6 +408,1046 @@ export function useObtenerSaludLista<TData = Awaited<ReturnType<typeof obtenerSa
 
 
 
+
+export const getObtenerSesionUrl = () => {
+
+
+
+
+  return `/api/v1/sesion`
+}
+
+/**
+ * @summary Sesión actual
+ */
+export const obtenerSesion = async ( options?: Parameters<typeof nexoFetch>[1]): Promise<SesionInfo> => {
+
+  return nexoFetch<SesionInfo>(getObtenerSesionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerSesionQueryKey = () => {
+    return [
+    `/api/v1/sesion`
+    ] as const;
+    }
+
+
+export const getObtenerSesionQueryOptions = <TData = Awaited<ReturnType<typeof obtenerSesion>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSesion>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerSesionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerSesion>>> = ({ signal }) => obtenerSesion({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerSesion>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerSesionQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerSesion>>>
+export type ObtenerSesionQueryError = ErrorType<void>
+
+
+export function useObtenerSesion<TData = Awaited<ReturnType<typeof obtenerSesion>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSesion>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerSesion>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerSesion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerSesion<TData = Awaited<ReturnType<typeof obtenerSesion>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSesion>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerSesion>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerSesion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerSesion<TData = Awaited<ReturnType<typeof obtenerSesion>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSesion>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Sesión actual
+ */
+
+export function useObtenerSesion<TData = Awaited<ReturnType<typeof obtenerSesion>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerSesion>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerSesionQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getIniciarSesionUrl = () => {
+
+
+
+
+  return `/api/v1/sesion`
+}
+
+/**
+ * @summary Iniciar sesión
+ */
+export const iniciarSesion = async (credenciales: Credenciales, options?: Parameters<typeof nexoFetch>[1]): Promise<SesionInfo> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<SesionInfo>(getIniciarSesionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(credenciales)
+  }
+);}
+
+
+
+
+
+export const getIniciarSesionMutationKey = () => ['iniciarSesion'] as const;
+
+export const getIniciarSesionMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof iniciarSesion>>, TError,IniciarSesionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof iniciarSesion>>, TError,IniciarSesionMutationVariables, TContext> => {
+
+const mutationKey = getIniciarSesionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof iniciarSesion>>, IniciarSesionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  iniciarSesion(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IniciarSesionMutationResult = NonNullable<Awaited<ReturnType<typeof iniciarSesion>>>
+    export type IniciarSesionMutationBody = Credenciales
+    export type IniciarSesionMutationError = ErrorType<void | HTTPValidationError>
+    export type IniciarSesionMutationVariables = {data: Credenciales}
+
+    /**
+ * @summary Iniciar sesión
+ */
+export const useIniciarSesion = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof iniciarSesion>>, TError,IniciarSesionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof iniciarSesion>>,
+        TError,
+        IniciarSesionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getIniciarSesionMutationOptions(options), queryClient);
+    }
+
+export const getCerrarSesionUrl = () => {
+
+
+
+
+  return `/api/v1/sesion`
+}
+
+/**
+ * @summary Cerrar sesión
+ */
+export const cerrarSesion = async ( options?: Parameters<typeof nexoFetch>[1]): Promise<void> => {
+
+  return nexoFetch<void>(getCerrarSesionUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getCerrarSesionMutationKey = () => ['cerrarSesion'] as const;
+
+export const getCerrarSesionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cerrarSesion>>, TError,void, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cerrarSesion>>, TError,void, TContext> => {
+
+const mutationKey = getCerrarSesionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cerrarSesion>>, void> = () => {
+
+
+          return  cerrarSesion(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CerrarSesionMutationResult = NonNullable<Awaited<ReturnType<typeof cerrarSesion>>>
+
+    export type CerrarSesionMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Cerrar sesión
+ */
+export const useCerrarSesion = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cerrarSesion>>, TError,void, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cerrarSesion>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCerrarSesionMutationOptions(options), queryClient);
+    }
+
+export const getCambiarPasswordUrl = () => {
+
+
+
+
+  return `/api/v1/sesion/password`
+}
+
+/**
+ * @summary Cambiar la contraseña propia
+ */
+export const cambiarPassword = async (cambioPassword: CambioPassword, options?: Parameters<typeof nexoFetch>[1]): Promise<SesionInfo> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<SesionInfo>(getCambiarPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cambioPassword)
+  }
+);}
+
+
+
+
+
+export const getCambiarPasswordMutationKey = () => ['cambiarPassword'] as const;
+
+export const getCambiarPasswordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cambiarPassword>>, TError,CambiarPasswordMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cambiarPassword>>, TError,CambiarPasswordMutationVariables, TContext> => {
+
+const mutationKey = getCambiarPasswordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cambiarPassword>>, CambiarPasswordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  cambiarPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CambiarPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof cambiarPassword>>>
+    export type CambiarPasswordMutationBody = CambioPassword
+    export type CambiarPasswordMutationError = ErrorType<void>
+    export type CambiarPasswordMutationVariables = {data: CambioPassword}
+
+    /**
+ * @summary Cambiar la contraseña propia
+ */
+export const useCambiarPassword = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cambiarPassword>>, TError,CambiarPasswordMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cambiarPassword>>,
+        TError,
+        CambiarPasswordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCambiarPasswordMutationOptions(options), queryClient);
+    }
+
+export const getListarUsuariosUrl = () => {
+
+
+
+
+  return `/api/v1/usuarios`
+}
+
+/**
+ * @summary Listar usuarios
+ */
+export const listarUsuarios = async ( options?: Parameters<typeof nexoFetch>[1]): Promise<UsuarioAdmin[]> => {
+
+  return nexoFetch<UsuarioAdmin[]>(getListarUsuariosUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarUsuariosQueryKey = () => {
+    return [
+    `/api/v1/usuarios`
+    ] as const;
+    }
+
+
+export const getListarUsuariosQueryOptions = <TData = Awaited<ReturnType<typeof listarUsuarios>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarUsuarios>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarUsuariosQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarUsuarios>>> = ({ signal }) => listarUsuarios({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarUsuarios>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarUsuariosQueryResult = NonNullable<Awaited<ReturnType<typeof listarUsuarios>>>
+export type ListarUsuariosQueryError = ErrorType<unknown>
+
+
+export function useListarUsuarios<TData = Awaited<ReturnType<typeof listarUsuarios>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarUsuarios>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarUsuarios>>,
+          TError,
+          Awaited<ReturnType<typeof listarUsuarios>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarUsuarios<TData = Awaited<ReturnType<typeof listarUsuarios>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarUsuarios>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarUsuarios>>,
+          TError,
+          Awaited<ReturnType<typeof listarUsuarios>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarUsuarios<TData = Awaited<ReturnType<typeof listarUsuarios>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarUsuarios>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar usuarios
+ */
+
+export function useListarUsuarios<TData = Awaited<ReturnType<typeof listarUsuarios>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarUsuarios>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarUsuariosQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCrearUsuarioUrl = () => {
+
+
+
+
+  return `/api/v1/usuarios`
+}
+
+/**
+ * @summary Dar de alta un usuario con contraseña temporal
+ */
+export const crearUsuario = async (nuevoUsuario: NuevoUsuario, options?: Parameters<typeof nexoFetch>[1]): Promise<UsuarioCreado> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<UsuarioCreado>(getCrearUsuarioUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nuevoUsuario)
+  }
+);}
+
+
+
+
+
+export const getCrearUsuarioMutationKey = () => ['crearUsuario'] as const;
+
+export const getCrearUsuarioMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crearUsuario>>, TError,CrearUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof crearUsuario>>, TError,CrearUsuarioMutationVariables, TContext> => {
+
+const mutationKey = getCrearUsuarioMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crearUsuario>>, CrearUsuarioMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  crearUsuario(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrearUsuarioMutationResult = NonNullable<Awaited<ReturnType<typeof crearUsuario>>>
+    export type CrearUsuarioMutationBody = NuevoUsuario
+    export type CrearUsuarioMutationError = ErrorType<void | HTTPValidationError>
+    export type CrearUsuarioMutationVariables = {data: NuevoUsuario}
+
+    /**
+ * @summary Dar de alta un usuario con contraseña temporal
+ */
+export const useCrearUsuario = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crearUsuario>>, TError,CrearUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof crearUsuario>>,
+        TError,
+        CrearUsuarioMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrearUsuarioMutationOptions(options), queryClient);
+    }
+
+export const getModificarUsuarioUrl = (usuarioId: number,) => {
+
+
+
+
+  return `/api/v1/usuarios/${usuarioId}`
+}
+
+/**
+ * @summary Cambiar datos, roles, permisos o estado
+ */
+export const modificarUsuario = async (usuarioId: number,
+    cambiosUsuario: CambiosUsuario, options?: Parameters<typeof nexoFetch>[1]): Promise<UsuarioAdmin> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<UsuarioAdmin>(getModificarUsuarioUrl(usuarioId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cambiosUsuario)
+  }
+);}
+
+
+
+
+
+export const getModificarUsuarioMutationKey = () => ['modificarUsuario'] as const;
+
+export const getModificarUsuarioMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof modificarUsuario>>, TError,ModificarUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof modificarUsuario>>, TError,ModificarUsuarioMutationVariables, TContext> => {
+
+const mutationKey = getModificarUsuarioMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof modificarUsuario>>, ModificarUsuarioMutationVariables> = (props) => {
+          const {usuarioId,data} = props ?? {};
+
+          return  modificarUsuario(usuarioId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ModificarUsuarioMutationResult = NonNullable<Awaited<ReturnType<typeof modificarUsuario>>>
+    export type ModificarUsuarioMutationBody = CambiosUsuario
+    export type ModificarUsuarioMutationError = ErrorType<void | HTTPValidationError>
+    export type ModificarUsuarioMutationVariables = {usuarioId: number;data: CambiosUsuario}
+
+    /**
+ * @summary Cambiar datos, roles, permisos o estado
+ */
+export const useModificarUsuario = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof modificarUsuario>>, TError,ModificarUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof modificarUsuario>>,
+        TError,
+        ModificarUsuarioMutationVariables,
+        TContext
+      > => {
+      return useMutation(getModificarUsuarioMutationOptions(options), queryClient);
+    }
+
+export const getRestablecerPasswordUrl = (usuarioId: number,) => {
+
+
+
+
+  return `/api/v1/usuarios/${usuarioId}/restablecer`
+}
+
+/**
+ * @summary Nueva contraseña temporal (cierra sus sesiones)
+ */
+export const restablecerPassword = async (usuarioId: number, options?: Parameters<typeof nexoFetch>[1]): Promise<PasswordTemporal> => {
+
+  return nexoFetch<PasswordTemporal>(getRestablecerPasswordUrl(usuarioId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRestablecerPasswordMutationKey = () => ['restablecerPassword'] as const;
+
+export const getRestablecerPasswordMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restablecerPassword>>, TError,RestablecerPasswordMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restablecerPassword>>, TError,RestablecerPasswordMutationVariables, TContext> => {
+
+const mutationKey = getRestablecerPasswordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restablecerPassword>>, RestablecerPasswordMutationVariables> = (props) => {
+          const {usuarioId} = props ?? {};
+
+          return  restablecerPassword(usuarioId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestablecerPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof restablecerPassword>>>
+
+    export type RestablecerPasswordMutationError = ErrorType<HTTPValidationError>
+    export type RestablecerPasswordMutationVariables = {usuarioId: number}
+
+    /**
+ * @summary Nueva contraseña temporal (cierra sus sesiones)
+ */
+export const useRestablecerPassword = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restablecerPassword>>, TError,RestablecerPasswordMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof restablecerPassword>>,
+        TError,
+        RestablecerPasswordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRestablecerPasswordMutationOptions(options), queryClient);
+    }
+
+export const getDesbloquearUsuarioUrl = (usuarioId: number,) => {
+
+
+
+
+  return `/api/v1/usuarios/${usuarioId}/desbloquear`
+}
+
+/**
+ * @summary Quitar el bloqueo por intentos fallidos
+ */
+export const desbloquearUsuario = async (usuarioId: number, options?: Parameters<typeof nexoFetch>[1]): Promise<void> => {
+
+  return nexoFetch<void>(getDesbloquearUsuarioUrl(usuarioId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDesbloquearUsuarioMutationKey = () => ['desbloquearUsuario'] as const;
+
+export const getDesbloquearUsuarioMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof desbloquearUsuario>>, TError,DesbloquearUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof desbloquearUsuario>>, TError,DesbloquearUsuarioMutationVariables, TContext> => {
+
+const mutationKey = getDesbloquearUsuarioMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof desbloquearUsuario>>, DesbloquearUsuarioMutationVariables> = (props) => {
+          const {usuarioId} = props ?? {};
+
+          return  desbloquearUsuario(usuarioId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DesbloquearUsuarioMutationResult = NonNullable<Awaited<ReturnType<typeof desbloquearUsuario>>>
+
+    export type DesbloquearUsuarioMutationError = ErrorType<HTTPValidationError>
+    export type DesbloquearUsuarioMutationVariables = {usuarioId: number}
+
+    /**
+ * @summary Quitar el bloqueo por intentos fallidos
+ */
+export const useDesbloquearUsuario = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof desbloquearUsuario>>, TError,DesbloquearUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof desbloquearUsuario>>,
+        TError,
+        DesbloquearUsuarioMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDesbloquearUsuarioMutationOptions(options), queryClient);
+    }
+
+export const getCerrarSesionesUsuarioUrl = (usuarioId: number,) => {
+
+
+
+
+  return `/api/v1/usuarios/${usuarioId}/sesiones`
+}
+
+/**
+ * @summary Cerrar todas las sesiones del usuario
+ */
+export const cerrarSesionesUsuario = async (usuarioId: number, options?: Parameters<typeof nexoFetch>[1]): Promise<void> => {
+
+  return nexoFetch<void>(getCerrarSesionesUsuarioUrl(usuarioId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getCerrarSesionesUsuarioMutationKey = () => ['cerrarSesionesUsuario'] as const;
+
+export const getCerrarSesionesUsuarioMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cerrarSesionesUsuario>>, TError,CerrarSesionesUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cerrarSesionesUsuario>>, TError,CerrarSesionesUsuarioMutationVariables, TContext> => {
+
+const mutationKey = getCerrarSesionesUsuarioMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cerrarSesionesUsuario>>, CerrarSesionesUsuarioMutationVariables> = (props) => {
+          const {usuarioId} = props ?? {};
+
+          return  cerrarSesionesUsuario(usuarioId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CerrarSesionesUsuarioMutationResult = NonNullable<Awaited<ReturnType<typeof cerrarSesionesUsuario>>>
+
+    export type CerrarSesionesUsuarioMutationError = ErrorType<HTTPValidationError>
+    export type CerrarSesionesUsuarioMutationVariables = {usuarioId: number}
+
+    /**
+ * @summary Cerrar todas las sesiones del usuario
+ */
+export const useCerrarSesionesUsuario = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cerrarSesionesUsuario>>, TError,CerrarSesionesUsuarioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cerrarSesionesUsuario>>,
+        TError,
+        CerrarSesionesUsuarioMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCerrarSesionesUsuarioMutationOptions(options), queryClient);
+    }
+
+export const getObtenerPreferenciasUrl = () => {
+
+
+
+
+  return `/api/v1/preferencias`
+}
+
+/**
+ * @summary Preferencias del usuario (por defecto Radiadores · Importados)
+ */
+export const obtenerPreferencias = async ( options?: Parameters<typeof nexoFetch>[1]): Promise<Preferencias> => {
+
+  return nexoFetch<Preferencias>(getObtenerPreferenciasUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerPreferenciasQueryKey = () => {
+    return [
+    `/api/v1/preferencias`
+    ] as const;
+    }
+
+
+export const getObtenerPreferenciasQueryOptions = <TData = Awaited<ReturnType<typeof obtenerPreferencias>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPreferencias>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerPreferenciasQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerPreferencias>>> = ({ signal }) => obtenerPreferencias({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerPreferencias>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerPreferenciasQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerPreferencias>>>
+export type ObtenerPreferenciasQueryError = ErrorType<unknown>
+
+
+export function useObtenerPreferencias<TData = Awaited<ReturnType<typeof obtenerPreferencias>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPreferencias>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerPreferencias>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerPreferencias>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerPreferencias<TData = Awaited<ReturnType<typeof obtenerPreferencias>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPreferencias>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerPreferencias>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerPreferencias>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerPreferencias<TData = Awaited<ReturnType<typeof obtenerPreferencias>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPreferencias>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Preferencias del usuario (por defecto Radiadores · Importados)
+ */
+
+export function useObtenerPreferencias<TData = Awaited<ReturnType<typeof obtenerPreferencias>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerPreferencias>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerPreferenciasQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGuardarPreferenciasUrl = () => {
+
+
+
+
+  return `/api/v1/preferencias`
+}
+
+/**
+ * @summary Guardar preferencias
+ */
+export const guardarPreferencias = async (preferencias: Preferencias, options?: Parameters<typeof nexoFetch>[1]): Promise<Preferencias> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Preferencias>(getGuardarPreferenciasUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(preferencias)
+  }
+);}
+
+
+
+
+
+export const getGuardarPreferenciasMutationKey = () => ['guardarPreferencias'] as const;
+
+export const getGuardarPreferenciasMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof guardarPreferencias>>, TError,GuardarPreferenciasMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof guardarPreferencias>>, TError,GuardarPreferenciasMutationVariables, TContext> => {
+
+const mutationKey = getGuardarPreferenciasMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof guardarPreferencias>>, GuardarPreferenciasMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  guardarPreferencias(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GuardarPreferenciasMutationResult = NonNullable<Awaited<ReturnType<typeof guardarPreferencias>>>
+    export type GuardarPreferenciasMutationBody = Preferencias
+    export type GuardarPreferenciasMutationError = ErrorType<void>
+    export type GuardarPreferenciasMutationVariables = {data: Preferencias}
+
+    /**
+ * @summary Guardar preferencias
+ */
+export const useGuardarPreferencias = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof guardarPreferencias>>, TError,GuardarPreferenciasMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof guardarPreferencias>>,
+        TError,
+        GuardarPreferenciasMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGuardarPreferenciasMutationOptions(options), queryClient);
+    }
 
 export const getListarCategoriasUrl = () => {
 
@@ -306,7 +1482,7 @@ export const getListarCategoriasQueryKey = () => {
     }
 
 
-export const getListarCategoriasQueryOptions = <TData = Awaited<ReturnType<typeof listarCategorias>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCategorias>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+export const getListarCategoriasQueryOptions = <TData = Awaited<ReturnType<typeof listarCategorias>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCategorias>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -325,10 +1501,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListarCategoriasQueryResult = NonNullable<Awaited<ReturnType<typeof listarCategorias>>>
-export type ListarCategoriasQueryError = unknown
+export type ListarCategoriasQueryError = ErrorType<unknown>
 
 
-export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = unknown>(
+export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = ErrorType<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCategorias>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof listarCategorias>>,
@@ -338,7 +1514,7 @@ export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCate
       >, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = unknown>(
+export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCategorias>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof listarCategorias>>,
@@ -348,7 +1524,7 @@ export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCate
       >, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = unknown>(
+export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCategorias>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -356,7 +1532,7 @@ export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCate
  * @summary Categorías en alcance con artículos activos por línea
  */
 
-export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = unknown>(
+export function useListarCategorias<TData = Awaited<ReturnType<typeof listarCategorias>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCategorias>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

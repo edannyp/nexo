@@ -51,6 +51,411 @@
         }
       }
     },
+    "/api/v1/sesion": {
+      "get": {
+        "tags": [
+          "sesion"
+        ],
+        "summary": "Sesión actual",
+        "operationId": "obtener_sesion",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionInfo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sesion"
+        ],
+        "summary": "Iniciar sesión",
+        "operationId": "iniciar_sesion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credenciales"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionInfo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales incorrectas"
+          },
+          "429": {
+            "description": "Cuenta bloqueada temporalmente"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "sesion"
+        ],
+        "summary": "Cerrar sesión",
+        "operationId": "cerrar_sesion",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/sesion/password": {
+      "post": {
+        "tags": [
+          "sesion"
+        ],
+        "summary": "Cambiar la contraseña propia",
+        "operationId": "cambiar_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambioPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionInfo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "La nueva contraseña no cumple la política"
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios": {
+      "get": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Listar usuarios",
+        "operationId": "listar_usuarios",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioAdmin"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Usuarios"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Dar de alta un usuario con contraseña temporal",
+        "operationId": "crear_usuario",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoUsuario"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioCreado"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El usuario ya existe"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}": {
+      "patch": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Cambiar datos, roles, permisos o estado",
+        "operationId": "modificar_usuario",
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Usuario Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosUsuario"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdmin"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe"
+          },
+          "409": {
+            "description": "Dejaría la APP sin administrador propio"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}/restablecer": {
+      "post": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Nueva contraseña temporal (cierra sus sesiones)",
+        "operationId": "restablecer_password",
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Usuario Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordTemporal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}/desbloquear": {
+      "post": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Quitar el bloqueo por intentos fallidos",
+        "operationId": "desbloquear_usuario",
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Usuario Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}/sesiones": {
+      "delete": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Cerrar todas las sesiones del usuario",
+        "operationId": "cerrar_sesiones_usuario",
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Usuario Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/preferencias": {
+      "get": {
+        "tags": [
+          "preferencias"
+        ],
+        "summary": "Preferencias del usuario (por defecto Radiadores · Importados)",
+        "operationId": "obtener_preferencias",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferencias"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "preferencias"
+        ],
+        "summary": "Guardar preferencias",
+        "operationId": "guardar_preferencias",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preferencias"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferencias"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Categoría inexistente"
+          }
+        }
+      }
+    },
     "/api/v1/categorias": {
       "get": {
         "tags": [
@@ -79,6 +484,99 @@
   },
   "components": {
     "schemas": {
+      "CambioPassword": {
+        "properties": {
+          "actual": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Actual"
+          },
+          "nueva": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nueva"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actual",
+          "nueva"
+        ],
+        "title": "CambioPassword"
+      },
+      "CambiosUsuario": {
+        "properties": {
+          "nombre": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre"
+          },
+          "correo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Rol"
+                },
+                "type": "array",
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "permisos": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Permiso"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permisos"
+          },
+          "activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activo"
+          }
+        },
+        "type": "object",
+        "title": "CambiosUsuario"
+      },
       "Categoria": {
         "properties": {
           "id": {
@@ -125,6 +623,41 @@
         ],
         "title": "Categoria"
       },
+      "Credenciales": {
+        "properties": {
+          "usuario": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Usuario"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "password"
+        ],
+        "title": "Credenciales"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
       "Linea": {
         "type": "string",
         "enum": [
@@ -150,6 +683,326 @@
           "migracion"
         ],
         "title": "Lista"
+      },
+      "NuevoUsuario": {
+        "properties": {
+          "usuario": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "title": "Usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "correo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/Rol"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Roles"
+          },
+          "permisos": {
+            "items": {
+              "$ref": "#/components/schemas/Permiso"
+            },
+            "type": "array",
+            "title": "Permisos",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "nombre",
+          "roles"
+        ],
+        "title": "NuevoUsuario"
+      },
+      "PasswordTemporal": {
+        "properties": {
+          "password_temporal": {
+            "type": "string",
+            "title": "Password Temporal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password_temporal"
+        ],
+        "title": "PasswordTemporal"
+      },
+      "Permiso": {
+        "type": "string",
+        "enum": [
+          "VER_ANALISIS_VENTAS"
+        ],
+        "title": "Permiso"
+      },
+      "Preferencias": {
+        "properties": {
+          "cat": {
+            "type": "string",
+            "pattern": "^\\d{2}$",
+            "title": "Cat",
+            "description": "Código SAP de la categoría (dos dígitos)"
+          },
+          "linea": {
+            "$ref": "#/components/schemas/Linea"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cat",
+          "linea"
+        ],
+        "title": "Preferencias"
+      },
+      "Rol": {
+        "type": "string",
+        "enum": [
+          "OPERADOR",
+          "SUPERVISOR",
+          "ADMINISTRADOR",
+          "FOTOS"
+        ],
+        "title": "Rol"
+      },
+      "SesionInfo": {
+        "properties": {
+          "usuario": {
+            "$ref": "#/components/schemas/UsuarioSesion"
+          },
+          "csrf": {
+            "type": "string",
+            "title": "Csrf",
+            "description": "Enviar en la cabecera X-CSRF-Token en los métodos que escriben"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "csrf"
+        ],
+        "title": "SesionInfo"
+      },
+      "UsuarioAdmin": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "correo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/Rol"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "permisos": {
+            "items": {
+              "$ref": "#/components/schemas/Permiso"
+            },
+            "type": "array",
+            "title": "Permisos"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "debe_cambiar_password": {
+            "type": "boolean",
+            "title": "Debe Cambiar Password"
+          },
+          "bloqueado_hasta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bloqueado Hasta"
+          },
+          "ultimo_acceso_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultimo Acceso En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario",
+          "nombre",
+          "correo",
+          "roles",
+          "permisos",
+          "activo",
+          "debe_cambiar_password",
+          "bloqueado_hasta",
+          "ultimo_acceso_en"
+        ],
+        "title": "UsuarioAdmin"
+      },
+      "UsuarioCreado": {
+        "properties": {
+          "usuario": {
+            "$ref": "#/components/schemas/UsuarioAdmin"
+          },
+          "password_temporal": {
+            "type": "string",
+            "title": "Password Temporal",
+            "description": "Se muestra una sola vez; el usuario debe cambiarla al entrar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "password_temporal"
+        ],
+        "title": "UsuarioCreado"
+      },
+      "UsuarioSesion": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "correo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/Rol"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "permisos": {
+            "items": {
+              "$ref": "#/components/schemas/Permiso"
+            },
+            "type": "array",
+            "title": "Permisos"
+          },
+          "debe_cambiar_password": {
+            "type": "boolean",
+            "title": "Debe Cambiar Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario",
+          "nombre",
+          "correo",
+          "roles",
+          "permisos",
+          "debe_cambiar_password"
+        ],
+        "title": "UsuarioSesion"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       },
       "Viva": {
         "properties": {

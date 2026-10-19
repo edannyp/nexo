@@ -1,2 +1,2 @@
 export * from './generado/nexo';
-export { nexoFetch, ProblemaError, type Problema } from './fetcher';
+export { alPerderSesion, establecerCsrf, nexoFetch, ProblemaError, type Problema } from './fetcher';
