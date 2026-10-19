@@ -1,0 +1,24 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+node_modules/
+dist/
+coverage/
+storybook-static/
+playwright-report/
+test-results/
+.DS_Store
+
+# Datos: solo se versionan README y archivos pequeños de referencia
+data/muestras/**
+!data/muestras/README.md
+data/perfiles/**
+!data/perfiles/README.md
+
+# Claude Code: preferencias personales
+.claude/settings.local.json
+especificaciones.png
