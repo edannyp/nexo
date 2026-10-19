@@ -6,4 +6,4 @@
 | App | Estructura prevista |
 |---|---|
 | `api/` | FastAPI. `src/nexo_api/{core, modules/{auth, articulos, workflow, aplicaciones, diagramas, matching, auditoria}, adapters/{autocare, consolidacion, mercado_externo, minio}}`, `alembic/`, `tests/{unit, integration}` |
-| `web/` | React + Vite. `src/{app, routes, features/{bandeja-validacion, master-merge, articulo-detalle, aplicaciones-vehiculares, diagramas, auth}, shared}`, `e2e/` |
+| `web/` | React + Vite. `src/{app, routes, features/{auth, panorama, busqueda, explorar, trabajo, articulo (ficha, aplicaciones, emparejamiento, equivalencia, fotos, historial), validacion, verificacion, fabricados, catalogo, fotos, calidad-sap, admin}, shared}`, `e2e/` |

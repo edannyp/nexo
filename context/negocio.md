@@ -57,8 +57,10 @@ Por defecto: **Radiadores Importados**. Cada categoría tiene un tipo de parte A
 PIES pide la consola. Ver `context/categorias.md`.
 
 ## Pantallas principales (a detallar en la planificación)
-1. **Bandejas**: operador (`PENDIENTE` / `RECHAZADO`), supervisor (`POR_VALIDAR`) y verificación (tareas abiertas). Todas respetan el filtro global (ADR 0010).
-2. **Consola Master Merge**: vista lado a lado del artículo SAP vs las sugerencias de Consolidación / AutoCare / Diagrams, con nivel de confianza de la IA; el operador acepta, corrige o rechaza cada atributo.
-3. **Asociación de aplicaciones vehiculares**: buscar y asignar vehículos (catálogo AutoCare + vehículos custom).
-4. **Asociación de diagramas**: elegir el diagrama correcto entre los candidatos.
-5. **Bitácora / auditoría** por artículo.
+Detalle en [architecture/ux/propuesta.md](../architecture/ux/propuesta.md). En resumen:
+1. **Panorama**: avance por estado, completitud de la ficha, cobertura y pendientes.
+2. **Trabajar / Validar**: bandejas con "Siguiente" para operador (`PENDIENTE` / `RECHAZADO`) y supervisor (`POR_VALIDAR`).
+3. **Espacio de trabajo del artículo**: ficha de atributos (sugerido de SAP vs confirmado), aplicaciones vehiculares (AutoCare +
+   MercadoExterno), emparejamiento con el catálogo maestro y diagramas, equivalencia, fotos e historial.
+4. **Verificación**, **Fabricados**, **Catálogo** (vista inversa), **Fotos**, **Calidad SAP** y **Administración**.
+Todas respetan el filtro global (ADR 0010).
