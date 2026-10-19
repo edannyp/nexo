@@ -13,6 +13,8 @@ from typing import Protocol
 
 from sqlalchemy import Engine, text
 
+from .externa import disponible
+
 LIMITE_MERCADO = 1_000_000_000
 
 COMBUSTIBLE = {"GAS": "Gasolina", "DIESEL": "Diésel", "ELECTRIC": "Eléctrico", "FLEX": "Flex", "HYBRID": "Híbrido",
@@ -104,7 +106,7 @@ class AutoCare:
         self.modelos = lru_cache(maxsize=2048)(self._modelos)  # type: ignore[method-assign]
 
     def _filas(self, sql: str, p: dict) -> list:
-        with self.motor.connect() as c:
+        with disponible("AutoCare"), self.motor.connect() as c:
             c.execute(text("set transaction read only"))
             return c.execute(text(sql), p).all()
 
@@ -177,7 +179,7 @@ class MercadoExterno:
         self.motor = motor
 
     def _filas(self, sql: str, p: dict) -> list:
-        with self.motor.connect() as c:
+        with disponible("MercadoExterno"), self.motor.connect() as c:
             return c.execute(text(sql), p).all()
 
     def marcas(self, desde: int, hasta: int) -> list[Marca]:
@@ -232,7 +234,7 @@ class MercadoExterno:
     def registrar(self, n: NuevoVehiculo) -> list[Configuracion]:
         """Registra marca/modelo/años (si faltan) y la configuración en cada año. Reutiliza lo que ya existe en AutoCare."""
         evidencia = json.dumps([{"fuente": n.fuente, "registrado_desde": "Nexo", "usuario": n.creado_por}])
-        with self.motor.begin() as c:
+        with disponible("MercadoExterno"), self.motor.begin() as c:
             anios = c.execute(text("""
                 select anio, base_vehicle_id, catalogo from vcdb.fn_registrar_vehiculo(:marca, :modelo, :d, :h, 'APP'::vcdb.origen,
                   :por, cast(:ev as jsonb), 1.0, cast(:reg as text[]))

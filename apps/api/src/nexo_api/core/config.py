@@ -51,9 +51,15 @@ class Config(BaseSettings):
     mercado_externo_db: str | None = Field(None, validation_alias="MERCADO_EXTERNO_DB")
     mercado_externo_user: str | None = Field(None, validation_alias="MERCADO_EXTERNO_USER")
     mercado_externo_password: str = Field("", validation_alias="MERCADO_EXTERNO_PASSWORD")
+    # Consolidación (catálogo maestro, solo lectura): candidatos para el emparejamiento (ADR 0011)
+    consolidacion_host: str | None = Field(None, validation_alias="CONSOLIDACION_HOST")
+    consolidacion_port: int = Field(5432, validation_alias="CONSOLIDACION_PORT")
+    consolidacion_db: str | None = Field(None, validation_alias="CONSOLIDACION_DB")
+    consolidacion_user: str | None = Field(None, validation_alias="CONSOLIDACION_USER")
+    consolidacion_password: str = Field("", validation_alias="CONSOLIDACION_PASSWORD")
 
     def url_externa(self, prefijo: str) -> URL | None:
-        """URL de AutoCare o MercadoExterno (`autocare` / `mercado_externo`), o None si no está configurada."""
+        """URL de una base externa (`autocare`, `mercado_externo`, `consolidacion`), o None si no está configurada."""
         host, db, user = (getattr(self, f"{prefijo}_{k}") for k in ("host", "db", "user"))
         if not (host and db and user):
             return None
