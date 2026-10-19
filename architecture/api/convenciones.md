@@ -48,6 +48,15 @@
   nueva firmada y conteo por origen), `POST /verificaciones/{id}/resolucion` `{ resultado: CONFORME | CON_HALLAZGO, nota }` (`204`;
   la nota es obligatoria con hallazgo), `POST /verificaciones` `{ item_code, nota }` (manual, solo validados) y
   `POST /verificaciones/muestreo` `{ cantidad }` (administrador).
+- **Equivalencia** (fabricados; ADR 0018 y 0005): `GET /articulos/{item_code}/equivalencia` (código, sugerencias de
+  `codigo_anterior`, estado `SIN_CODIGO → ESPERA_FOTO → LISTO_PARA_VALIDAR → VALIDADO` y tarjeta del importado equivalente);
+  `PUT` `{ codigo }` lo captura (operador, supervisor o administrador; no requiere reserva ni cambia el estado, pero no si otro lo
+  tiene reservado); `POST …/validar` (supervisor o administrador; exige foto propia validada); `POST …/confirmar`
+  `{ version, heredar }` confirma la equivalencia y hereda parte y aplicaciones como sugerencias (misma regla de edición que la
+  ficha). `GET /fabricados?cat=&estado_codigo=&q=&limite=&desde=` es la revisión de fabricados con conteo por estado.
+- **Catálogo (vista inversa)**: `GET /catalogo?cat=&q=&sin_articulo=&tolerancia=` (partes del tipo con cuántos artículos las
+  usan) y `GET /catalogo/{parte_id}/articulos` (vinculados y candidatos de Nexo con el mismo puntaje del emparejamiento). Vincular
+  se hace en el artículo: la consola abre `/articulos/{item_code}?pestana=emparejamiento&parte={parte_id}`.
 - **Bases externas** (AutoCare, MercadoExterno, Consolidación): si no están configuradas o no responden, `503`; las pestañas siguen
   mostrando lo que vive en Nexo.
 - **Autenticación** (ADR 0015, implementada en `apps/api/src/nexo_api/auth/`): `POST /sesion` (entrar), `GET /sesion` (usuario,
