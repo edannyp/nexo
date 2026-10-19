@@ -21,6 +21,12 @@
   --rechazado: oklch(0.55 0.21 27);
   --validado: oklch(0.55 0.15 150);
   --sincronizado: oklch(0.45 0.12 165);
+
+  /* Gráficos (validados con el validador de la guía de visualización: contraste y escala ordinal en ambos modos) */
+  --viz-barra: #2a78d6; /* magnitud de un solo tono */
+  --viz-confirmado: #256abf; /* ordinal: confirmado (más) */
+  --viz-sugerido: #86b6ef; /* ordinal: sugerido (menos) */
+  --viz-riel: #cde2fb; /* riel de medidores: paso claro de la misma rampa */
 }
 
 .dark {
@@ -39,6 +45,11 @@
   --rechazado: oklch(0.72 0.17 27);
   --validado: oklch(0.76 0.14 150);
   --sincronizado: oklch(0.72 0.11 165);
+
+  --viz-barra: #3987e5;
+  --viz-confirmado: #6da7ec; /* en oscuro, "más" se lee más claro */
+  --viz-sugerido: #1c5cab;
+  --viz-riel: #184f95;
 }
 
 @theme inline {
@@ -56,6 +67,10 @@
   --color-rechazado: var(--rechazado);
   --color-validado: var(--validado);
   --color-sincronizado: var(--sincronizado);
+  --color-viz-barra: var(--viz-barra);
+  --color-viz-confirmado: var(--viz-confirmado);
+  --color-viz-sugerido: var(--viz-sugerido);
+  --color-viz-riel: var(--viz-riel);
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
