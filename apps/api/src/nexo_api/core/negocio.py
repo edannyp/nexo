@@ -23,6 +23,9 @@ ERRORES = {
     "REQUISITOS_INCOMPLETOS": (422, "Faltan datos para enviar a revisión"),
     "RESERVA_PERDIDA": (409, "El artículo ya no está reservado por ti"),
     "RESERVADO_POR_OTRO": (409, "Está reservado por otro usuario"),
+    "ATRIBUTO_NO_HABILITADO": (422, "Ese atributo no se usa en este tipo de parte"),
+    "VALOR_NO_VALIDO": (422, "Ese valor no está en la lista de PIES"),
+    "REQUIERE_UOM": (422, "Falta la unidad de la medida"),
 }
 _CODIGO = re.compile(r"^([A-Z_]+): ?(.*)$", re.S)
 
