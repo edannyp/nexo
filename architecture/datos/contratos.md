@@ -27,6 +27,10 @@ Cada proceso de otro proyecto que lee o escribe Nexo tiene aquí su contrato. Mi
 - **Escribe en:** `articulos_consolidacion` (`catalogo.*`, `carga.*`). Nunca en Nexo.
 - **No** cambia estados de artículos: Consolidación no conoce SAP.
 - **La APP** lee Consolidación para que el operador empareje; lo confirmado se guarda en Nexo (`app.articulo_parte`).
+  Lee `catalogo.v_parte_busqueda` (candidatos por `part_terminology_id`, medidas del panal como par sin orden ± tolerancia,
+  `parte_numero.numero_norm` y `parte_aplicacion.base_vehicle_id`) y el detalle de la parte (números, atributos, aplicaciones, imágenes
+  y fuentes vigentes). Al vincular, puede copiar atributos y aplicaciones como sugerencias (`origen = CONSOLIDACION`, con `parte_id`).
+  Las medidas de las vistas deben venir en mm (PAdb 267 alto, 269 largo, 268 ancho).
 
 ## Proceso de salida (Nexo → SAP)
 - **Lee:** artículos `VALIDADO`.

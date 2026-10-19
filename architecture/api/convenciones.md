@@ -33,6 +33,15 @@
   marca por homologación confirmada o por nombre, modelos candidatos por parecido); `POST` `{ version, items }` agrega desde el
   selector ya confirmadas (si estaba sugerida, la confirma); `POST …/confirmar` y `POST …/quitar` con `{ version, ids }`. Misma
   regla de edición que la ficha. Confirmar una sugerida sin submodelo o motor → `422`.
+- **Emparejamiento** (catálogo maestro de Consolidación vía adaptador; ADR 0011): `GET /articulos/{item_code}/emparejamiento?tolerancia=`
+  (partes vinculadas y hasta 20 candidatos con `puntaje` 0–100 y `razones`: alto y largo 40, o 35 si están invertidos; ancho 15;
+  número 35; vehículos en común 10), `GET /articulos/{item_code}/emparejamiento/{parte_id}` (comparación por atributo, números,
+  vehículos, imágenes y fuentes) y `GET /catalogo/partes?q=` (búsqueda manual: `400x518x26`, número o descripción).
+  `POST /articulos/{item_code}/partes` `{ version, parte_id, principal, traer_sugerencias }` vincula (la primera queda principal; trae
+  atributos y aplicaciones como sugerencias sin pisar lo que ya hay); `POST …/partes/principal` y `POST …/partes/quitar`
+  `{ version, parte_id }` (quitar borra sus sugerencias sin confirmar). Parte fusionada, descartada o de otro tipo → `422`.
+- **Bases externas** (AutoCare, MercadoExterno, Consolidación): si no están configuradas o no responden, `503`; las pestañas siguen
+  mostrando lo que vive en Nexo.
 - **Autenticación** (ADR 0015, implementada en `apps/api/src/nexo_api/auth/`): `POST /sesion` (entrar), `GET /sesion` (usuario,
   roles, permisos y token CSRF), `DELETE /sesion` (salir), `POST /sesion/password` (cambiar la propia; cierra las demás sesiones).
   Sesión en Redis con cookie `nexo_sesion` `httpOnly`, `SameSite=Lax` y `Secure` bajo HTTPS; en Redis se guarda el SHA-256 del token.

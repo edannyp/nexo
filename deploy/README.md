@@ -60,6 +60,10 @@ La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y 
 MercadoExterno con `grp_mercado_registro`). MercadoExterno debe tener aplicada la migración `V003__configuraciones.sql`
 (`uv run db/aplicar.py mercado_externo --servidor`). Sin estas variables, la pestaña muestra las aplicaciones pero no permite buscar.
 
+## Catálogo maestro (pestaña Emparejamiento y diagramas)
+La API lee Consolidación con `CONSOLIDACION_*` (usuario con `app_lectura`). Los diagramas guardados en MinIO se muestran con URLs
+firmadas (requiere `MINIO_*`). Sin Consolidación, la pestaña muestra lo ya vinculado pero no busca candidatos.
+
 ## Actualizar
 ```bash
 git pull                         # la rama que corresponda al ambiente (main en producción)

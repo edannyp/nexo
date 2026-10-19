@@ -312,7 +312,7 @@ Datos de apoyo de ClickHouse (volumen de venta), leídos por adaptador. Dos nive
 | Espacio de trabajo | `GET /articulos/{id}` · `GET /articulos/{id}/requisitos` · `POST /articulos/{id}/transiciones` |
 | Ficha | `GET /articulos/{id}/ficha` · `PUT /articulos/{id}/ficha` (cambios de la pestaña juntos, con `version`) |
 | Aplicaciones | `GET/POST/DELETE /articulos/{id}/aplicaciones` · `GET /vehiculos?anio=&marca=&modelo=` · `POST /vehiculos-externos` |
-| Emparejamiento | `GET /articulos/{id}/candidatos` · `GET /catalogo/partes` · `POST/DELETE /articulos/{id}/partes` |
+| Emparejamiento | `GET /articulos/{id}/emparejamiento` (vinculadas + candidatos) · `GET /articulos/{id}/emparejamiento/{parte}` (comparación) · `GET /catalogo/partes` · `POST /articulos/{id}/partes` (+ `/principal`, `/quitar`) |
 | Equivalencia | `PUT /articulos/{id}/codigo-equivalente` · `POST /articulos/{id}/equivalencias` · `POST /articulos/{id}/heredar` |
 | Fotos | `POST /articulos/{id}/fotos` · `GET /fotos/pendientes` |
 | Verificación | `GET /verificaciones` · `POST /verificaciones/{id}/resolucion` · `POST /verificaciones/muestreo` |
