@@ -1995,6 +1995,399 @@
           }
         }
       }
+    },
+    "/api/v1/articulos/{item_code}/emparejamiento": {
+      "get": {
+        "tags": [
+          "emparejamiento"
+        ],
+        "summary": "Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué",
+        "operationId": "obtener_emparejamiento",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Emparejamiento"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalogo/partes": {
+      "get": {
+        "tags": [
+          "emparejamiento"
+        ],
+        "summary": "Búsqueda manual en el catálogo maestro: medidas (400x518x26), número o descripción",
+        "operationId": "buscar_partes",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 80,
+              "title": "Q"
+            }
+          },
+          {
+            "name": "part_terminology_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParteCatalogo"
+                  },
+                  "title": "Response Buscar Partes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/emparejamiento/{parte_id}": {
+      "get": {
+        "tags": [
+          "emparejamiento"
+        ],
+        "summary": "Comparación lado a lado del artículo con una parte del catálogo maestro",
+        "operationId": "comparar_parte",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          },
+          {
+            "name": "parte_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Parte Id"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comparacion"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/partes": {
+      "post": {
+        "tags": [
+          "emparejamiento"
+        ],
+        "summary": "Vincular una parte del catálogo maestro (opcionalmente como principal y trayendo sus datos como sugerencias)",
+        "operationId": "vincular_parte",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Vincular"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Emparejamiento"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No editable o versión distinta"
+          },
+          "422": {
+            "description": "Parte no válida"
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/partes/principal": {
+      "post": {
+        "tags": [
+          "emparejamiento"
+        ],
+        "summary": "Marcar una parte vinculada como principal",
+        "operationId": "marcar_parte_principal",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PorParte"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Emparejamiento"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/partes/quitar": {
+      "post": {
+        "tags": [
+          "emparejamiento"
+        ],
+        "summary": "Desvincular una parte (y quitar sus sugerencias aún sin confirmar)",
+        "operationId": "desvincular_parte",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          },
+          {
+            "name": "tolerancia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 0,
+              "description": "mm de tolerancia en las medidas",
+              "default": 10,
+              "title": "Tolerancia"
+            },
+            "description": "mm de tolerancia en las medidas"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PorParte"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Emparejamiento"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3125,6 +3518,36 @@
         "type": "object",
         "title": "CambiosUsuario"
       },
+      "CandidatoParte": {
+        "properties": {
+          "parte": {
+            "$ref": "#/components/schemas/ParteCatalogo"
+          },
+          "puntaje": {
+            "type": "integer",
+            "title": "Puntaje"
+          },
+          "razones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Razones"
+          },
+          "invertida": {
+            "type": "boolean",
+            "title": "Invertida"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parte",
+          "puntaje",
+          "razones",
+          "invertida"
+        ],
+        "title": "CandidatoParte"
+      },
       "Categoria": {
         "properties": {
           "id": {
@@ -3233,6 +3656,73 @@
         ],
         "title": "Coincidencia"
       },
+      "Comparacion": {
+        "properties": {
+          "parte": {
+            "$ref": "#/components/schemas/ParteCatalogo"
+          },
+          "invertida": {
+            "type": "boolean",
+            "title": "Invertida"
+          },
+          "filas": {
+            "items": {
+              "$ref": "#/components/schemas/FilaComparacion"
+            },
+            "type": "array",
+            "title": "Filas"
+          },
+          "numeros": {
+            "items": {
+              "$ref": "#/components/schemas/NumeroCatalogo"
+            },
+            "type": "array",
+            "title": "Numeros"
+          },
+          "imagenes": {
+            "items": {
+              "$ref": "#/components/schemas/ImagenCatalogo"
+            },
+            "type": "array",
+            "title": "Imagenes"
+          },
+          "fuentes": {
+            "items": {
+              "$ref": "#/components/schemas/FuenteCatalogo"
+            },
+            "type": "array",
+            "title": "Fuentes"
+          },
+          "vehiculos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Vehiculos"
+          },
+          "vehiculos_comunes": {
+            "type": "integer",
+            "title": "Vehiculos Comunes"
+          },
+          "vinculada": {
+            "type": "boolean",
+            "title": "Vinculada"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parte",
+          "invertida",
+          "filas",
+          "numeros",
+          "imagenes",
+          "fuentes",
+          "vehiculos",
+          "vehiculos_comunes",
+          "vinculada"
+        ],
+        "title": "Comparacion"
+      },
       "Completitud": {
         "type": "string",
         "enum": [
@@ -3304,6 +3794,88 @@
           "password"
         ],
         "title": "Credenciales"
+      },
+      "Emparejamiento": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "part_terminology_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Terminology Id"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable"
+          },
+          "razon_no_editable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razon No Editable"
+          },
+          "catalogo_disponible": {
+            "type": "boolean",
+            "title": "Catalogo Disponible"
+          },
+          "medidas": {
+            "$ref": "#/components/schemas/MedidasPanal"
+          },
+          "tolerancia": {
+            "type": "integer",
+            "title": "Tolerancia"
+          },
+          "vinculadas": {
+            "items": {
+              "$ref": "#/components/schemas/ParteVinculada"
+            },
+            "type": "array",
+            "title": "Vinculadas"
+          },
+          "candidatos": {
+            "items": {
+              "$ref": "#/components/schemas/CandidatoParte"
+            },
+            "type": "array",
+            "title": "Candidatos"
+          },
+          "traidos": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Traidos"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "part_terminology_id",
+          "editable",
+          "razon_no_editable",
+          "catalogo_disponible",
+          "medidas",
+          "tolerancia",
+          "vinculadas",
+          "candidatos"
+        ],
+        "title": "Emparejamiento"
       },
       "Estado": {
         "type": "string",
@@ -3429,6 +4001,102 @@
           "atributos"
         ],
         "title": "Ficha"
+      },
+      "FilaComparacion": {
+        "properties": {
+          "paid": {
+            "type": "integer",
+            "title": "Paid"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "articulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Articulo"
+          },
+          "parte": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte"
+          },
+          "coincide": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coincide"
+          },
+          "diferencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diferencia"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paid",
+          "etiqueta",
+          "articulo",
+          "parte",
+          "coincide",
+          "diferencia"
+        ],
+        "title": "FilaComparacion"
+      },
+      "FuenteCatalogo": {
+        "properties": {
+          "fuente": {
+            "type": "string",
+            "title": "Fuente"
+          },
+          "id_en_fuente": {
+            "type": "string",
+            "title": "Id En Fuente"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fuente",
+          "id_en_fuente",
+          "url"
+        ],
+        "title": "FuenteCatalogo"
       },
       "Grupo": {
         "properties": {
@@ -3656,6 +4324,24 @@
         ],
         "title": "HallazgosSap"
       },
+      "ImagenCatalogo": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "url"
+        ],
+        "title": "ImagenCatalogo"
+      },
       "Linea": {
         "type": "string",
         "enum": [
@@ -3681,6 +4367,50 @@
           "migracion"
         ],
         "title": "Lista"
+      },
+      "MedidasPanal": {
+        "properties": {
+          "alto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alto"
+          },
+          "largo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largo"
+          },
+          "ancho": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ancho"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alto",
+          "largo",
+          "ancho"
+        ],
+        "title": "MedidasPanal"
       },
       "NuevaAplicacion": {
         "properties": {
@@ -3783,6 +4513,36 @@
           "roles"
         ],
         "title": "NuevoUsuario"
+      },
+      "NumeroCatalogo": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "marca": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca"
+          },
+          "numero": {
+            "type": "string",
+            "title": "Numero"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "marca",
+          "numero"
+        ],
+        "title": "NumeroCatalogo"
       },
       "Opcion": {
         "properties": {
@@ -3926,6 +4686,149 @@
         ],
         "title": "Panorama"
       },
+      "ParteCatalogo": {
+        "properties": {
+          "parte_id": {
+            "type": "integer",
+            "title": "Parte Id"
+          },
+          "tipo_parte": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo Parte"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "numeros": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numeros"
+          },
+          "medidas": {
+            "$ref": "#/components/schemas/MedidasPanal"
+          },
+          "n_aplicaciones": {
+            "type": "integer",
+            "title": "N Aplicaciones"
+          },
+          "n_fuentes": {
+            "type": "integer",
+            "title": "N Fuentes"
+          },
+          "imagen_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagen Url"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "fusionada_en_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fusionada En Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parte_id",
+          "tipo_parte",
+          "descripcion",
+          "numeros",
+          "medidas",
+          "n_aplicaciones",
+          "n_fuentes",
+          "imagen_url",
+          "estado",
+          "fusionada_en_id"
+        ],
+        "title": "ParteCatalogo"
+      },
+      "ParteVinculada": {
+        "properties": {
+          "parte_id": {
+            "type": "integer",
+            "title": "Parte Id"
+          },
+          "es_principal": {
+            "type": "boolean",
+            "title": "Es Principal"
+          },
+          "origen": {
+            "type": "string",
+            "title": "Origen"
+          },
+          "confirmado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmado Por"
+          },
+          "confirmado_en": {
+            "type": "string",
+            "title": "Confirmado En"
+          },
+          "parte": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParteCatalogo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "parte_id",
+          "es_principal",
+          "origen",
+          "confirmado_por",
+          "confirmado_en",
+          "parte"
+        ],
+        "title": "ParteVinculada"
+      },
       "PasswordTemporal": {
         "properties": {
           "password_temporal": {
@@ -3968,6 +4871,24 @@
           "ids"
         ],
         "title": "PorIds"
+      },
+      "PorParte": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "parte_id": {
+            "type": "integer",
+            "title": "Parte Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "parte_id"
+        ],
+        "title": "PorParte"
       },
       "Preferencias": {
         "properties": {
@@ -4485,6 +5406,24 @@
         ],
         "title": "TipoCampo"
       },
+      "Traidos": {
+        "properties": {
+          "atributos": {
+            "type": "integer",
+            "title": "Atributos"
+          },
+          "aplicaciones": {
+            "type": "integer",
+            "title": "Aplicaciones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "atributos",
+          "aplicaciones"
+        ],
+        "title": "Traidos"
+      },
       "Transicion": {
         "properties": {
           "destino": {
@@ -4950,6 +5889,34 @@
           "prioridad"
         ],
         "title": "VentasResumen"
+      },
+      "Vincular": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "parte_id": {
+            "type": "integer",
+            "title": "Parte Id"
+          },
+          "principal": {
+            "type": "boolean",
+            "title": "Principal",
+            "default": false
+          },
+          "traer_sugerencias": {
+            "type": "boolean",
+            "title": "Traer Sugerencias",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "parte_id"
+        ],
+        "title": "Vincular"
       },
       "Vista": {
         "properties": {

@@ -318,6 +318,32 @@ export interface CambiosUsuario {
   activo?: boolean | null;
 }
 
+export interface MedidasPanal {
+  alto: string | null;
+  largo: string | null;
+  ancho: string | null;
+}
+
+export interface ParteCatalogo {
+  parte_id: number;
+  tipo_parte: string | null;
+  descripcion: string | null;
+  numeros: string | null;
+  medidas: MedidasPanal;
+  n_aplicaciones: number;
+  n_fuentes: number;
+  imagen_url: string | null;
+  estado: string;
+  fusionada_en_id: number | null;
+}
+
+export interface CandidatoParte {
+  parte: ParteCatalogo;
+  puntaje: number;
+  razones: string[];
+  invertida: boolean;
+}
+
 export type Linea = typeof Linea[keyof typeof Linea];
 
 
@@ -358,6 +384,44 @@ export const Coincidencia = {
   descripcion: 'descripcion',
 } as const;
 
+export interface FilaComparacion {
+  paid: number;
+  etiqueta: string;
+  articulo: string | null;
+  parte: string | null;
+  coincide: boolean | null;
+  diferencia: string | null;
+}
+
+export interface NumeroCatalogo {
+  tipo: string;
+  marca: string | null;
+  numero: string;
+}
+
+export interface ImagenCatalogo {
+  tipo: string;
+  url: string;
+}
+
+export interface FuenteCatalogo {
+  fuente: string;
+  id_en_fuente: string;
+  url: string | null;
+}
+
+export interface Comparacion {
+  parte: ParteCatalogo;
+  invertida: boolean;
+  filas: FilaComparacion[];
+  numeros: NumeroCatalogo[];
+  imagenes: ImagenCatalogo[];
+  fuentes: FuenteCatalogo[];
+  vehiculos: string[];
+  vehiculos_comunes: number;
+  vinculada: boolean;
+}
+
 export type Completitud = typeof Completitud[keyof typeof Completitud];
 
 
@@ -389,6 +453,33 @@ export interface Credenciales {
      * @maxLength 200
      */
   password: string;
+}
+
+export interface ParteVinculada {
+  parte_id: number;
+  es_principal: boolean;
+  origen: string;
+  confirmado_por: string | null;
+  confirmado_en: string;
+  parte: ParteCatalogo | null;
+}
+
+export interface Traidos {
+  atributos: number;
+  aplicaciones: number;
+}
+
+export interface Emparejamiento {
+  version: number;
+  part_terminology_id: number | null;
+  editable: boolean;
+  razon_no_editable: string | null;
+  catalogo_disponible: boolean;
+  medidas: MedidasPanal;
+  tolerancia: number;
+  vinculadas: ParteVinculada[];
+  candidatos: CandidatoParte[];
+  traidos?: Traidos | null;
 }
 
 export type EventoHistorialDetalle = { [key: string]: unknown } | null;
@@ -577,6 +668,11 @@ export interface PorIds {
   ids: number[];
 }
 
+export interface PorParte {
+  version: number;
+  parte_id: number;
+}
+
 export interface Preferencias {
   /**
      * Código SAP de la categoría (dos dígitos)
@@ -705,6 +801,13 @@ export interface VehiculoExterno {
   fuente: string;
   /** Abreviaturas VCdb: GTM, SLV… */
   regiones?: string[] | null;
+}
+
+export interface Vincular {
+  version: number;
+  parte_id: number;
+  principal?: boolean;
+  traer_sugerencias?: boolean;
 }
 
 /**
@@ -888,6 +991,66 @@ desde: number;
  * @maximum 2100
  */
 hasta: number;
+};
+
+export type ObtenerEmparejamientoParams = {
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
+};
+
+export type BuscarPartesParams = {
+/**
+ * @minLength 2
+ * @maxLength 80
+ */
+q: string;
+part_terminology_id?: number | null;
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
+};
+
+export type CompararParteParams = {
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
+};
+
+export type VincularParteParams = {
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
+};
+
+export type MarcarPartePrincipalParams = {
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
+};
+
+export type DesvincularParteParams = {
+/**
+ * mm de tolerancia en las medidas
+ * @minimum 0
+ * @maximum 50
+ */
+tolerancia?: number;
 };
 
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -4747,4 +4910,646 @@ export const useQuitarAplicaciones = <TError = ErrorType<HTTPValidationError>,
         TContext
       > => {
       return useMutation(getQuitarAplicacionesMutationOptions(options), queryClient);
+    }
+
+export const getObtenerEmparejamientoUrl = (itemCode: string,
+    params?: ObtenerEmparejamientoParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/articulos/${itemCode}/emparejamiento?${stringifiedParams}` : `/api/v1/articulos/${itemCode}/emparejamiento`
+}
+
+/**
+ * @summary Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué
+ */
+export const obtenerEmparejamiento = async (itemCode: string,
+    params?: ObtenerEmparejamientoParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Emparejamiento> => {
+
+  return nexoFetch<Emparejamiento>(getObtenerEmparejamientoUrl(itemCode,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerEmparejamientoQueryKey = (itemCode: string,
+    params?: ObtenerEmparejamientoParams,) => {
+    return [
+    `/api/v1/articulos/${itemCode}/emparejamiento`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getObtenerEmparejamientoQueryOptions = <TData = Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError = ErrorType<HTTPValidationError>>(itemCode: string,
+    params?: ObtenerEmparejamientoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerEmparejamientoQueryKey(itemCode,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerEmparejamiento>>> = ({ signal }) => obtenerEmparejamiento(itemCode,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemCode !== null && itemCode !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerEmparejamientoQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerEmparejamiento>>>
+export type ObtenerEmparejamientoQueryError = ErrorType<HTTPValidationError>
+
+
+export function useObtenerEmparejamiento<TData = Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    params: undefined |  ObtenerEmparejamientoParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerEmparejamiento>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerEmparejamiento>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerEmparejamiento<TData = Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    params?: ObtenerEmparejamientoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerEmparejamiento>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerEmparejamiento>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerEmparejamiento<TData = Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    params?: ObtenerEmparejamientoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué
+ */
+
+export function useObtenerEmparejamiento<TData = Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    params?: ObtenerEmparejamientoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerEmparejamientoQueryOptions(itemCode,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBuscarPartesUrl = (params: BuscarPartesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/catalogo/partes?${stringifiedParams}` : `/api/v1/catalogo/partes`
+}
+
+/**
+ * @summary Búsqueda manual en el catálogo maestro: medidas (400x518x26), número o descripción
+ */
+export const buscarPartes = async (params: BuscarPartesParams, options?: Parameters<typeof nexoFetch>[1]): Promise<ParteCatalogo[]> => {
+
+  return nexoFetch<ParteCatalogo[]>(getBuscarPartesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getBuscarPartesQueryKey = (params?: BuscarPartesParams,) => {
+    return [
+    `/api/v1/catalogo/partes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getBuscarPartesQueryOptions = <TData = Awaited<ReturnType<typeof buscarPartes>>, TError = ErrorType<HTTPValidationError>>(params: BuscarPartesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof buscarPartes>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getBuscarPartesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof buscarPartes>>> = ({ signal }) => buscarPartes(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof buscarPartes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type BuscarPartesQueryResult = NonNullable<Awaited<ReturnType<typeof buscarPartes>>>
+export type BuscarPartesQueryError = ErrorType<HTTPValidationError>
+
+
+export function useBuscarPartes<TData = Awaited<ReturnType<typeof buscarPartes>>, TError = ErrorType<HTTPValidationError>>(
+ params: BuscarPartesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof buscarPartes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof buscarPartes>>,
+          TError,
+          Awaited<ReturnType<typeof buscarPartes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useBuscarPartes<TData = Awaited<ReturnType<typeof buscarPartes>>, TError = ErrorType<HTTPValidationError>>(
+ params: BuscarPartesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof buscarPartes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof buscarPartes>>,
+          TError,
+          Awaited<ReturnType<typeof buscarPartes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useBuscarPartes<TData = Awaited<ReturnType<typeof buscarPartes>>, TError = ErrorType<HTTPValidationError>>(
+ params: BuscarPartesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof buscarPartes>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Búsqueda manual en el catálogo maestro: medidas (400x518x26), número o descripción
+ */
+
+export function useBuscarPartes<TData = Awaited<ReturnType<typeof buscarPartes>>, TError = ErrorType<HTTPValidationError>>(
+ params: BuscarPartesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof buscarPartes>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getBuscarPartesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCompararParteUrl = (itemCode: string,
+    parteId: number,
+    params?: CompararParteParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/articulos/${itemCode}/emparejamiento/${parteId}?${stringifiedParams}` : `/api/v1/articulos/${itemCode}/emparejamiento/${parteId}`
+}
+
+/**
+ * @summary Comparación lado a lado del artículo con una parte del catálogo maestro
+ */
+export const compararParte = async (itemCode: string,
+    parteId: number,
+    params?: CompararParteParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Comparacion> => {
+
+  return nexoFetch<Comparacion>(getCompararParteUrl(itemCode,parteId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompararParteQueryKey = (itemCode: string,
+    parteId: number,
+    params?: CompararParteParams,) => {
+    return [
+    `/api/v1/articulos/${itemCode}/emparejamiento/${parteId}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCompararParteQueryOptions = <TData = Awaited<ReturnType<typeof compararParte>>, TError = ErrorType<HTTPValidationError>>(itemCode: string,
+    parteId: number,
+    params?: CompararParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compararParte>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCompararParteQueryKey(itemCode,parteId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof compararParte>>> = ({ signal }) => compararParte(itemCode,parteId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemCode !== null && itemCode !== undefined && parteId !== null && parteId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof compararParte>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CompararParteQueryResult = NonNullable<Awaited<ReturnType<typeof compararParte>>>
+export type CompararParteQueryError = ErrorType<HTTPValidationError>
+
+
+export function useCompararParte<TData = Awaited<ReturnType<typeof compararParte>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    parteId: number,
+    params: undefined |  CompararParteParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof compararParte>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof compararParte>>,
+          TError,
+          Awaited<ReturnType<typeof compararParte>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCompararParte<TData = Awaited<ReturnType<typeof compararParte>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    parteId: number,
+    params?: CompararParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compararParte>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof compararParte>>,
+          TError,
+          Awaited<ReturnType<typeof compararParte>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCompararParte<TData = Awaited<ReturnType<typeof compararParte>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    parteId: number,
+    params?: CompararParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compararParte>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Comparación lado a lado del artículo con una parte del catálogo maestro
+ */
+
+export function useCompararParte<TData = Awaited<ReturnType<typeof compararParte>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string,
+    parteId: number,
+    params?: CompararParteParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compararParte>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCompararParteQueryOptions(itemCode,parteId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getVincularParteUrl = (itemCode: string,
+    params?: VincularParteParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/articulos/${itemCode}/partes?${stringifiedParams}` : `/api/v1/articulos/${itemCode}/partes`
+}
+
+/**
+ * @summary Vincular una parte del catálogo maestro (opcionalmente como principal y trayendo sus datos como sugerencias)
+ */
+export const vincularParte = async (itemCode: string,
+    vincular: Vincular,
+    params?: VincularParteParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Emparejamiento> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Emparejamiento>(getVincularParteUrl(itemCode,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(vincular)
+  }
+);}
+
+
+
+
+
+export const getVincularParteMutationKey = () => ['vincularParte'] as const;
+
+export const getVincularParteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof vincularParte>>, TError,VincularParteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof vincularParte>>, TError,VincularParteMutationVariables, TContext> => {
+
+const mutationKey = getVincularParteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof vincularParte>>, VincularParteMutationVariables> = (props) => {
+          const {itemCode,data,params} = props ?? {};
+
+          return  vincularParte(itemCode,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VincularParteMutationResult = NonNullable<Awaited<ReturnType<typeof vincularParte>>>
+    export type VincularParteMutationBody = Vincular
+    export type VincularParteMutationError = ErrorType<void>
+    export type VincularParteMutationVariables = {itemCode: string;data: Vincular;params?: VincularParteParams}
+
+    /**
+ * @summary Vincular una parte del catálogo maestro (opcionalmente como principal y trayendo sus datos como sugerencias)
+ */
+export const useVincularParte = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof vincularParte>>, TError,VincularParteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof vincularParte>>,
+        TError,
+        VincularParteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getVincularParteMutationOptions(options), queryClient);
+    }
+
+export const getMarcarPartePrincipalUrl = (itemCode: string,
+    params?: MarcarPartePrincipalParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/articulos/${itemCode}/partes/principal?${stringifiedParams}` : `/api/v1/articulos/${itemCode}/partes/principal`
+}
+
+/**
+ * @summary Marcar una parte vinculada como principal
+ */
+export const marcarPartePrincipal = async (itemCode: string,
+    porParte: PorParte,
+    params?: MarcarPartePrincipalParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Emparejamiento> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Emparejamiento>(getMarcarPartePrincipalUrl(itemCode,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(porParte)
+  }
+);}
+
+
+
+
+
+export const getMarcarPartePrincipalMutationKey = () => ['marcarPartePrincipal'] as const;
+
+export const getMarcarPartePrincipalMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof marcarPartePrincipal>>, TError,MarcarPartePrincipalMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof marcarPartePrincipal>>, TError,MarcarPartePrincipalMutationVariables, TContext> => {
+
+const mutationKey = getMarcarPartePrincipalMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof marcarPartePrincipal>>, MarcarPartePrincipalMutationVariables> = (props) => {
+          const {itemCode,data,params} = props ?? {};
+
+          return  marcarPartePrincipal(itemCode,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarcarPartePrincipalMutationResult = NonNullable<Awaited<ReturnType<typeof marcarPartePrincipal>>>
+    export type MarcarPartePrincipalMutationBody = PorParte
+    export type MarcarPartePrincipalMutationError = ErrorType<HTTPValidationError>
+    export type MarcarPartePrincipalMutationVariables = {itemCode: string;data: PorParte;params?: MarcarPartePrincipalParams}
+
+    /**
+ * @summary Marcar una parte vinculada como principal
+ */
+export const useMarcarPartePrincipal = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof marcarPartePrincipal>>, TError,MarcarPartePrincipalMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof marcarPartePrincipal>>,
+        TError,
+        MarcarPartePrincipalMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMarcarPartePrincipalMutationOptions(options), queryClient);
+    }
+
+export const getDesvincularParteUrl = (itemCode: string,
+    params?: DesvincularParteParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/articulos/${itemCode}/partes/quitar?${stringifiedParams}` : `/api/v1/articulos/${itemCode}/partes/quitar`
+}
+
+/**
+ * @summary Desvincular una parte (y quitar sus sugerencias aún sin confirmar)
+ */
+export const desvincularParte = async (itemCode: string,
+    porParte: PorParte,
+    params?: DesvincularParteParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Emparejamiento> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Emparejamiento>(getDesvincularParteUrl(itemCode,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(porParte)
+  }
+);}
+
+
+
+
+
+export const getDesvincularParteMutationKey = () => ['desvincularParte'] as const;
+
+export const getDesvincularParteMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof desvincularParte>>, TError,DesvincularParteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof desvincularParte>>, TError,DesvincularParteMutationVariables, TContext> => {
+
+const mutationKey = getDesvincularParteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof desvincularParte>>, DesvincularParteMutationVariables> = (props) => {
+          const {itemCode,data,params} = props ?? {};
+
+          return  desvincularParte(itemCode,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DesvincularParteMutationResult = NonNullable<Awaited<ReturnType<typeof desvincularParte>>>
+    export type DesvincularParteMutationBody = PorParte
+    export type DesvincularParteMutationError = ErrorType<HTTPValidationError>
+    export type DesvincularParteMutationVariables = {itemCode: string;data: PorParte;params?: DesvincularParteParams}
+
+    /**
+ * @summary Desvincular una parte (y quitar sus sugerencias aún sin confirmar)
+ */
+export const useDesvincularParte = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof desvincularParte>>, TError,DesvincularParteMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof desvincularParte>>,
+        TError,
+        DesvincularParteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDesvincularParteMutationOptions(options), queryClient);
     }
