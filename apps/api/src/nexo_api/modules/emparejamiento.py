@@ -15,7 +15,6 @@ from sqlalchemy import Connection, create_engine, text
 from sqlalchemy.exc import DBAPIError
 
 from ..adapters.consolidacion import Candidato, CatalogoMaestro, Consolidacion, DetalleParte, Medidas, ResumenParte
-from ..adapters.minio import FotosMinio
 from ..adapters.vehiculos import Vehiculos
 from ..auth.dependencias import Usuario, UsuarioActual
 from ..auth.registro import fijar_actor
@@ -24,6 +23,7 @@ from ..core.config import config
 from ..core.errores import Problema
 from .aplicaciones import rangos
 from .edicion import articulo, bloquear_para_editar, razon_no_editable, subir_version
+from .imagenes import FirmadorOpcional
 from .vehiculos import CatalogoOpcional
 
 router = APIRouter(tags=["emparejamiento"])
@@ -43,21 +43,7 @@ def obtener_catalogo_maestro() -> CatalogoMaestro | None:
     return _catalogo()
 
 
-@lru_cache
-def _fotos() -> FotosMinio | None:
-    try:
-        return FotosMinio(config())
-    except RuntimeError:
-        return None
-
-
-def obtener_firmador() -> FotosMinio | None:
-    """Firma URLs de diagramas guardados en MinIO (rlt-diagramas). None sin MINIO_*."""
-    return _fotos()
-
-
 Maestro = Annotated[CatalogoMaestro | None, Depends(obtener_catalogo_maestro)]
-Firmador = Annotated[FotosMinio | None, Depends(obtener_firmador)]
 
 
 def requerir(m: CatalogoMaestro | None) -> CatalogoMaestro:
@@ -335,8 +321,8 @@ def _vehiculos_texto(v: Vehiculos | None, d: DetalleParte) -> list[str]:
 
 @router.get("/articulos/{item_code}/emparejamiento/{parte_id}", response_model=Comparacion,
             summary="Comparación lado a lado del artículo con una parte del catálogo maestro")
-def comparar_parte(item_code: str, parte_id: int, _: UsuarioActual, c: Conexion, m: Maestro, v: CatalogoOpcional, firmador: Firmador,
-                   tolerancia: Tolerancia = 10) -> Comparacion:
+def comparar_parte(item_code: str, parte_id: int, _: UsuarioActual, c: Conexion, m: Maestro, v: CatalogoOpcional,
+                   firmador: FirmadorOpcional, tolerancia: Tolerancia = 10) -> Comparacion:
     d = requerir(m).detalle(parte_id)
     if d is None:
         raise Problema(404, "La parte no existe en el catálogo maestro")

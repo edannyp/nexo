@@ -40,6 +40,9 @@ class Config(BaseSettings):
     minio_secret_key: str | None = Field(None, validation_alias="MINIO_SECRET_KEY")
     minio_bucket: str = Field("rlt-dru", validation_alias="MINIO_BUCKET")
     minio_secure: bool = Field(True, validation_alias="MINIO_SECURE")
+    # Llave de escritura acotada a imagenes_inventario/ (ADR 0013). Sin ella, la APP no sube fotos (la de arriba es de lectura).
+    minio_fotos_access_key: str | None = Field(None, validation_alias="MINIO_FOTOS_ACCESS_KEY")
+    minio_fotos_secret_key: str | None = Field(None, validation_alias="MINIO_FOTOS_SECRET_KEY")
     # AutoCare (VCdb, solo lectura) y MercadoExterno (vehículos fuera de AutoCare): selector de vehículos de las aplicaciones
     autocare_host: str | None = Field(None, validation_alias="AUTOCARE_HOST")
     autocare_port: int = Field(5432, validation_alias="AUTOCARE_PORT")

@@ -23,7 +23,8 @@ from nexo_api.adapters.consolidacion import (
 from nexo_api.auth.dependencias import cargar_usuario, usuario_actual
 from nexo_api.core.bd import obtener_motor
 from nexo_api.main import crear_app
-from nexo_api.modules.emparejamiento import obtener_catalogo_maestro, obtener_firmador
+from nexo_api.modules.emparejamiento import obtener_catalogo_maestro
+from nexo_api.modules.imagenes import obtener_firmador
 from nexo_api.modules.vehiculos import obtener_vehiculos
 
 from .apoyo import articulo, cargar, crear_usuario
