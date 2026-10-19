@@ -40,6 +40,14 @@
   `POST /articulos/{item_code}/partes` `{ version, parte_id, principal, traer_sugerencias }` vincula (la primera queda principal; trae
   atributos y aplicaciones como sugerencias sin pisar lo que ya hay); `POST …/partes/principal` y `POST …/partes/quitar`
   `{ version, parte_id }` (quitar borra sus sugerencias sin confirmar). Parte fusionada, descartada o de otro tipo → `422`.
+- **Fotos** (ADR 0013): `GET /articulos/{item_code}/fotos` (propias con URL firmada y estado de validación, y las del catálogo
+  maestro por URL); `POST` multipart `archivos` (rol `FOTOS` o `ADMINISTRADOR`; JPG/PNG/WebP → WebP, lado mayor ≤ 2400 px, con la
+  orientación de la cámara; numeración `{ItemCode}_{n}` que continúa; todo se valida antes de subir nada); `PUT …/fotos/orden`
+  `{ ids }`; `GET /fotos/pendientes` (activos sin foto propia, primero clase de venta A). No requiere reservar el artículo.
+- **Verificación** (supervisor o administrador; ADR 0012): `GET /verificaciones?origen=` (abiertas del filtro global, con la foto
+  nueva firmada y conteo por origen), `POST /verificaciones/{id}/resolucion` `{ resultado: CONFORME | CON_HALLAZGO, nota }` (`204`;
+  la nota es obligatoria con hallazgo), `POST /verificaciones` `{ item_code, nota }` (manual, solo validados) y
+  `POST /verificaciones/muestreo` `{ cantidad }` (administrador).
 - **Bases externas** (AutoCare, MercadoExterno, Consolidación): si no están configuradas o no responden, `503`; las pestañas siguen
   mostrando lo que vive en Nexo.
 - **Autenticación** (ADR 0015, implementada en `apps/api/src/nexo_api/auth/`): `POST /sesion` (entrar), `GET /sesion` (usuario,

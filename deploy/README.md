@@ -48,12 +48,19 @@ En el servidor, con `cron` (o el programador que se use), desde la carpeta del r
 ```bash
 # Ventas de apoyo desde ClickHouse, a diario (ADR 0022)
 0 6 * * *  cd /ruta/a/nexo && docker compose exec -T api python -m nexo_api.cli actualizar-ventas
+# Partes emparejadas que se fusionaron o descartaron en Consolidación → verificaciones CAMBIO_CATALOGO (ADR 0012)
+30 6 * * * cd /ruta/a/nexo && docker compose exec -T api python -m nexo_api.cli revisar-catalogo
 ```
 Una sola vez (repetible sin duplicar), la importación inicial de las fotos que ya están en MinIO (ADR 0013):
 ```bash
 docker compose exec api python -m nexo_api.cli importar-fotos
 ```
-Requieren `CLICKHOUSE_*` y `MINIO_*` (con `MINIO_SECURE=false` para el MinIO interno) en el `.env`.
+Requieren `CLICKHOUSE_*`, `MINIO_*` (con `MINIO_SECURE=false` para el MinIO interno) y `CONSOLIDACION_*` en el `.env`.
+
+## Fotos propias (pantalla Fotos)
+La subida usa una llave de MinIO **aparte**, con escritura limitada a `rlt-dru/imagenes_inventario/` (ADR 0013):
+`MINIO_FOTOS_ACCESS_KEY` y `MINIO_FOTOS_SECRET_KEY`. Sin ella, la APP muestra las fotos pero no permite subir. El encargado de
+fotos necesita un usuario con rol `FOTOS`.
 
 ## Catálogo de vehículos (pestaña Aplicaciones)
 La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y `MERCADO_EXTERNO_*` en el `.env` (el usuario de

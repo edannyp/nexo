@@ -314,7 +314,7 @@ Datos de apoyo de ClickHouse (volumen de venta), leídos por adaptador. Dos nive
 | Aplicaciones | `GET/POST/DELETE /articulos/{id}/aplicaciones` · `GET /vehiculos?anio=&marca=&modelo=` · `POST /vehiculos-externos` |
 | Emparejamiento | `GET /articulos/{id}/emparejamiento` (vinculadas + candidatos) · `GET /articulos/{id}/emparejamiento/{parte}` (comparación) · `GET /catalogo/partes` · `POST /articulos/{id}/partes` (+ `/principal`, `/quitar`) |
 | Equivalencia | `PUT /articulos/{id}/codigo-equivalente` · `POST /articulos/{id}/equivalencias` · `POST /articulos/{id}/heredar` |
-| Fotos | `POST /articulos/{id}/fotos` · `GET /fotos/pendientes` |
+| Fotos | `GET/POST /articulos/{id}/fotos` · `PUT /articulos/{id}/fotos/orden` · `GET /fotos/pendientes` |
 | Verificación | `GET /verificaciones` · `POST /verificaciones/{id}/resolucion` · `POST /verificaciones/muestreo` |
 | Calidad SAP | `GET /hallazgos-sap` · `GET /hallazgos-sap.xlsx` |
 | Ventas | `GET /articulos/{id}/indicadores-venta` · `GET /ventas/analisis` (permiso `VER_ANALISIS_VENTAS`) |

@@ -59,3 +59,8 @@ Revisión periódica de artículos ya validados, en una **cola de tareas** apart
 Resultados posibles:
 - **Conforme**: se cierra la tarea; si era `NUEVA_FOTO`, la foto queda validada y el artículo no cambia de estado.
 - **Con hallazgo**: el artículo vuelve a `PENDIENTE` (motivo `VERIFICACION`) con la nota del hallazgo.
+
+**Implementado (paso 8):** `NUEVA_FOTO` la crea la base al registrar una foto propia de un artículo validado; `MUESTREO` lo genera
+el administrador desde la pantalla; `MANUAL` solo para artículos `VALIDADO`/`SINCRONIZADO` (lo que está en proceso se revisa al
+validarlo); `CAMBIO_CATALOGO` lo crea la tarea diaria `revisar-catalogo` cuando la parte emparejada se fusionó, se descartó o ya no
+existe. Pendiente: detectar "datos nuevos" de una parte que sigue activa.
