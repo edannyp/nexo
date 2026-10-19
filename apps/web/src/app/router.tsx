@@ -6,8 +6,10 @@ import { Usuarios } from '@/features/admin/Usuarios';
 import { Articulo } from '@/features/articulo/Articulo';
 import { CambiarContrasena } from '@/features/auth/CambiarContrasena';
 import { CalidadSap } from '@/features/calidad-sap/CalidadSap';
+import { Catalogo } from '@/features/catalogo/Catalogo';
 import { Entrar } from '@/features/auth/Entrar';
 import { Explorar } from '@/features/explorar/Explorar';
+import { Fabricados } from '@/features/fabricados/Fabricados';
 import { PantallaFotos } from '@/features/fotos/PantallaFotos';
 import { busquedaExplorar } from '@/features/explorar/filtros';
 import { EnConstruccion } from '@/features/pendiente/EnConstruccion';
@@ -75,6 +77,8 @@ const PANTALLAS: Record<string, () => ReactNode> = {
   '/validar': () => <Bandeja bandeja="supervisor" />,
   '/verificacion': () => <Verificacion />,
   '/fotos': () => <PantallaFotos />,
+  '/fabricados': () => <Fabricados />,
+  '/catalogo': () => <Catalogo />,
 };
 
 // Parámetros de búsqueda propios de algunas pantallas (además del filtro global de la raíz)
@@ -95,8 +99,13 @@ const secciones = SECCIONES.map((s) =>
 const articulo = createRoute({
   getParentRoute: () => app,
   path: '/articulos/$itemCode',
-  validateSearch: (s: Record<string, unknown>): { bandeja?: 'operador' | 'supervisor' } =>
-    s.bandeja === 'operador' || s.bandeja === 'supervisor' ? { bandeja: s.bandeja } : {},
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { bandeja?: 'operador' | 'supervisor'; pestana?: string; parte?: number } => ({
+    ...(s.bandeja === 'operador' || s.bandeja === 'supervisor' ? { bandeja: s.bandeja } : {}),
+    ...(typeof s.pestana === 'string' ? { pestana: s.pestana } : {}),
+    ...(Number(s.parte) > 0 ? { parte: Number(s.parte) } : {}),
+  }),
   component: Articulo,
 });
 

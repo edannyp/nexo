@@ -14,7 +14,7 @@ import {
 } from '@nexo/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { ArrowLeft, Construction, Lock, LockOpen, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Lock, LockOpen, TriangleAlert } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
@@ -27,6 +27,7 @@ import { Aviso, Boton, Dialogo } from '@/shared/ui';
 
 import { Aplicaciones } from './Aplicaciones';
 import { Emparejamiento } from './Emparejamiento';
+import { Equivalencia } from './Equivalencia';
 import { Ficha } from './Ficha';
 import { FotosDelArticulo } from '@/features/fotos/FotosDelArticulo';
 
@@ -35,7 +36,7 @@ const PESTANAS = [
   { id: 'ficha', etiqueta: 'Ficha' },
   { id: 'aplicaciones', etiqueta: 'Aplicaciones' },
   { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas' },
-  { id: 'equivalencia', etiqueta: 'Equivalencia', paso: 6, soloFabricado: true },
+  { id: 'equivalencia', etiqueta: 'Equivalencia', soloFabricado: true },
   { id: 'fotos', etiqueta: 'Fotos' },
   { id: 'sap', etiqueta: 'Datos SAP' },
   { id: 'historial', etiqueta: 'Historial' },
@@ -211,7 +212,15 @@ function Historial({ itemCode }: { itemCode: string }) {
 /** Espacio de trabajo del artículo (propuesta UX §6.4). En este paso: encabezado, flujo, datos SAP e historial. */
 export function Articulo() {
   const { itemCode } = useParams({ strict: false }) as { itemCode: string };
-  const { bandeja } = useSearch({ strict: false }) as { bandeja?: Bandeja };
+  const {
+    bandeja,
+    pestana: pestanaUrl,
+    parte: parteUrl,
+  } = useSearch({ strict: false }) as {
+    bandeja?: Bandeja;
+    pestana?: string;
+    parte?: number;
+  };
   const { filtro } = useFiltro();
   const navegar = useNavigate();
   const consultas = useQueryClient();
@@ -220,7 +229,9 @@ export function Articulo() {
   const clave = getObtenerArticuloQueryKey(itemCode);
   const fijar = (d: ArticuloDetalle) => consultas.setQueryData(clave, d);
 
-  const [pestana, setPestanaDirecta] = useState<Pestana>('ficha');
+  const [pestana, setPestanaDirecta] = useState<Pestana>(
+    PESTANAS.some((p) => p.id === pestanaUrl) ? (pestanaUrl as Pestana) : 'ficha',
+  );
   const [pendientesFicha, setPendientesFicha] = useState(0);
   // Cambiar de pestaña desmonta la ficha: si hay cambios sin guardar, se pregunta antes
   const setPestana = (p: Pestana) => {
@@ -496,18 +507,11 @@ export function Articulo() {
       <div role="tabpanel">
         {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
         {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
-        {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} />}
+        {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} parteInicial={parteUrl} />}
+        {pestana === 'equivalencia' && <Equivalencia itemCode={itemCode} />}
         {pestana === 'fotos' && <FotosDelArticulo itemCode={itemCode} />}
         {pestana === 'sap' && <DatosSap a={a} />}
         {pestana === 'historial' && <Historial itemCode={itemCode} />}
-        {PESTANAS.filter((p) => 'paso' in p && p.id === pestana).map((p) => (
-          <div key={p.id} className="py-10 text-center text-suave">
-            <Construction className="mx-auto size-8" aria-hidden />
-            <p className="mt-2">
-              «{p.etiqueta}» llega en el paso {'paso' in p ? p.paso : ''} de la ruta de construcción.
-            </p>
-          </div>
-        ))}
       </div>
 
       {/* La key reinicia el motivo escrito cada vez que se abre para otra acción */}

@@ -251,11 +251,11 @@ function Comparar({
 }
 
 /** Pestaña Emparejamiento y diagramas (propuesta UX §6.4, ADR 0011). */
-export function Emparejamiento({ itemCode }: { itemCode: string }) {
+export function Emparejamiento({ itemCode, parteInicial }: { itemCode: string; parteInicial?: number }) {
   const [tolerancia, setTolerancia] = useState(10);
   const [texto, setTexto] = useState('');
   const [buscado, setBuscado] = useState('');
-  const [elegida, setElegida] = useState<number | null>(null);
+  const [elegida, setElegida] = useState<number | null>(parteInicial ?? null);
   const [hecho, setHecho] = useState<string>();
   const q = useObtenerEmparejamiento(itemCode, { tolerancia });
   const e = q.data;
