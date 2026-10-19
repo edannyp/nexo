@@ -4,7 +4,7 @@
 y nombres de VCdb (ADR 0014). Ejemplos: modelos de Changan vendidos en Guatemala que VCdb no tiene, Great Wall, plantas Generac.
 
 ## Regla principal
-**Nadie inserta directo.** Se usan dos funciones, que primero buscan en AutoCare y en MercadoExterno, y solo insertan lo que falta:
+**Nadie inserta directo.** Se usan funciones, que primero buscan en AutoCare y en MercadoExterno, y solo insertan lo que falta:
 
 ```sql
 -- Vehículo: un base_vehicle_id por año del rango
@@ -20,10 +20,21 @@ select * from vcdb.fn_registrar_vehiculo(
 select * from vcdb.fn_registrar_equipo('Generac', 'SD150', 'IA_WEB', 'ia-busqueda-web', '["https://..."]', 0.8);
 ```
 
+```sql
+-- Configuración (V003): submodelo + motor de un vehículo base, la aplicación que usa Nexo
+select * from vcdb.fn_registrar_configuracion(
+  p_base_vehicle_id => 1000000001, p_submodelo => 'Base', p_litros => 1.4, p_cilindros => 4::smallint,
+  p_combustible => 'GAS', p_origen => 'APP', p_creado_por => 'nexo:beto.op',
+  p_designacion => 'JL473ZQ', p_evidencia => '[{"fuente": "https://..."}]');
+--  sub_model_id | engine_config_id | nueva
+```
+
 - Si el vehículo ya está en AutoCare, devuelve **su** ID con `catalogo = 'AUTOCARE'` y no inserta nada.
 - Si ya existe aquí (aunque se escriba distinto: `cs-35 plus`), devuelve el mismo ID con `nuevo = false`.
 - Si la marca existe en AutoCare (Changan), la reutiliza y solo crea el modelo o los años que faltan.
 - Es segura ante llamadas simultáneas: índices únicos y `on conflict`.
+- La configuración reutiliza el submodelo de AutoCare si existe por nombre (`ref.sub_model`) y el motor si ya hay uno igual; exige
+  litros o código de motor, y que el vehículo base exista (AutoCare o propio). Queda en `vcdb.configuracion`, sin `DELETE`.
 
 ## Diagrama
 
@@ -67,6 +78,7 @@ y `estado` (`ACTIVO`, `REEMPLAZADO` con `reemplazado_por_id` cuando AutoCare lo 
 
 ## Lo que la base rechaza
 - Registrar sin evidencia, con rango de años inválido o con una región que no existe en VCdb.
+- Una configuración sin submodelo, sin litros ni código de motor, o con un vehículo base que no existe.
 - Insertar directo una marca, modelo, base vehicle, fabricante o equipo que ya existe en AutoCare.
 - `DELETE` de cualquier tabla.
 

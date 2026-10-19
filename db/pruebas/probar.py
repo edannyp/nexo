@@ -162,6 +162,22 @@ def probar_mercado(dsn: str) -> None:
                 None, "ya existe en AutoCare")
         rechaza(c, "DELETE", "delete from vcdb.base_vehicle", None, "no se borra")
 
+        print("  -- configuraciones (vehículo base + submodelo + motor):")
+        g = ("select * from vcdb.fn_registrar_configuracion(%s::int, %s::text, %s::numeric, %s::smallint, %s::text, "
+             "'APP'::vcdb.origen, 'op'::text, %s::text, %s::text)")
+        bv = c.execute("select base_vehicle_id from vcdb.v_base_vehicle where make_name = 'Changan' and base_vehicle_id >= 1000000000 "
+                       "order by base_vehicle_id limit 1").fetchone()[0]
+        r1 = c.execute(g, (bv, "Comfort", 1.6, 4, "gas", None, "JL478QEE")).fetchone()
+        check(r1[0] >= 1_000_000_000 and r1[1] >= 1_000_000_000 and r1[2], f"configuración nueva en vehículo propio {r1}")
+        r2 = c.execute(g, (bv, "  comfort ", 1.6, 4, "GAS", None, "jl478qee")).fetchone()
+        check(r2 == (r1[0], r1[1], False), "repetir (mayúsculas, espacios) no duplica submodelo, motor ni configuración")
+        r3 = c.execute(g, (802010, "Base", 2.4, 4, "GAS", None, None)).fetchone()
+        check(r3[2], f"configuración sobre un vehículo de AutoCare (sin tocar AutoCare) {r3}")
+        rechaza(c, "configuración sin submodelo", g, (bv, " ", 1.6, 4, "GAS", None, None), "submodelo es obligatorio")
+        rechaza(c, "configuración sin motor", g, (bv, "Base", None, None, "GAS", None, None), "motor necesita")
+        rechaza(c, "configuración de un vehículo inexistente", g, (123, "Base", 1.6, 4, "GAS", None, None), "no existe")
+        rechaza(c, "DELETE de una configuración", "delete from vcdb.configuracion", None, "no se borra")
+
 
 def main() -> None:
     p = argparse.ArgumentParser()
