@@ -2388,6 +2388,448 @@
           }
         }
       }
+    },
+    "/api/v1/articulos/{item_code}/fotos": {
+      "get": {
+        "tags": [
+          "fotos"
+        ],
+        "summary": "Fotos propias (MinIO) y del catálogo (URL)",
+        "operationId": "listar_fotos",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FotosArticulo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "fotos"
+        ],
+        "summary": "Subir fotos propias (se convierten a WebP con la convención de MinIO)",
+        "operationId": "subir_fotos",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_subir_fotos"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FotosArticulo"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol FOTOS o ADMINISTRADOR"
+          },
+          "409": {
+            "description": "Artículo inactivo"
+          },
+          "422": {
+            "description": "No es una imagen"
+          },
+          "503": {
+            "description": "Sin llave de escritura de MinIO"
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/fotos/orden": {
+      "put": {
+        "tags": [
+          "fotos"
+        ],
+        "summary": "Ordenar las fotos propias",
+        "operationId": "ordenar_fotos",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdenFotos"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FotosArticulo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fotos/pendientes": {
+      "get": {
+        "tags": [
+          "fotos"
+        ],
+        "summary": "Artículos activos sin foto propia, primero los que más venden",
+        "operationId": "listar_sin_foto",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SinFoto"
+                  },
+                  "title": "Response Listar Sin Foto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verificaciones": {
+      "get": {
+        "tags": [
+          "verificacion"
+        ],
+        "summary": "Tareas de verificación abiertas del tipo de artículo elegido",
+        "operationId": "listar_verificaciones",
+        "parameters": [
+          {
+            "name": "origen",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OrigenTarea"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Origen"
+            }
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColaVerificacion"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "verificacion"
+        ],
+        "summary": "Crear una verificación manual de un artículo",
+        "operationId": "crear_verificacion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaVerificacion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Creadas"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya tiene una verificación manual abierta o no está validado"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verificaciones/{tarea_id}/resolucion": {
+      "post": {
+        "tags": [
+          "verificacion"
+        ],
+        "summary": "Resolver: conforme o con hallazgo (regresa a Pendiente)",
+        "operationId": "resolver_verificacion",
+        "parameters": [
+          {
+            "name": "tarea_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Tarea Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Resolucion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Ya resuelta o reservado por otro"
+          },
+          "422": {
+            "description": "Falta la nota"
+          }
+        }
+      }
+    },
+    "/api/v1/verificaciones/muestreo": {
+      "post": {
+        "tags": [
+          "verificacion"
+        ],
+        "summary": "Generar un muestreo de artículos validados al azar (administrador)",
+        "operationId": "generar_muestreo",
+        "parameters": [
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Muestreo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Creadas"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3365,6 +3807,24 @@
         ],
         "title": "Bandeja"
       },
+      "Body_subir_fotos": {
+        "properties": {
+          "archivos": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Archivos",
+            "description": "JPG, PNG o WebP"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archivos"
+        ],
+        "title": "Body_subir_fotos"
+      },
       "Cambio": {
         "properties": {
           "valor_num": {
@@ -3656,6 +4116,30 @@
         ],
         "title": "Coincidencia"
       },
+      "ColaVerificacion": {
+        "properties": {
+          "tareas": {
+            "items": {
+              "$ref": "#/components/schemas/TareaVerificacion"
+            },
+            "type": "array",
+            "title": "Tareas"
+          },
+          "por_origen": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Por Origen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tareas",
+          "por_origen"
+        ],
+        "title": "ColaVerificacion"
+      },
       "Comparacion": {
         "properties": {
           "parte": {
@@ -3772,6 +4256,19 @@
         ],
         "title": "ConfiguracionAgrupada",
         "description": "Un submodelo + motor (como lo lee el operador) y los años en que existe; cada año lleva su propio motor de VCdb."
+      },
+      "Creadas": {
+        "properties": {
+          "creadas": {
+            "type": "integer",
+            "title": "Creadas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "creadas"
+        ],
+        "title": "Creadas"
       },
       "Credenciales": {
         "properties": {
@@ -4067,6 +4564,137 @@
           "diferencia"
         ],
         "title": "FilaComparacion"
+      },
+      "FotoPropia": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "orden": {
+            "type": "integer",
+            "title": "Orden"
+          },
+          "subida_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subida Por"
+          },
+          "subida_en": {
+            "type": "string",
+            "title": "Subida En"
+          },
+          "validada": {
+            "type": "boolean",
+            "title": "Validada"
+          },
+          "validada_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validada Por"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "orden",
+          "subida_por",
+          "subida_en",
+          "validada",
+          "validada_por"
+        ],
+        "title": "FotoPropia"
+      },
+      "FotoProveedor": {
+        "properties": {
+          "parte_id": {
+            "type": "integer",
+            "title": "Parte Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parte_id",
+          "tipo",
+          "url"
+        ],
+        "title": "FotoProveedor"
+      },
+      "FotosArticulo": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "puede_subir": {
+            "type": "boolean",
+            "title": "Puede Subir"
+          },
+          "subida_disponible": {
+            "type": "boolean",
+            "title": "Subida Disponible"
+          },
+          "propias": {
+            "items": {
+              "$ref": "#/components/schemas/FotoPropia"
+            },
+            "type": "array",
+            "title": "Propias"
+          },
+          "proveedor": {
+            "items": {
+              "$ref": "#/components/schemas/FotoProveedor"
+            },
+            "type": "array",
+            "title": "Proveedor"
+          },
+          "subidas": {
+            "type": "integer",
+            "title": "Subidas",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "puede_subir",
+          "subida_disponible",
+          "propias",
+          "proveedor"
+        ],
+        "title": "FotosArticulo"
       },
       "FuenteCatalogo": {
         "properties": {
@@ -4412,6 +5040,19 @@
         ],
         "title": "MedidasPanal"
       },
+      "Muestreo": {
+        "properties": {
+          "cantidad": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Cantidad",
+            "default": 10
+          }
+        },
+        "type": "object",
+        "title": "Muestreo"
+      },
       "NuevaAplicacion": {
         "properties": {
           "base_vehicle_id": {
@@ -4434,6 +5075,29 @@
           "engine_config_id"
         ],
         "title": "NuevaAplicacion"
+      },
+      "NuevaVerificacion": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 3,
+            "title": "Item Code"
+          },
+          "nota": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Nota",
+            "description": "Qué hay que revisar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "nota"
+        ],
+        "title": "NuevaVerificacion"
       },
       "NuevaVista": {
         "properties": {
@@ -4604,6 +5268,34 @@
           "faltantes"
         ],
         "title": "Orden"
+      },
+      "OrdenFotos": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "OrdenFotos"
+      },
+      "OrigenTarea": {
+        "type": "string",
+        "enum": [
+          "NUEVA_FOTO",
+          "MUESTREO",
+          "CAMBIO_CATALOGO",
+          "MANUAL"
+        ],
+        "title": "OrigenTarea"
       },
       "PaginaArticulos": {
         "properties": {
@@ -5097,6 +5789,30 @@
         ],
         "title": "ReservaRenovada"
       },
+      "Resolucion": {
+        "properties": {
+          "resultado": {
+            "$ref": "#/components/schemas/ResultadoVerificacion"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resultado"
+        ],
+        "title": "Resolucion"
+      },
       "Resultado": {
         "properties": {
           "item_code": {
@@ -5182,6 +5898,14 @@
           "panal_ancho_mm"
         ],
         "title": "Resultado"
+      },
+      "ResultadoVerificacion": {
+        "type": "string",
+        "enum": [
+          "CONFORME",
+          "CON_HALLAZGO"
+        ],
+        "title": "ResultadoVerificacion"
       },
       "Resultados": {
         "properties": {
@@ -5321,6 +6045,48 @@
         ],
         "title": "Siguiente"
       },
+      "SinFoto": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "clase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clase"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "descripcion",
+          "estado",
+          "clase"
+        ],
+        "title": "SinFoto"
+      },
       "SugerenciaSap": {
         "properties": {
           "marca": {
@@ -5396,6 +6162,78 @@
         ],
         "title": "SugerenciaSap",
         "description": "Lo que SAP dice del vehículo, y su traducción al catálogo cuando se encuentra."
+      },
+      "TareaVerificacion": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "origen": {
+            "$ref": "#/components/schemas/OrigenTarea"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creada En"
+          },
+          "detalle": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detalle"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado_articulo": {
+            "type": "string",
+            "title": "Estado Articulo"
+          },
+          "medidas": {
+            "$ref": "#/components/schemas/MedidasPanal"
+          },
+          "foto_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foto Url"
+          },
+          "fotos_validadas": {
+            "type": "integer",
+            "title": "Fotos Validadas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "origen",
+          "creada_en",
+          "detalle",
+          "item_code",
+          "descripcion",
+          "estado_articulo",
+          "medidas",
+          "foto_url",
+          "fotos_validadas"
+        ],
+        "title": "TareaVerificacion"
       },
       "TipoCampo": {
         "type": "string",

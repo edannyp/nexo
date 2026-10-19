@@ -272,6 +272,11 @@ export const Bandeja = {
   supervisor: 'supervisor',
 } as const;
 
+export interface BodySubirFotos {
+  /** JPG, PNG o WebP */
+  archivos: (Blob | File)[];
+}
+
 export interface Cambio {
   valor_num?: number | string | null;
   uom_code?: string | null;
@@ -384,6 +389,38 @@ export const Coincidencia = {
   descripcion: 'descripcion',
 } as const;
 
+export type ColaVerificacionPorOrigen = {[key: string]: number};
+
+export type OrigenTarea = typeof OrigenTarea[keyof typeof OrigenTarea];
+
+
+export const OrigenTarea = {
+  NUEVA_FOTO: 'NUEVA_FOTO',
+  MUESTREO: 'MUESTREO',
+  CAMBIO_CATALOGO: 'CAMBIO_CATALOGO',
+  MANUAL: 'MANUAL',
+} as const;
+
+export type TareaVerificacionDetalle = { [key: string]: unknown };
+
+export interface TareaVerificacion {
+  id: number;
+  origen: OrigenTarea;
+  creada_en: string;
+  detalle: TareaVerificacionDetalle;
+  item_code: string;
+  descripcion: string | null;
+  estado_articulo: string;
+  medidas: MedidasPanal;
+  foto_url: string | null;
+  fotos_validadas: number;
+}
+
+export interface ColaVerificacion {
+  tareas: TareaVerificacion[];
+  por_origen: ColaVerificacionPorOrigen;
+}
+
 export interface FilaComparacion {
   paid: number;
   etiqueta: string;
@@ -440,6 +477,10 @@ export interface ConfiguracionAgrupada {
   anios: AnioConfiguracion[];
   completa: boolean;
   catalogo: string;
+}
+
+export interface Creadas {
+  creadas: number;
 }
 
 export interface Credenciales {
@@ -502,6 +543,31 @@ export interface Ficha {
   atributos: AtributoFicha[];
 }
 
+export interface FotoPropia {
+  id: number;
+  url: string | null;
+  orden: number;
+  subida_por: string | null;
+  subida_en: string;
+  validada: boolean;
+  validada_por: string | null;
+}
+
+export interface FotoProveedor {
+  parte_id: number;
+  tipo: string;
+  url: string;
+}
+
+export interface FotosArticulo {
+  item_code: string;
+  puede_subir: boolean;
+  subida_disponible: boolean;
+  propias: FotoPropia[];
+  proveedor: FotoProveedor[];
+  subidas?: number;
+}
+
 export interface Grupo {
   tipo: string;
   descripcion: string;
@@ -551,6 +617,28 @@ export interface Lista {
   migracion: string;
 }
 
+export interface Muestreo {
+  /**
+     * @minimum 1
+     * @maximum 50
+     */
+  cantidad?: number;
+}
+
+export interface NuevaVerificacion {
+  /**
+     * @minLength 3
+     * @maxLength 30
+     */
+  item_code: string;
+  /**
+     * Qué hay que revisar
+     * @minLength 3
+     * @maxLength 1000
+     */
+  nota: string;
+}
+
 /**
  * Filtros, orden y columnas, tal como los usa la consola
  */
@@ -597,6 +685,14 @@ export const Orden = {
   reciente: 'reciente',
   faltantes: 'faltantes',
 } as const;
+
+export interface OrdenFotos {
+  /**
+     * @minItems 1
+     * @maxItems 100
+     */
+  ids: number[];
+}
 
 export interface PaginaArticulos {
   items: ArticuloFila[];
@@ -695,6 +791,19 @@ export interface ReservaRenovada {
   hasta: string;
 }
 
+export type ResultadoVerificacion = typeof ResultadoVerificacion[keyof typeof ResultadoVerificacion];
+
+
+export const ResultadoVerificacion = {
+  CONFORME: 'CONFORME',
+  CON_HALLAZGO: 'CON_HALLAZGO',
+} as const;
+
+export interface Resolucion {
+  resultado: ResultadoVerificacion;
+  nota?: string | null;
+}
+
 export interface Resultado {
   item_code: string;
   descripcion: string | null;
@@ -732,6 +841,13 @@ export interface SesionInfo {
 export interface Siguiente {
   /** null si la bandeja está vacía */
   articulo: ArticuloDetalle | null;
+}
+
+export interface SinFoto {
+  item_code: string;
+  descripcion: string | null;
+  estado: string;
+  clase: string | null;
 }
 
 export interface Transicion {
@@ -1051,6 +1167,48 @@ export type DesvincularParteParams = {
  * @maximum 50
  */
 tolerancia?: number;
+};
+
+export type ListarSinFotoParams = {
+/**
+ * @minimum 1
+ * @maximum 200
+ */
+limite?: number;
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type ListarVerificacionesParams = {
+origen?: OrigenTarea | null;
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
+};
+
+export type GenerarMuestreoParams = {
+/**
+ * Código SAP de la categoría
+ * @pattern ^\d{2}$
+ */
+cat?: string;
+/**
+ * Línea
+ */
+linea?: Linea;
 };
 
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -5552,4 +5710,760 @@ export const useDesvincularParte = <TError = ErrorType<HTTPValidationError>,
         TContext
       > => {
       return useMutation(getDesvincularParteMutationOptions(options), queryClient);
+    }
+
+export const getListarFotosUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/fotos`
+}
+
+/**
+ * @summary Fotos propias (MinIO) y del catálogo (URL)
+ */
+export const listarFotos = async (itemCode: string, options?: Parameters<typeof nexoFetch>[1]): Promise<FotosArticulo> => {
+
+  return nexoFetch<FotosArticulo>(getListarFotosUrl(itemCode),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarFotosQueryKey = (itemCode: string,) => {
+    return [
+    `/api/v1/articulos/${itemCode}/fotos`
+    ] as const;
+    }
+
+
+export const getListarFotosQueryOptions = <TData = Awaited<ReturnType<typeof listarFotos>>, TError = ErrorType<HTTPValidationError>>(itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFotos>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarFotosQueryKey(itemCode);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarFotos>>> = ({ signal }) => listarFotos(itemCode, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemCode !== null && itemCode !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarFotos>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarFotosQueryResult = NonNullable<Awaited<ReturnType<typeof listarFotos>>>
+export type ListarFotosQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarFotos<TData = Awaited<ReturnType<typeof listarFotos>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFotos>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarFotos>>,
+          TError,
+          Awaited<ReturnType<typeof listarFotos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarFotos<TData = Awaited<ReturnType<typeof listarFotos>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFotos>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarFotos>>,
+          TError,
+          Awaited<ReturnType<typeof listarFotos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarFotos<TData = Awaited<ReturnType<typeof listarFotos>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFotos>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Fotos propias (MinIO) y del catálogo (URL)
+ */
+
+export function useListarFotos<TData = Awaited<ReturnType<typeof listarFotos>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarFotos>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarFotosQueryOptions(itemCode,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubirFotosUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/fotos`
+}
+
+/**
+ * @summary Subir fotos propias (se convierten a WebP con la convención de MinIO)
+ */
+export const subirFotos = async (itemCode: string,
+    bodySubirFotos: BodySubirFotos, options?: Parameters<typeof nexoFetch>[1]): Promise<FotosArticulo> => {
+    const formData = new FormData();
+bodySubirFotos.archivos.forEach(value => formData.append(`archivos`, value));
+
+  return nexoFetch<FotosArticulo>(getSubirFotosUrl(itemCode),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getSubirFotosMutationKey = () => ['subirFotos'] as const;
+
+export const getSubirFotosMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subirFotos>>, TError,SubirFotosMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof subirFotos>>, TError,SubirFotosMutationVariables, TContext> => {
+
+const mutationKey = getSubirFotosMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof subirFotos>>, SubirFotosMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  subirFotos(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubirFotosMutationResult = NonNullable<Awaited<ReturnType<typeof subirFotos>>>
+    export type SubirFotosMutationBody = BodySubirFotos
+    export type SubirFotosMutationError = ErrorType<void>
+    export type SubirFotosMutationVariables = {itemCode: string;data: BodySubirFotos}
+
+    /**
+ * @summary Subir fotos propias (se convierten a WebP con la convención de MinIO)
+ */
+export const useSubirFotos = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subirFotos>>, TError,SubirFotosMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof subirFotos>>,
+        TError,
+        SubirFotosMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubirFotosMutationOptions(options), queryClient);
+    }
+
+export const getOrdenarFotosUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/fotos/orden`
+}
+
+/**
+ * @summary Ordenar las fotos propias
+ */
+export const ordenarFotos = async (itemCode: string,
+    ordenFotos: OrdenFotos, options?: Parameters<typeof nexoFetch>[1]): Promise<FotosArticulo> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<FotosArticulo>(getOrdenarFotosUrl(itemCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(ordenFotos)
+  }
+);}
+
+
+
+
+
+export const getOrdenarFotosMutationKey = () => ['ordenarFotos'] as const;
+
+export const getOrdenarFotosMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordenarFotos>>, TError,OrdenarFotosMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ordenarFotos>>, TError,OrdenarFotosMutationVariables, TContext> => {
+
+const mutationKey = getOrdenarFotosMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ordenarFotos>>, OrdenarFotosMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  ordenarFotos(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrdenarFotosMutationResult = NonNullable<Awaited<ReturnType<typeof ordenarFotos>>>
+    export type OrdenarFotosMutationBody = OrdenFotos
+    export type OrdenarFotosMutationError = ErrorType<HTTPValidationError>
+    export type OrdenarFotosMutationVariables = {itemCode: string;data: OrdenFotos}
+
+    /**
+ * @summary Ordenar las fotos propias
+ */
+export const useOrdenarFotos = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordenarFotos>>, TError,OrdenarFotosMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof ordenarFotos>>,
+        TError,
+        OrdenarFotosMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrdenarFotosMutationOptions(options), queryClient);
+    }
+
+export const getListarSinFotoUrl = (params?: ListarSinFotoParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/fotos/pendientes?${stringifiedParams}` : `/api/v1/fotos/pendientes`
+}
+
+/**
+ * @summary Artículos activos sin foto propia, primero los que más venden
+ */
+export const listarSinFoto = async (params?: ListarSinFotoParams, options?: Parameters<typeof nexoFetch>[1]): Promise<SinFoto[]> => {
+
+  return nexoFetch<SinFoto[]>(getListarSinFotoUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarSinFotoQueryKey = (params?: ListarSinFotoParams,) => {
+    return [
+    `/api/v1/fotos/pendientes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarSinFotoQueryOptions = <TData = Awaited<ReturnType<typeof listarSinFoto>>, TError = ErrorType<HTTPValidationError>>(params?: ListarSinFotoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSinFoto>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarSinFotoQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarSinFoto>>> = ({ signal }) => listarSinFoto(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarSinFoto>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarSinFotoQueryResult = NonNullable<Awaited<ReturnType<typeof listarSinFoto>>>
+export type ListarSinFotoQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarSinFoto<TData = Awaited<ReturnType<typeof listarSinFoto>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  ListarSinFotoParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSinFoto>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarSinFoto>>,
+          TError,
+          Awaited<ReturnType<typeof listarSinFoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarSinFoto<TData = Awaited<ReturnType<typeof listarSinFoto>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarSinFotoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSinFoto>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarSinFoto>>,
+          TError,
+          Awaited<ReturnType<typeof listarSinFoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarSinFoto<TData = Awaited<ReturnType<typeof listarSinFoto>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarSinFotoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSinFoto>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Artículos activos sin foto propia, primero los que más venden
+ */
+
+export function useListarSinFoto<TData = Awaited<ReturnType<typeof listarSinFoto>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarSinFotoParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSinFoto>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarSinFotoQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListarVerificacionesUrl = (params?: ListarVerificacionesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/verificaciones?${stringifiedParams}` : `/api/v1/verificaciones`
+}
+
+/**
+ * @summary Tareas de verificación abiertas del tipo de artículo elegido
+ */
+export const listarVerificaciones = async (params?: ListarVerificacionesParams, options?: Parameters<typeof nexoFetch>[1]): Promise<ColaVerificacion> => {
+
+  return nexoFetch<ColaVerificacion>(getListarVerificacionesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarVerificacionesQueryKey = (params?: ListarVerificacionesParams,) => {
+    return [
+    `/api/v1/verificaciones`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListarVerificacionesQueryOptions = <TData = Awaited<ReturnType<typeof listarVerificaciones>>, TError = ErrorType<HTTPValidationError>>(params?: ListarVerificacionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarVerificaciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarVerificacionesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarVerificaciones>>> = ({ signal }) => listarVerificaciones(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarVerificaciones>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarVerificacionesQueryResult = NonNullable<Awaited<ReturnType<typeof listarVerificaciones>>>
+export type ListarVerificacionesQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListarVerificaciones<TData = Awaited<ReturnType<typeof listarVerificaciones>>, TError = ErrorType<HTTPValidationError>>(
+ params: undefined |  ListarVerificacionesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarVerificaciones>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarVerificaciones>>,
+          TError,
+          Awaited<ReturnType<typeof listarVerificaciones>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarVerificaciones<TData = Awaited<ReturnType<typeof listarVerificaciones>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarVerificacionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarVerificaciones>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarVerificaciones>>,
+          TError,
+          Awaited<ReturnType<typeof listarVerificaciones>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarVerificaciones<TData = Awaited<ReturnType<typeof listarVerificaciones>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarVerificacionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarVerificaciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Tareas de verificación abiertas del tipo de artículo elegido
+ */
+
+export function useListarVerificaciones<TData = Awaited<ReturnType<typeof listarVerificaciones>>, TError = ErrorType<HTTPValidationError>>(
+ params?: ListarVerificacionesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarVerificaciones>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarVerificacionesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCrearVerificacionUrl = () => {
+
+
+
+
+  return `/api/v1/verificaciones`
+}
+
+/**
+ * @summary Crear una verificación manual de un artículo
+ */
+export const crearVerificacion = async (nuevaVerificacion: NuevaVerificacion, options?: Parameters<typeof nexoFetch>[1]): Promise<Creadas> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Creadas>(getCrearVerificacionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nuevaVerificacion)
+  }
+);}
+
+
+
+
+
+export const getCrearVerificacionMutationKey = () => ['crearVerificacion'] as const;
+
+export const getCrearVerificacionMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crearVerificacion>>, TError,CrearVerificacionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof crearVerificacion>>, TError,CrearVerificacionMutationVariables, TContext> => {
+
+const mutationKey = getCrearVerificacionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crearVerificacion>>, CrearVerificacionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  crearVerificacion(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrearVerificacionMutationResult = NonNullable<Awaited<ReturnType<typeof crearVerificacion>>>
+    export type CrearVerificacionMutationBody = NuevaVerificacion
+    export type CrearVerificacionMutationError = ErrorType<void | HTTPValidationError>
+    export type CrearVerificacionMutationVariables = {data: NuevaVerificacion}
+
+    /**
+ * @summary Crear una verificación manual de un artículo
+ */
+export const useCrearVerificacion = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crearVerificacion>>, TError,CrearVerificacionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof crearVerificacion>>,
+        TError,
+        CrearVerificacionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrearVerificacionMutationOptions(options), queryClient);
+    }
+
+export const getResolverVerificacionUrl = (tareaId: number,) => {
+
+
+
+
+  return `/api/v1/verificaciones/${tareaId}/resolucion`
+}
+
+/**
+ * @summary Resolver: conforme o con hallazgo (regresa a Pendiente)
+ */
+export const resolverVerificacion = async (tareaId: number,
+    resolucion: Resolucion, options?: Parameters<typeof nexoFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<void>(getResolverVerificacionUrl(tareaId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resolucion)
+  }
+);}
+
+
+
+
+
+export const getResolverVerificacionMutationKey = () => ['resolverVerificacion'] as const;
+
+export const getResolverVerificacionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolverVerificacion>>, TError,ResolverVerificacionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resolverVerificacion>>, TError,ResolverVerificacionMutationVariables, TContext> => {
+
+const mutationKey = getResolverVerificacionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolverVerificacion>>, ResolverVerificacionMutationVariables> = (props) => {
+          const {tareaId,data} = props ?? {};
+
+          return  resolverVerificacion(tareaId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResolverVerificacionMutationResult = NonNullable<Awaited<ReturnType<typeof resolverVerificacion>>>
+    export type ResolverVerificacionMutationBody = Resolucion
+    export type ResolverVerificacionMutationError = ErrorType<void>
+    export type ResolverVerificacionMutationVariables = {tareaId: number;data: Resolucion}
+
+    /**
+ * @summary Resolver: conforme o con hallazgo (regresa a Pendiente)
+ */
+export const useResolverVerificacion = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolverVerificacion>>, TError,ResolverVerificacionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resolverVerificacion>>,
+        TError,
+        ResolverVerificacionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getResolverVerificacionMutationOptions(options), queryClient);
+    }
+
+export const getGenerarMuestreoUrl = (params?: GenerarMuestreoParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/verificaciones/muestreo?${stringifiedParams}` : `/api/v1/verificaciones/muestreo`
+}
+
+/**
+ * @summary Generar un muestreo de artículos validados al azar (administrador)
+ */
+export const generarMuestreo = async (muestreo: Muestreo,
+    params?: GenerarMuestreoParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Creadas> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Creadas>(getGenerarMuestreoUrl(params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(muestreo)
+  }
+);}
+
+
+
+
+
+export const getGenerarMuestreoMutationKey = () => ['generarMuestreo'] as const;
+
+export const getGenerarMuestreoMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generarMuestreo>>, TError,GenerarMuestreoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generarMuestreo>>, TError,GenerarMuestreoMutationVariables, TContext> => {
+
+const mutationKey = getGenerarMuestreoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generarMuestreo>>, GenerarMuestreoMutationVariables> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  generarMuestreo(data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerarMuestreoMutationResult = NonNullable<Awaited<ReturnType<typeof generarMuestreo>>>
+    export type GenerarMuestreoMutationBody = Muestreo
+    export type GenerarMuestreoMutationError = ErrorType<HTTPValidationError>
+    export type GenerarMuestreoMutationVariables = {data: Muestreo;params?: GenerarMuestreoParams}
+
+    /**
+ * @summary Generar un muestreo de artículos validados al azar (administrador)
+ */
+export const useGenerarMuestreo = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generarMuestreo>>, TError,GenerarMuestreoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof generarMuestreo>>,
+        TError,
+        GenerarMuestreoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGenerarMuestreoMutationOptions(options), queryClient);
     }
