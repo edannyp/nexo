@@ -8,7 +8,7 @@ from fastapi.routing import APIRoute
 from .auth import router as sesion
 from .auth import usuarios
 from .core import errores
-from .modules import calidad_sap, catalogos, panorama, preferencias, salud, ventas
+from .modules import articulos, bandejas, busqueda, calidad_sap, catalogos, panorama, preferencias, salud, ventas, vistas
 
 
 def nombre_operacion(ruta: APIRoute) -> str:
@@ -28,7 +28,8 @@ def crear_app() -> FastAPI:
     )
     errores.registrar(app)
     v1 = APIRouter(prefix="/api/v1")
-    for modulo in (salud, sesion, usuarios, preferencias, catalogos, panorama, calidad_sap, ventas):
+    for modulo in (salud, sesion, usuarios, preferencias, catalogos, panorama, calidad_sap, ventas,
+                   articulos, bandejas, busqueda, vistas):
         v1.include_router(modulo.router)
     app.include_router(v1)
     return app
