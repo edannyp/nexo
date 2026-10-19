@@ -20,6 +20,10 @@
 - **Búsqueda**: `GET /busqueda?q=` (código, código anterior, número de parte, medidas `400x518x26` con ±10 mm sin importar el orden
   de alto y largo, o palabras de la descripción en cualquier orden); `todos=true` busca fuera del filtro global.
 - **Vistas guardadas**: `GET/PUT /vistas`, `DELETE /vistas/{id}` (por usuario).
+- **Ficha** (botón Guardar): `GET /articulos/{item_code}/ficha` (atributos habilitados con el valor de SAP, el valor en Nexo, opciones
+  PIES con su traducción y si se puede editar); `PUT` con `{ version, cambios, quitar }` guarda todo junto y lo deja confirmado por el
+  usuario (aceptar lo sugerido conserva el origen `SAP`). Solo quien tiene la reserva, en Pendiente o Rechazado. Las sugerencias de
+  SAP se materializan al abrir la ficha (idempotente).
 - **Autenticación** (ADR 0015, implementada en `apps/api/src/nexo_api/auth/`): `POST /sesion` (entrar), `GET /sesion` (usuario,
   roles, permisos y token CSRF), `DELETE /sesion` (salir), `POST /sesion/password` (cambiar la propia; cierra las demás sesiones).
   Sesión en Redis con cookie `nexo_sesion` `httpOnly`, `SameSite=Lax` y `Secure` bajo HTTPS; en Redis se guarda el SHA-256 del token.

@@ -14,6 +14,7 @@
 >   indicadores relativos por tipo (`app.v_indicador_venta`: clase ABC, top %, participación, tendencia; ADR 0022).
 > - `0007_bandejas.sql`: "Siguiente" con prioridad y doble control, reservas (`fn_reservar`, `fn_renovar_reserva`,
 >   `fn_soltar_reserva`), índices trigram para la búsqueda y vistas guardadas (`app.vista_guardada`).
+> - `0008_ficha.sql`: traducción al español de los valores PIES (`meta.traduccion_valor`, auditada), decisión UX 5.
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones

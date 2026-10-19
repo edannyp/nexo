@@ -41,7 +41,7 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    ```
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
 6. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0007"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0008"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Tareas programadas
 En el servidor, con `cron` (o el programador que se use), desde la carpeta del repositorio:

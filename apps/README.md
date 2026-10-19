@@ -27,7 +27,7 @@ pnpm lint                           # ESLint + Prettier
 pnpm api-client
 ```
 
-Migraciones: 0001 núcleo, 0002 enriquecimiento, 0003 código equivalente, 0004 catálogo de atributos, 0005 autenticación, 0006 ventas, 0007 bandejas.
+Migraciones: 0001 núcleo, 0002 enriquecimiento, 0003 código equivalente, 0004 catálogo de atributos, 0005 autenticación, 0006 ventas, 0007 bandejas, 0008 ficha.
 Tareas: `uv run python -m nexo_api.cli actualizar-ventas` (ClickHouse) · `importar-fotos` (MinIO).
 Primer administrador local: `cd apps/api && uv run python -m nexo_api.cli crear-admin <usuario> "<Nombre>"`.
 Despliegue: [deploy/README.md](../deploy/README.md).
