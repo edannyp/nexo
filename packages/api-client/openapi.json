@@ -704,10 +704,810 @@
           }
         }
       }
+    },
+    "/api/v1/articulos": {
+      "get": {
+        "tags": [
+          "articulos"
+        ],
+        "summary": "Artículos del tipo elegido con filtros, orden y paginación",
+        "operationId": "listar_articulos",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Código, número de parte o texto de la descripción",
+              "title": "Q"
+            },
+            "description": "Código, número de parte o texto de la descripción"
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Estado"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          },
+          {
+            "name": "completitud",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Completitud"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Completitud"
+            }
+          },
+          {
+            "name": "con_foto",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Con Foto"
+            }
+          },
+          {
+            "name": "emparejado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Emparejado"
+            }
+          },
+          {
+            "name": "con_hallazgo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Con Hallazgo"
+            }
+          },
+          {
+            "name": "clase",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A, B, C o SIN_VENTA",
+              "title": "Clase"
+            },
+            "description": "A, B, C o SIN_VENTA"
+          },
+          {
+            "name": "reserva",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Reserva"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reserva"
+            }
+          },
+          {
+            "name": "orden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Orden",
+              "default": "venta"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaArticulos"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}": {
+      "get": {
+        "tags": [
+          "articulos"
+        ],
+        "summary": "Detalle del artículo: datos SAP, requisitos y acciones posibles",
+        "operationId": "obtener_articulo",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticuloDetalle"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/historial": {
+      "get": {
+        "tags": [
+          "articulos"
+        ],
+        "summary": "Bitácora del artículo (más reciente primero)",
+        "operationId": "historial_articulo",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventoHistorial"
+                  },
+                  "title": "Response Historial Articulo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bandejas/{bandeja}/siguiente": {
+      "post": {
+        "tags": [
+          "bandejas"
+        ],
+        "summary": "Reserva el siguiente artículo de la bandeja",
+        "operationId": "tomar_siguiente",
+        "parameters": [
+          {
+            "name": "bandeja",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Bandeja"
+            }
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Siguiente"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/asignacion": {
+      "post": {
+        "tags": [
+          "bandejas"
+        ],
+        "summary": "Tomar este artículo (reservarlo)",
+        "operationId": "reservar_articulo",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRenovada"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Reservado por otro usuario o inactivo"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "bandejas"
+        ],
+        "summary": "Latido: renueva la reserva propia",
+        "operationId": "renovar_reserva",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRenovada"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La reserva ya no es tuya"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "bandejas"
+        ],
+        "summary": "Soltar: devuelve el artículo a la bandeja",
+        "operationId": "soltar_reserva",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/transiciones": {
+      "post": {
+        "tags": [
+          "bandejas"
+        ],
+        "summary": "Cambiar el estado del artículo",
+        "operationId": "transicionar",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Transicion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticuloDetalle"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol o doble control"
+          },
+          "409": {
+            "description": "Conflicto o reservado por otro"
+          },
+          "422": {
+            "description": "Falta motivo o requisitos"
+          }
+        }
+      }
+    },
+    "/api/v1/busqueda": {
+      "get": {
+        "tags": [
+          "busqueda"
+        ],
+        "summary": "Búsqueda universal de artículos",
+        "operationId": "buscar",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "title": "Q"
+            }
+          },
+          {
+            "name": "todos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Buscar en todos los tipos de artículo, no solo en el del filtro global",
+              "default": false,
+              "title": "Todos"
+            },
+            "description": "Buscar en todos los tipos de artículo, no solo en el del filtro global"
+          },
+          {
+            "name": "cat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Código SAP de la categoría",
+              "default": "25",
+              "title": "Cat"
+            },
+            "description": "Código SAP de la categoría"
+          },
+          {
+            "name": "linea",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Linea",
+              "description": "Línea",
+              "default": "IMPORTADO"
+            },
+            "description": "Línea"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resultados"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vistas": {
+      "get": {
+        "tags": [
+          "vistas"
+        ],
+        "summary": "Vistas guardadas del usuario",
+        "operationId": "listar_vistas",
+        "parameters": [
+          {
+            "name": "pantalla",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "explorar",
+              "title": "Pantalla"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Vista"
+                  },
+                  "title": "Response Listar Vistas"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "vistas"
+        ],
+        "summary": "Guardar (o reemplazar) una vista por su nombre",
+        "operationId": "guardar_vista",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaVista"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vista"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vistas/{vista_id}": {
+      "delete": {
+        "tags": [
+          "vistas"
+        ],
+        "summary": "Borrar una vista propia",
+        "operationId": "borrar_vista",
+        "parameters": [
+          {
+            "name": "vista_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Vista Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccionEstado": {
+        "properties": {
+          "destino": {
+            "$ref": "#/components/schemas/Estado"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "requiere_motivo": {
+            "type": "boolean",
+            "title": "Requiere Motivo"
+          },
+          "habilitada": {
+            "type": "boolean",
+            "title": "Habilitada"
+          },
+          "razon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "destino",
+          "etiqueta",
+          "requiere_motivo",
+          "habilitada"
+        ],
+        "title": "AccionEstado"
+      },
       "AnalisisVentas": {
         "properties": {
           "meses": {
@@ -749,6 +1549,410 @@
           "articulos"
         ],
         "title": "AnalisisVentas"
+      },
+      "ArticuloDetalle": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/Estado"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "linea": {
+            "type": "string",
+            "title": "Linea"
+          },
+          "categoria_codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoria Codigo"
+          },
+          "numero_parte_proveedor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Parte Proveedor"
+          },
+          "codigo_anterior": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Anterior"
+          },
+          "codigo_equivalente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Equivalente"
+          },
+          "datos_sap": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Datos Sap"
+          },
+          "requisitos": {
+            "items": {
+              "$ref": "#/components/schemas/Requisito"
+            },
+            "type": "array",
+            "title": "Requisitos"
+          },
+          "acciones": {
+            "items": {
+              "$ref": "#/components/schemas/AccionEstado"
+            },
+            "type": "array",
+            "title": "Acciones"
+          },
+          "reserva": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReservaInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ultimo_motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultimo Motivo"
+          },
+          "hallazgos": {
+            "items": {
+              "$ref": "#/components/schemas/nexo_api__modules__articulos__Hallazgo"
+            },
+            "type": "array",
+            "title": "Hallazgos"
+          },
+          "fotos": {
+            "type": "integer",
+            "title": "Fotos"
+          },
+          "clase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clase"
+          },
+          "participacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participacion"
+          },
+          "tendencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tendencia"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "item_code",
+          "descripcion",
+          "estado",
+          "version",
+          "activo",
+          "linea",
+          "categoria_codigo",
+          "numero_parte_proveedor",
+          "codigo_anterior",
+          "codigo_equivalente",
+          "datos_sap",
+          "requisitos",
+          "acciones",
+          "reserva",
+          "ultimo_motivo",
+          "hallazgos",
+          "fotos",
+          "clase",
+          "participacion",
+          "tendencia"
+        ],
+        "title": "ArticuloDetalle"
+      },
+      "ArticuloFila": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/Estado"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "marca_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca Vehiculo"
+          },
+          "modelo_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo Vehiculo"
+          },
+          "anio_desde": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anio Desde"
+          },
+          "anio_hasta": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anio Hasta"
+          },
+          "panal_alto_mm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Panal Alto Mm"
+          },
+          "panal_largo_mm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Panal Largo Mm"
+          },
+          "panal_ancho_mm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Panal Ancho Mm"
+          },
+          "faltan": {
+            "type": "integer",
+            "title": "Faltan"
+          },
+          "fotos": {
+            "type": "integer",
+            "title": "Fotos"
+          },
+          "emparejado": {
+            "type": "boolean",
+            "title": "Emparejado"
+          },
+          "hallazgos": {
+            "type": "integer",
+            "title": "Hallazgos"
+          },
+          "clase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clase"
+          },
+          "participacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participacion"
+          },
+          "tendencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tendencia"
+          },
+          "reservado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservado Por"
+          },
+          "reservado_hasta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservado Hasta"
+          },
+          "actualizado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Actualizado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "item_code",
+          "descripcion",
+          "estado",
+          "version",
+          "marca_vehiculo",
+          "modelo_vehiculo",
+          "anio_desde",
+          "anio_hasta",
+          "panal_alto_mm",
+          "panal_largo_mm",
+          "panal_ancho_mm",
+          "faltan",
+          "fotos",
+          "emparejado",
+          "hallazgos",
+          "clase",
+          "participacion",
+          "tendencia",
+          "reservado_por",
+          "reservado_hasta",
+          "actualizado_en"
+        ],
+        "title": "ArticuloFila"
       },
       "ArticuloVenta": {
         "properties": {
@@ -927,6 +2131,14 @@
           "faltan"
         ],
         "title": "AtributoFicha"
+      },
+      "Bandeja": {
+        "type": "string",
+        "enum": [
+          "operador",
+          "supervisor"
+        ],
+        "title": "Bandeja"
       },
       "CambioPassword": {
         "properties": {
@@ -1118,6 +2330,25 @@
         ],
         "title": "Cobertura"
       },
+      "Coincidencia": {
+        "type": "string",
+        "enum": [
+          "codigo",
+          "codigo_anterior",
+          "numero_parte",
+          "medidas",
+          "descripcion"
+        ],
+        "title": "Coincidencia"
+      },
+      "Completitud": {
+        "type": "string",
+        "enum": [
+          "completa",
+          "incompleta"
+        ],
+        "title": "Completitud"
+      },
       "Credenciales": {
         "properties": {
           "usuario": {
@@ -1150,6 +2381,82 @@
           "SINCRONIZADO"
         ],
         "title": "Estado"
+      },
+      "EventoHistorial": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "estado_origen": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estado"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estado_destino": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estado"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actor": {
+            "type": "string",
+            "title": "Actor"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "detalle": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detalle"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "estado_origen",
+          "estado_destino",
+          "actor",
+          "motivo",
+          "detalle",
+          "creado_en"
+        ],
+        "title": "EventoHistorial"
       },
       "Ficha": {
         "properties": {
@@ -1213,64 +2520,6 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "Hallazgo": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "campo_sap": {
-            "type": "string",
-            "title": "Campo Sap"
-          },
-          "valor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valor"
-          },
-          "item_code": {
-            "type": "string",
-            "title": "Item Code"
-          },
-          "descripcion_articulo": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descripcion Articulo"
-          },
-          "detectado_en": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Detectado En"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "tipo",
-          "campo_sap",
-          "valor",
-          "item_code",
-          "descripcion_articulo",
-          "detectado_en"
-        ],
-        "title": "Hallazgo"
-      },
       "HallazgosSap": {
         "properties": {
           "grupos": {
@@ -1282,7 +2531,7 @@
           },
           "hallazgos": {
             "items": {
-              "$ref": "#/components/schemas/Hallazgo"
+              "$ref": "#/components/schemas/nexo_api__modules__calidad_sap__Hallazgo"
             },
             "type": "array",
             "title": "Hallazgos"
@@ -1320,6 +2569,33 @@
           "migracion"
         ],
         "title": "Lista"
+      },
+      "NuevaVista": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "parametros": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parametros",
+            "description": "Filtros, orden y columnas, tal como los usa la consola"
+          },
+          "pantalla": {
+            "type": "string",
+            "title": "Pantalla",
+            "default": "explorar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre",
+          "parametros"
+        ],
+        "title": "NuevaVista"
       },
       "NuevoUsuario": {
         "properties": {
@@ -1372,6 +2648,52 @@
           "roles"
         ],
         "title": "NuevoUsuario"
+      },
+      "Orden": {
+        "type": "string",
+        "enum": [
+          "venta",
+          "codigo",
+          "descripcion",
+          "estado",
+          "anio",
+          "reciente",
+          "faltantes"
+        ],
+        "title": "Orden"
+      },
+      "PaginaArticulos": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ArticuloFila"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_cursor"
+        ],
+        "title": "PaginaArticulos"
       },
       "Panorama": {
         "properties": {
@@ -1573,6 +2895,203 @@
         ],
         "title": "PuntoSerie"
       },
+      "Requisito": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "pestana": {
+            "type": "string",
+            "title": "Pestana"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "etiqueta",
+          "pestana"
+        ],
+        "title": "Requisito"
+      },
+      "Reserva": {
+        "type": "string",
+        "enum": [
+          "mia",
+          "libre",
+          "otros"
+        ],
+        "title": "Reserva"
+      },
+      "ReservaInfo": {
+        "properties": {
+          "usuario_id": {
+            "type": "integer",
+            "title": "Usuario Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Hasta"
+          },
+          "mia": {
+            "type": "boolean",
+            "title": "Mia"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario_id",
+          "nombre",
+          "hasta",
+          "mia"
+        ],
+        "title": "ReservaInfo"
+      },
+      "ReservaRenovada": {
+        "properties": {
+          "hasta": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Hasta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hasta"
+        ],
+        "title": "ReservaRenovada"
+      },
+      "Resultado": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/Estado"
+          },
+          "categoria_codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoria Codigo"
+          },
+          "linea": {
+            "type": "string",
+            "title": "Linea"
+          },
+          "coincide": {
+            "$ref": "#/components/schemas/Coincidencia"
+          },
+          "panal_alto_mm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Panal Alto Mm"
+          },
+          "panal_largo_mm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Panal Largo Mm"
+          },
+          "panal_ancho_mm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Panal Ancho Mm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code",
+          "descripcion",
+          "estado",
+          "categoria_codigo",
+          "linea",
+          "coincide",
+          "panal_alto_mm",
+          "panal_largo_mm",
+          "panal_ancho_mm"
+        ],
+        "title": "Resultado"
+      },
+      "Resultados": {
+        "properties": {
+          "consulta": {
+            "type": "string",
+            "title": "Consulta"
+          },
+          "medidas": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medidas"
+          },
+          "articulos": {
+            "items": {
+              "$ref": "#/components/schemas/Resultado"
+            },
+            "type": "array",
+            "title": "Articulos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consulta",
+          "medidas",
+          "articulos"
+        ],
+        "title": "Resultados"
+      },
       "Rol": {
         "type": "string",
         "enum": [
@@ -1600,6 +3119,56 @@
           "csrf"
         ],
         "title": "SesionInfo"
+      },
+      "Siguiente": {
+        "properties": {
+          "articulo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArticuloDetalle"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null si la bandeja está vacía"
+          }
+        },
+        "type": "object",
+        "required": [
+          "articulo"
+        ],
+        "title": "Siguiente"
+      },
+      "Transicion": {
+        "properties": {
+          "destino": {
+            "$ref": "#/components/schemas/Estado"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Versión que ve el usuario: si otro lo cambió, responde 409"
+          }
+        },
+        "type": "object",
+        "required": [
+          "destino",
+          "version"
+        ],
+        "title": "Transicion"
       },
       "UsuarioAdmin": {
         "properties": {
@@ -1854,6 +3423,44 @@
         ],
         "title": "VentasResumen"
       },
+      "Vista": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "parametros": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parametros",
+            "description": "Filtros, orden y columnas, tal como los usa la consola"
+          },
+          "pantalla": {
+            "type": "string",
+            "title": "Pantalla",
+            "default": "explorar"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creada En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre",
+          "parametros",
+          "id",
+          "creada_en"
+        ],
+        "title": "Vista"
+      },
       "Viva": {
         "properties": {
           "estado": {
@@ -1871,6 +3478,94 @@
           "version"
         ],
         "title": "Viva"
+      },
+      "nexo_api__modules__articulos__Hallazgo": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "campo_sap": {
+            "type": "string",
+            "title": "Campo Sap"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "campo_sap",
+          "valor"
+        ],
+        "title": "Hallazgo"
+      },
+      "nexo_api__modules__calidad_sap__Hallazgo": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "campo_sap": {
+            "type": "string",
+            "title": "Campo Sap"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          },
+          "item_code": {
+            "type": "string",
+            "title": "Item Code"
+          },
+          "descripcion_articulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion Articulo"
+          },
+          "detectado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detectado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "campo_sap",
+          "valor",
+          "item_code",
+          "descripcion_articulo",
+          "detectado_en"
+        ],
+        "title": "Hallazgo"
       }
     }
   }
