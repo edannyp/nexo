@@ -40,6 +40,25 @@ class Config(BaseSettings):
     minio_secret_key: str | None = Field(None, validation_alias="MINIO_SECRET_KEY")
     minio_bucket: str = Field("rlt-dru", validation_alias="MINIO_BUCKET")
     minio_secure: bool = Field(True, validation_alias="MINIO_SECURE")
+    # AutoCare (VCdb, solo lectura) y MercadoExterno (vehículos fuera de AutoCare): selector de vehículos de las aplicaciones
+    autocare_host: str | None = Field(None, validation_alias="AUTOCARE_HOST")
+    autocare_port: int = Field(5432, validation_alias="AUTOCARE_PORT")
+    autocare_db: str | None = Field(None, validation_alias="AUTOCARE_DB")
+    autocare_user: str | None = Field(None, validation_alias="AUTOCARE_USER")
+    autocare_password: str = Field("", validation_alias="AUTOCARE_PASSWORD")
+    mercado_externo_host: str | None = Field(None, validation_alias="MERCADO_EXTERNO_HOST")
+    mercado_externo_port: int = Field(5432, validation_alias="MERCADO_EXTERNO_PORT")
+    mercado_externo_db: str | None = Field(None, validation_alias="MERCADO_EXTERNO_DB")
+    mercado_externo_user: str | None = Field(None, validation_alias="MERCADO_EXTERNO_USER")
+    mercado_externo_password: str = Field("", validation_alias="MERCADO_EXTERNO_PASSWORD")
+
+    def url_externa(self, prefijo: str) -> URL | None:
+        """URL de AutoCare o MercadoExterno (`autocare` / `mercado_externo`), o None si no está configurada."""
+        host, db, user = (getattr(self, f"{prefijo}_{k}") for k in ("host", "db", "user"))
+        if not (host and db and user):
+            return None
+        return URL.create("postgresql+psycopg", username=user, password=getattr(self, f"{prefijo}_password"), host=host,
+                          port=getattr(self, f"{prefijo}_port"), database=db)
 
     @property
     def url_bd(self) -> URL:
