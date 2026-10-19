@@ -7,7 +7,8 @@ from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-load_dotenv(Path(__file__).resolve().parents[3] / ".env")
+# En desarrollo, el .env de la raíz del repositorio; en la imagen Docker las variables ya vienen del entorno.
+load_dotenv(next((d / ".env" for d in Path(__file__).resolve().parents if (d / ".env").is_file()), None))
 
 
 def url() -> str:
