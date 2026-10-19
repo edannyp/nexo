@@ -195,7 +195,7 @@ class ReservaInfo(BaseModel):
     mia: bool
 
 
-class Hallazgo(BaseModel):
+class HallazgoArticulo(BaseModel):
     tipo: str
     campo_sap: str
     valor: str | None
@@ -218,7 +218,7 @@ class ArticuloDetalle(BaseModel):
     acciones: list[AccionEstado]
     reserva: ReservaInfo | None
     ultimo_motivo: str | None              # motivo del último rechazo o reapertura
-    hallazgos: list[Hallazgo]
+    hallazgos: list[HallazgoArticulo]
     fotos: int
     clase: str | None
     participacion: Decimal | None
@@ -320,7 +320,7 @@ def cargar_detalle(c: Connection, item_code: str, usuario: Usuario) -> ArticuloD
         codigo_equivalente=a["codigo_equivalente"],
         datos_sap={etiqueta: a[col] for col, etiqueta in CAMPOS_SAP if a[col] is not None},
         requisitos=requisitos, acciones=acciones, reserva=reserva, ultimo_motivo=ultimo_motivo,
-        hallazgos=[Hallazgo(**h._mapping) for h in hallazgos], fotos=fotos,
+        hallazgos=[HallazgoArticulo(**h._mapping) for h in hallazgos], fotos=fotos,
         clase=a["clase"], participacion=a["participacion"], tendencia=a["tendencia"],
     )
 

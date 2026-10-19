@@ -23,7 +23,7 @@ class Estado(StrEnum):
     SINCRONIZADO = "SINCRONIZADO"
 
 
-class AtributoFicha(BaseModel):
+class ResumenAtributo(BaseModel):
     paid: int
     etiqueta: str
     confirmados: int
@@ -31,9 +31,9 @@ class AtributoFicha(BaseModel):
     faltan: int
 
 
-class Ficha(BaseModel):
+class ResumenFicha(BaseModel):
     completos: int   # artículos con todos los atributos obligatorios confirmados
-    atributos: list[AtributoFicha]
+    atributos: list[ResumenAtributo]
 
 
 class Cobertura(BaseModel):
@@ -88,7 +88,7 @@ class VentasResumen(BaseModel):
 class Panorama(BaseModel):
     activos: int
     por_estado: dict[Estado, int]
-    ficha: Ficha
+    ficha: ResumenFicha
     cobertura: Cobertura
     atencion: Atencion
     productividad: list[Productividad]
@@ -179,7 +179,7 @@ def obtener_panorama(_: UsuarioActual, tipo: TipoArticulo, c: Conexion) -> Panor
     return Panorama(
         activos=sum(por_estado.values()),
         por_estado=por_estado,
-        ficha=Ficha(completos=completos, atributos=[AtributoFicha(**f._mapping) for f in atributos]),
+        ficha=ResumenFicha(completos=completos, atributos=[ResumenAtributo(**f._mapping) for f in atributos]),
         cobertura=Cobertura(**cob._mapping),
         atencion=Atencion(**aten._mapping),
         productividad=[Productividad(**f._mapping) for f in productividad],
