@@ -8,6 +8,8 @@ Cada proceso de otro proyecto que lee o escribe Nexo tiene aquí su contrato. Mi
 > Implementado en `apps/api/alembic/sql/0001_nucleo.sql`; pruebas en `apps/api/tests/integration/test_nucleo.py`.
 
 - **Escribe en:** solo `staging`, con *upsert*. No toca nada del esquema `app`.
+- **Usuario:** `etl_entrada` (`deploy/sql/usuario-etl.sql`): `SELECT/INSERT/UPDATE` en `staging` y `EXECUTE` de
+  `app.fn_procesar_staging`, que corre con los permisos de su dueño (migración 0010). No puede leer ni escribir `app`.
   1. `staging.lote`: abre un lote (`insert … default values returning lote_id`).
   2. `staging.sap_marca` (`@IGT_MARCAS`: código, nombre) y `staging.sap_modelo` (`@IGT_LINEA`: marca, `LineId`, nombre, tamaño), **completos**
      en cada lote: Nexo los usa para decidir si `U_Marca` es válida (si no, es basura → `null` + hallazgo de calidad).
@@ -31,6 +33,28 @@ Cada proceso de otro proyecto que lee o escribe Nexo tiene aquí su contrato. Mi
   `parte_numero.numero_norm` y `parte_aplicacion.base_vehicle_id`) y el detalle de la parte (números, atributos, aplicaciones, imágenes
   y fuentes vigentes). Al vincular, puede copiar atributos y aplicaciones como sugerencias (`origen = CONSOLIDACION`, con `parte_id`).
   Las medidas de las vistas deben venir en mm (PAdb 267 alto, 269 largo, 268 ancho).
+
+## Agente de revisión del catálogo (Consolidación → verificaciones de Nexo)
+> Implementado en la migración 0011; pruebas en `apps/api/tests/integration/test_agente_revision.py`. ADR 0012.
+Un agente de IA independiente compara lo que Nexo validó con lo que hoy dice el catálogo maestro y le informa a Nexo los cambios.
+Nexo crea una verificación `CAMBIO_CATALOGO` por artículo afectado; un supervisor la resuelve y el ciclo vuelve a empezar.
+- **Usuario:** `agente_revision_catalogo` (`deploy/sql/usuario-agente-revision-catalogo.sql`). Solo ejecuta tres funciones; no lee ni
+  escribe tablas de Nexo. En Consolidación, un usuario de solo lectura (`grp_app_lectura`).
+- **Por corrida:**
+  1. `select parte_id, articulos from app.fn_partes_emparejadas()` → partes emparejadas con artículos validados.
+  2. `select * from app.fn_datos_emparejamiento(array[…])` → por parte y artículo: lo validado (atributos y aplicaciones
+     confirmados, número de proveedor, código anterior, fecha de validación).
+  3. Comparar con Consolidación (`catalogo.parte`, `parte_numero`, `parte_atributo`, `parte_aplicacion`).
+  4. `select app.fn_registrar_cambios_catalogo('<lista JSON>')` con los cambios:
+     - `{"parte_id", "estado": "FUSIONADA", "fusionada_en_id"}`, `{"parte_id", "estado": "DESCARTADA"}`,
+       `{"parte_id", "estado": "NO_EXISTE"}`: para todos los artículos validados de esa parte;
+     - `{"parte_id", "estado": "DATOS_CAMBIARON", "item_code", "huella", "nota", "campos"}`: el agente explica en `nota` (10 a 2 000
+       caracteres, la ve el supervisor) qué cambió; `huella` identifica los datos revisados; `item_code` y `campos` son opcionales.
+     Devuelve `{recibidos, tareas, repetidos}`.
+- **El ciclo cierra:** cada cambio tiene una clave (estado + `fusionada_en_id` o `huella`). El mismo cambio no vuelve a crear una
+  verificación para el mismo artículo, aunque el supervisor ya la haya resuelto. Si los datos vuelven a cambiar, la `huella` es otra.
+- **Error:** `CAMBIOS_INVALIDOS` si la lista no tiene esa forma.
+- **Nexo no implementa la revisión:** solo expone estas funciones y muestra las verificaciones en la cola.
 
 ## Proceso de salida (Nexo → SAP)
 - **Lee:** artículos `VALIDADO`.

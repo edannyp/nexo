@@ -41,6 +41,9 @@ def entorno(bd):
             c.execute("insert into app.venta_mensual values ('RAD00174', %s, 50), ('RAD00188', %s, 30), ('RAD00156', %s, 1)",
                       (mes(atras), mes(atras), mes(atras)))
         c.execute("insert into meta.carga_ventas (meses, articulos, filas) values (12, 3, 36)")
+        # Clase de la clasificación de la empresa en ClickHouse (ADR 0023)
+        c.execute("insert into app.venta_referencia (item_code, abcxyz_empresa) values ('RAD00174', 'AX'), ('RAD00188', 'BY'), "
+                  "('RAD00156', 'CZ')")
         # RAD00156 rechazado: debe salir primero en la bandeja del operador
         completar(c, "RAD00156", ids["op2"])
         c.execute("select app.fn_transicionar(id, 'POR_VALIDAR', 'USUARIO', %s) from app.articulo where item_code = 'RAD00156'",

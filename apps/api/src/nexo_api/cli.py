@@ -4,7 +4,6 @@ En el servidor: `docker compose exec api python -m nexo_api.cli <tarea>`.
 - crear-admin <usuario> "<nombre>": primer administrador, con contraseña temporal que se cambia en el primer inicio.
 - actualizar-ventas: refresca la copia de apoyo de ventas desde ClickHouse (programarla a diario; ADR 0022).
 - importar-fotos: importación inicial de las fotos propias que ya están en MinIO (repetible; ADR 0013).
-- revisar-catalogo: tareas CAMBIO_CATALOGO por partes emparejadas que se fusionaron o descartaron (programarla a diario; ADR 0012).
 """
 
 import argparse
@@ -39,7 +38,6 @@ def main() -> None:
     alta.add_argument("nombre")
     sub.add_parser("actualizar-ventas", help="Refresca las ventas de apoyo desde ClickHouse")
     sub.add_parser("importar-fotos", help="Importa las fotos propias que ya están en MinIO")
-    sub.add_parser("revisar-catalogo", help="Crea verificaciones por partes emparejadas que cambiaron en Consolidación")
     a = p.parse_args()
 
     if a.tarea == "crear-admin":
@@ -69,18 +67,6 @@ def main() -> None:
                   ", ".join(r.carpetas_sin_articulo[:20]), "…" if len(r.carpetas_sin_articulo) > 20 else "")
         if r.no_son_imagen:
             print(f"Archivos fuera de la convención o que no son imagen ({len(r.no_son_imagen)}):", ", ".join(r.no_son_imagen[:10]))
-
-    elif a.tarea == "revisar-catalogo":
-        from .modules.emparejamiento import obtener_catalogo_maestro
-        from .tareas.catalogo import revisar_catalogo
-
-        maestro = obtener_catalogo_maestro()
-        if maestro is None:
-            sys.exit("Faltan CONSOLIDACION_* en el entorno.")
-        with obtener_motor().connect() as c:
-            r = revisar_catalogo(c, maestro)
-        cambios = ", ".join(f"{k.lower()}: {v}" for k, v in sorted(r.cambios.items())) or "ninguna"
-        print(f"Partes emparejadas revisadas: {r.partes}. Cambiadas: {cambios}. Verificaciones nuevas: {r.tareas}.")
 
 
 if __name__ == "__main__":

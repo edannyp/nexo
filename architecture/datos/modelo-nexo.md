@@ -17,6 +17,11 @@
 > - `0008_ficha.sql`: traducción al español de los valores PIES (`meta.traduccion_valor`, auditada), decisión UX 5.
 > - `0009_aplicaciones.sql`: una aplicación de vehículo confirmada debe tener submodelo y motor (`aplicacion_vehiculo_completa`);
 >   las sugeridas pueden llegar incompletas y se completan en el selector (decisión UX 4).
+> - `0010_etl_minimo.sql`: `app.fn_procesar_staging` con `SECURITY DEFINER` y sin `EXECUTE` público: el usuario del ETL solo
+>   necesita `staging` y ejecutar esa función (ADR 0017; usuario en `deploy/sql/usuario-etl.sql`).
+> - `0011_clase_clickhouse_y_revision.sql`: la clase de venta de `app.v_indicador_venta` viene de la clasificación de ClickHouse
+>   (ADR 0023); contrato del agente de revisión del catálogo (`app.fn_partes_emparejadas`, `app.fn_datos_emparejamiento`,
+>   `app.fn_registrar_cambios_catalogo`), `SECURITY DEFINER` y sin `EXECUTE` público.
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones

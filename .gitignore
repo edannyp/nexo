@@ -24,3 +24,6 @@ data/perfiles/**
 # Claude Code: preferencias personales
 .claude/settings.local.json
 especificaciones.png
+
+# Paquetes armados para otros equipos (paquetes/armar.py)
+entregables/
