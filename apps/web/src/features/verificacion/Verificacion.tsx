@@ -37,6 +37,8 @@ export function queRevisar(t: Pick<TareaVerificacion, 'origen' | 'detalle'>): st
     case 'MUESTREO':
       return 'Control de calidad al azar: revisa ficha, aplicaciones y emparejamiento.';
     case 'CAMBIO_CATALOGO':
+      if (d.estado === 'DATOS_CAMBIARON')
+        return `Cambiaron los datos de la parte ${d.parte_id} en el catálogo maestro: ${d.nota ?? ''}`;
       return d.estado === 'FUSIONADA'
         ? `La parte ${d.parte_id} se fusionó en la ${d.fusionada_en_id}: confirma que el emparejamiento sigue siendo correcto.`
         : d.estado === 'DESCARTADA'

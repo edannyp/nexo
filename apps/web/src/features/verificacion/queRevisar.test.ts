@@ -15,6 +15,15 @@ describe('qué revisar', () => {
     );
   });
 
+  it('muestra la explicación del agente cuando cambian los datos', () => {
+    expect(
+      queRevisar({
+        origen: 'CAMBIO_CATALOGO',
+        detalle: { parte_id: 7003, estado: 'DATOS_CAMBIARON', nota: 'El alto pasó de 400 a 410 mm.' },
+      }),
+    ).toBe('Cambiaron los datos de la parte 7003 en el catálogo maestro: El alto pasó de 400 a 410 mm.');
+  });
+
   it('muestra la nota de la manual', () => {
     expect(queRevisar({ origen: 'MANUAL', detalle: { nota: 'Revisar años', creada_por: 'sup1' } })).toBe(
       'Revisar años (sup1)',
