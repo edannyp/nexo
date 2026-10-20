@@ -1,6 +1,7 @@
 # 0022. Indicadores de venta relativos y análisis con permiso
 
 - **Estado:** Aceptada. Implementada en la migración 0006, `modules/{panorama,ventas}.py` y la tarea `actualizar-ventas` (2026-10-19).
+  La clase A/B/C la reemplaza el ADR 0023 (viene de la clasificación de ClickHouse).
 - **Fecha:** 2026-10-19
 
 ## Contexto

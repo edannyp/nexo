@@ -16,9 +16,11 @@ unidades vendidas por artículo para los indicadores relativos de venta. Explora
 **Nunca** se leen montos (`venta_neta`, `venta_neta_qtz`): los indicadores son relativos (ADR 0022).
 
 ## Cómo llega a Nexo
-`python -m nexo_api.cli actualizar-ventas` copia a `app.venta_mensual` las unidades de los dos últimos periodos (por defecto 24 meses) de
-los artículos que existen en Nexo, y a `app.venta_referencia` la clasificación de la empresa. `app.v_indicador_venta` calcula, **dentro de
-cada tipo** (categoría + línea), la clase ABC (80 % / 95 %), el top %, la participación y la tendencia frente al periodo anterior.
+`python -m nexo_api.cli actualizar-ventas` (a diario, en el servidor de Nexo) copia a `app.venta_mensual` las unidades de los dos últimos periodos (por defecto 24 meses) de
+los artículos que existen en Nexo, y a `app.venta_referencia` la clasificación ABC-XYZ de la empresa. En `app.v_indicador_venta`, la
+**clase A/B/C es la de esa clasificación** (ADR 0023); el top %, la participación y la tendencia frente al periodo anterior se calculan
+**dentro de cada tipo** (categoría + línea) con las unidades. `rlt_ml.latest_clasificacion_abcxyz_seg` la trae por ámbito (hoy solo
+`radiadores_importados`).
 
 ## Cobertura (2026-10-19)
 Con venta en los últimos 12 meses: 657 de 1 095 radiadores importados y 710 de 2 028 fabricados. En radiadores importados, 118 artículos

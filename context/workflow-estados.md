@@ -62,5 +62,5 @@ Resultados posibles:
 
 **Implementado (paso 8):** `NUEVA_FOTO` la crea la base al registrar una foto propia de un artículo validado; `MUESTREO` lo genera
 el administrador desde la pantalla; `MANUAL` solo para artículos `VALIDADO`/`SINCRONIZADO` (lo que está en proceso se revisa al
-validarlo); `CAMBIO_CATALOGO` lo crea la tarea diaria `revisar-catalogo` cuando la parte emparejada se fusionó, se descartó o ya no
-existe. Pendiente: detectar "datos nuevos" de una parte que sigue activa.
+validarlo); `CAMBIO_CATALOGO` lo informa el agente de revisión del catálogo (otro proceso, contrato en `architecture/datos/contratos.md`)
+cuando la parte emparejada se fusionó, se descartó, ya no existe o cambiaron sus datos. Pendiente: detectar "datos nuevos" de una parte que sigue activa.

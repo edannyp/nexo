@@ -54,21 +54,36 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
    **Fotos existentes** (una vez, repetible): `docker compose exec api python -m nexo_api.cli importar-fotos`.
 7. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0009"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0011"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+
+## Usuarios de los procesos externos
+Una vez cada uno, como superusuario, después de que la API migró a `0011` (permisos mínimos, ADR 0017). La contraseña se pasa al
+ejecutar y se entrega al equipo de cada proceso:
+```bash
+psql -h <servidor> -U postgres -d nexo -v clave='<contraseña larga>' -f deploy/sql/usuario-etl.sql                       # ETL de SAP
+psql -h <servidor> -U postgres -d nexo -v clave='<contraseña larga>' -f deploy/sql/usuario-agente-revision-catalogo.sql  # agente
+```
+| Usuario | Puede |
+|---|---|
+| `etl_entrada` | leer y escribir `staging` (artículos de SAP) y ejecutar `app.fn_procesar_staging` |
+| `agente_revision_catalogo` | ejecutar `app.fn_partes_emparejadas`, `app.fn_datos_emparejamiento` y `app.fn_registrar_cambios_catalogo` |
+
+Ninguno lee ni escribe las tablas de `app`: las funciones corren con los permisos de su dueño.
 
 ## Tareas programadas
-En el servidor, con `cron` (o el programador que se use), desde la carpeta del repositorio:
+**Ventas** (ADR 0022 y 0023): Nexo copia a diario de ClickHouse las unidades por artículo y la clasificación ABC-XYZ de la empresa.
+Con `cron` en el servidor, desde la carpeta del repositorio:
 ```bash
-# Ventas de apoyo desde ClickHouse, a diario (ADR 0022)
-0 6 * * *  cd /ruta/a/nexo && docker compose exec -T api python -m nexo_api.cli actualizar-ventas
-# Partes emparejadas que se fusionaron o descartaron en Consolidación → verificaciones CAMBIO_CATALOGO (ADR 0012)
-30 6 * * * cd /ruta/a/nexo && docker compose exec -T api python -m nexo_api.cli revisar-catalogo
+0 6 * * *  cd /opt/nexo && docker compose exec -T api python -m nexo_api.cli actualizar-ventas
 ```
+**Revisión del catálogo:** la hace el agente de revisión, un proceso aparte (contrato en `architecture/datos/contratos.md`); Nexo
+no la implementa.
+
 Una sola vez (repetible sin duplicar), la importación inicial de las fotos que ya están en MinIO (ADR 0013):
 ```bash
 docker compose exec api python -m nexo_api.cli importar-fotos
 ```
-Requieren `CLICKHOUSE_*`, `MINIO_*` (con `MINIO_SECURE=false` para el MinIO interno) y `CONSOLIDACION_*` en el `.env`.
+Requieren `CLICKHOUSE_*` (ventas) y `MINIO_*` (fotos; `MINIO_SECURE=false` para el MinIO interno).
 
 ## Fotos propias (pantalla Fotos)
 La subida usa una llave de MinIO **aparte**, con escritura limitada a `rlt-dru/imagenes_inventario/` (ADR 0013):
