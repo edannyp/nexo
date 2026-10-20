@@ -32,6 +32,7 @@ stateDiagram-v2
    operador. La equivalencia **no** es requisito: el código equivalente de los fabricados se captura en la revisión de fabricados y
    se valida con foto propia, sin afectar el estado (ADR 0018).
    Al confirmar la equivalencia, el Fabricado hereda la parte emparejada y recibe las aplicaciones del Importado como sugerencias.
+   Una aplicación **de vehículo** solo se confirma con **submodelo y motor** (decisión UX 4, 2026-10-19; la base lo exige desde la migración 0009: `aplicacion_vehiculo_completa`).
 5. **Regla de checksum**: si `fn_procesar_staging` detecta otro `hash_control` en un artículo `VALIDADO` o `SINCRONIZADO`, lo regresa
    a `PENDIENTE` (actor `PROCESO:ETL`, motivo `HASH_CAMBIO`) **conservando** el emparejamiento y los datos ya confirmados, y mostrando
    al operador qué campos de SAP cambiaron. En `PENDIENTE`, `POR_VALIDAR` o `RECHAZADO` solo se actualizan los datos y el hash.
@@ -40,6 +41,8 @@ stateDiagram-v2
 8. **Concurrencia**: un artículo solo puede editarlo un usuario a la vez. El usuario toma el siguiente artículo de su bandeja con
    **"Siguiente"** (respetando el filtro global); queda **reservado 30 minutos** y la reserva se renueva sola mientras trabaja en él.
    Al vencer, vuelve a la bandeja. Además, cada fila lleva `version` (control optimista). El administrador puede liberar o reasignar.
+   **Implementado (migración 0007):** "Siguiente" entrega primero los `RECHAZADO` y luego por clase de venta; en `POR_VALIDAR` nunca
+   entrega lo que el propio usuario envió (no podría validarlo). Las transiciones se rechazan si el artículo está reservado por otro.
 9. **Inactivos** (ADR 0008): la bandera `activo` es independiente del estado. Un artículo inactivo conserva su estado, pero no aparece
    en la APP, no se asigna ni cambia de estado y no se publica.
 
@@ -56,3 +59,8 @@ Revisión periódica de artículos ya validados, en una **cola de tareas** apart
 Resultados posibles:
 - **Conforme**: se cierra la tarea; si era `NUEVA_FOTO`, la foto queda validada y el artículo no cambia de estado.
 - **Con hallazgo**: el artículo vuelve a `PENDIENTE` (motivo `VERIFICACION`) con la nota del hallazgo.
+
+**Implementado (paso 8):** `NUEVA_FOTO` la crea la base al registrar una foto propia de un artículo validado; `MUESTREO` lo genera
+el administrador desde la pantalla; `MANUAL` solo para artículos `VALIDADO`/`SINCRONIZADO` (lo que está en proceso se revisa al
+validarlo); `CAMBIO_CATALOGO` lo crea la tarea diaria `revisar-catalogo` cuando la parte emparejada se fusionó, se descartó o ya no
+existe. Pendiente: detectar "datos nuevos" de una parte que sigue activa.

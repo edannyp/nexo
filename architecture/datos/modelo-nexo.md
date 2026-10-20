@@ -8,6 +8,15 @@
 >   bandeja `v_revision_fabricados`; la equivalencia deja de ser requisito para `POR_VALIDAR` (ADR 0018).
 > - `0004_catalogo_atributos.sql`: catálogo configurable de atributos PIES por tipo de parte (ADR 0019), que reemplaza
 >   `meta.atributo_requerido` y `meta.atributo_desde_sap`. Siembra la ficha del radiador; `db/ref/cargar_ref.py nexo` carga el resto desde PAdb.
+> - `0005_auth.sql`: permisos especiales por usuario (`app.usuario_permiso`, ADR 0022), registro de accesos (`audit.evento_acceso`)
+>   y auditoría de usuarios, roles y permisos sin el hash de la contraseña (ADR 0015).
+> - `0006_ventas.sql`: copia de apoyo de ventas (`app.venta_mensual`, `app.venta_referencia`), parámetros (`meta.parametro`) e
+>   indicadores relativos por tipo (`app.v_indicador_venta`: clase ABC, top %, participación, tendencia; ADR 0022).
+> - `0007_bandejas.sql`: "Siguiente" con prioridad y doble control, reservas (`fn_reservar`, `fn_renovar_reserva`,
+>   `fn_soltar_reserva`), índices trigram para la búsqueda y vistas guardadas (`app.vista_guardada`).
+> - `0008_ficha.sql`: traducción al español de los valores PIES (`meta.traduccion_valor`, auditada), decisión UX 5.
+> - `0009_aplicaciones.sql`: una aplicación de vehículo confirmada debe tener submodelo y motor (`aplicacion_vehiculo_completa`);
+>   las sugeridas pueden llegar incompletas y se completan en el selector (decisión UX 4).
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones

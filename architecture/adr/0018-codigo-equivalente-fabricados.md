@@ -1,6 +1,6 @@
 # 0018. Código equivalente de fabricados, validado con foto
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Implementada en la APP (2026-10-19): pestaña Equivalencia y pantalla Fabricados.
 - **Fecha:** 2026-10-16
 
 ## Contexto

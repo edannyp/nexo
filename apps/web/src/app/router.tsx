@@ -1,0 +1,138 @@
+import { createRootRoute, createRoute, createRouter, Outlet, retainSearchParams } from '@tanstack/react-router';
+import { ShieldX } from 'lucide-react';
+import type { ReactNode } from 'react';
+
+import { Usuarios } from '@/features/admin/Usuarios';
+import { Articulo } from '@/features/articulo/Articulo';
+import { CambiarContrasena } from '@/features/auth/CambiarContrasena';
+import { CalidadSap } from '@/features/calidad-sap/CalidadSap';
+import { Catalogo } from '@/features/catalogo/Catalogo';
+import { Entrar } from '@/features/auth/Entrar';
+import { Explorar } from '@/features/explorar/Explorar';
+import { Fabricados } from '@/features/fabricados/Fabricados';
+import { PantallaFotos } from '@/features/fotos/PantallaFotos';
+import { busquedaExplorar } from '@/features/explorar/filtros';
+import { EnConstruccion } from '@/features/pendiente/EnConstruccion';
+import { Panorama } from '@/features/panorama/Panorama';
+import { Bandeja } from '@/features/trabajo/Bandeja';
+import { Ventas } from '@/features/ventas/Ventas';
+import { Verificacion } from '@/features/verificacion/Verificacion';
+
+import { Armazon } from './Armazon';
+import { useUsuario } from './contexto-usuario';
+import { validarBusqueda } from './filtro';
+import { SECCIONES, type Seccion } from './navegacion';
+import { puedeVer } from './sesion';
+
+// El filtro global vive en la URL (?cat=25&linea=IMPORTADO) y se conserva al navegar entre secciones.
+const raiz = createRootRoute({
+  validateSearch: validarBusqueda,
+  search: { middlewares: [retainSearchParams(['cat', 'linea'])] },
+  component: Outlet,
+  notFoundComponent: () => (
+    <div className="py-10 text-center">
+      <h1 className="text-xl font-semibold">Página no encontrada</h1>
+      <p className="mt-2 text-suave">Revisa la dirección o usa el menú.</p>
+    </div>
+  ),
+});
+
+const entrar = createRoute({
+  getParentRoute: () => raiz,
+  path: '/entrar',
+  validateSearch: (s: Record<string, unknown>): { redirigir?: string } =>
+    typeof s.redirigir === 'string' ? { redirigir: s.redirigir } : {},
+  component: Entrar,
+});
+
+const cambiarContrasena = createRoute({
+  getParentRoute: () => raiz,
+  path: '/cambiar-contrasena',
+  component: CambiarContrasena,
+});
+
+// Todo lo demás exige sesión: el armazón redirige a /entrar si no la hay.
+const app = createRoute({ getParentRoute: () => raiz, id: 'app', component: Armazon });
+
+/** Si el rol o permiso del usuario no alcanza, lo dice en lugar de mostrar la sección. */
+function Protegida({ seccion, children }: { seccion: Seccion; children: ReactNode }) {
+  const usuario = useUsuario();
+  if (puedeVer(usuario, seccion)) return children;
+  return (
+    <section className="mx-auto max-w-md py-10 text-center">
+      <ShieldX className="mx-auto size-10 text-suave" aria-hidden />
+      <h1 className="mt-4 text-xl font-semibold">Sin acceso a {seccion.etiqueta}</h1>
+      <p className="mt-2 text-suave">Tu rol no incluye esta sección. Si la necesitas, pídela a un administrador.</p>
+    </section>
+  );
+}
+
+const PANTALLAS: Record<string, () => ReactNode> = {
+  '/': () => <Panorama />,
+  '/admin': () => <Usuarios />,
+  '/calidad-sap': () => <CalidadSap />,
+  '/ventas': () => <Ventas />,
+  '/articulos': () => <Explorar />,
+  '/trabajar': () => <Bandeja bandeja="operador" />,
+  '/validar': () => <Bandeja bandeja="supervisor" />,
+  '/verificacion': () => <Verificacion />,
+  '/fotos': () => <PantallaFotos />,
+  '/fabricados': () => <Fabricados />,
+  '/catalogo': () => <Catalogo />,
+};
+
+// Parámetros de búsqueda propios de algunas pantallas (además del filtro global de la raíz)
+const BUSQUEDAS: Record<string, (s: Record<string, unknown>) => object> = {
+  '/articulos': busquedaExplorar,
+};
+
+const secciones = SECCIONES.map((s) =>
+  createRoute({
+    getParentRoute: () => app,
+    path: s.ruta,
+    ...(BUSQUEDAS[s.ruta] ? { validateSearch: BUSQUEDAS[s.ruta] } : {}),
+    component: () => <Protegida seccion={s}>{PANTALLAS[s.ruta]?.() ?? <EnConstruccion seccion={s} />}</Protegida>,
+  }),
+);
+
+// Espacio de trabajo del artículo. `bandeja` indica que se llegó con "Siguiente" (al terminar, abre el siguiente).
+const articulo = createRoute({
+  getParentRoute: () => app,
+  path: '/articulos/$itemCode',
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { bandeja?: 'operador' | 'supervisor'; pestana?: string; parte?: number } => ({
+    ...(s.bandeja === 'operador' || s.bandeja === 'supervisor' ? { bandeja: s.bandeja } : {}),
+    ...(typeof s.pestana === 'string' ? { pestana: s.pestana } : {}),
+    ...(Number(s.parte) > 0 ? { parte: Number(s.parte) } : {}),
+  }),
+  component: Articulo,
+});
+
+/**
+ * Parámetros de búsqueda planos (`?cat=25&linea=IMPORTADO`). El serializador por defecto usa JSON y escribe `?cat=%2225%22`
+ * para los textos que parecen números; aquí todos los valores son textos simples y las URL quedan legibles para compartir.
+ */
+export function leerBusqueda(texto: string): Record<string, string> {
+  return Object.fromEntries(new URLSearchParams(texto));
+}
+
+export function escribirBusqueda(busqueda: Record<string, unknown>): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(busqueda)) if (v !== undefined && v !== null && v !== '') p.set(k, String(v));
+  const texto = p.toString();
+  return texto ? `?${texto}` : '';
+}
+
+export const router = createRouter({
+  routeTree: raiz.addChildren([entrar, cambiarContrasena, app.addChildren([...secciones, articulo])]),
+  defaultPreload: 'intent',
+  parseSearch: leerBusqueda,
+  stringifySearch: escribirBusqueda,
+});
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}

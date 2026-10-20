@@ -43,7 +43,7 @@ def cargar(c: psycopg.Connection, filas: list[dict]) -> dict:
 
 def art(c, item_code: str) -> dict:
     cur = c.execute("select * from app.articulo where item_code = %s", (item_code,))
-    return dict(zip([d.name for d in cur.description], cur.fetchone()))
+    return dict(zip([d.name for d in cur.description], cur.fetchone(), strict=True))
 
 
 def transicionar(c, item_code: str, destino: str, actor_tipo: str, actor, motivo=None, version=None):
@@ -76,3 +76,10 @@ def completar(c, item_code: str, usuario_id: int, parte_id: int = 5001) -> None:
                  select a.id, r.paid, 'confirmado', 'MANUAL', %s, now()
                  from app.articulo a join meta.atributo_config r on r.part_terminology_id = a.part_terminology_id
                  where a.id = %s and r.habilitado and r.obligatorio on conflict (articulo_id, paid) do nothing""", (usuario_id, aid))
+
+
+def validar(c, item_code: str, operador_id: int, supervisor_id: int, parte_id: int = 5001) -> None:
+    """Lleva el artículo a VALIDADO por el camino normal: el operador completa y envía, el supervisor valida."""
+    completar(c, item_code, operador_id, parte_id)
+    transicionar(c, item_code, "POR_VALIDAR", "USUARIO", operador_id)
+    transicionar(c, item_code, "VALIDADO", "USUARIO", supervisor_id)
