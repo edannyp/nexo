@@ -1,19 +1,17 @@
 """Cola de verificación: foto nueva (conforme valida la foto), con hallazgo regresa a Pendiente, verificación manual, muestreo del
-administrador y CAMBIO_CATALOGO por partes fusionadas o descartadas (ADR 0012, propuesta UX §6.6)."""
+administrador y CAMBIO_CATALOGO informados por el agente de revisión del catálogo (ADR 0012, propuesta UX §6.6)."""
 
-from decimal import Decimal as D
+import json
 
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 
-from nexo_api.adapters.consolidacion import Medidas, ResumenParte
 from nexo_api.auth.dependencias import cargar_usuario, usuario_actual
 from nexo_api.core.bd import obtener_motor
 from nexo_api.main import crear_app
 from nexo_api.modules.imagenes import obtener_firmador
-from nexo_api.tareas.catalogo import revisar_catalogo
 
 from .apoyo import articulo, cargar, crear_usuario, validar
 
@@ -112,26 +110,13 @@ def test_04b_muestreo_solo_administrador(entorno):
     assert len(tareas(como(entorno, "admin"), "MUESTREO")) == 2
 
 
-class MaestroFalso:
-    def resumenes(self, ids):
-        estados = {5003: ("FUSIONADA", 9001), 5004: ("DESCARTADA", None)}
-        return {i: ResumenParte(i, 2172, "Radiator", None, None, Medidas(D(1), D(1), D(1)), 0, 1, None, *estados[i])
-                for i in ids if i in estados}              # 5005 no aparece: ya no existe en Consolidación
-
-
-def test_05_cambio_en_el_catalogo_crea_verificacion(entorno):
-    motor, _, _ = entorno
-
-    class Activas(MaestroFalso):
-        def resumenes(self, ids):
-            r = super().resumenes(ids)
-            return r | {i: ResumenParte(i, 2172, None, None, None, Medidas(), 0, 1, None) for i in ids if i in (5001, 5002)}
-
-    with motor.connect() as c:
-        r = revisar_catalogo(c, Activas())
-    assert (r.partes, r.tareas, r.cambios) == (4, 3, {"FUSIONADA": 1, "DESCARTADA": 1, "NO_EXISTE": 1})  # RAD00102 ya no está validado
-    with motor.connect() as c:
-        assert revisar_catalogo(c, Activas()).tareas == 0                      # repetible: no duplica
+def test_05_cambio_en_el_catalogo_llega_a_la_cola(entorno):
+    """El agente de revisión (otro proceso) informa por app.fn_registrar_cambios_catalogo; aquí se ve en la cola."""
+    _, _, bd = entorno
+    cambios = [{"parte_id": 5003, "estado": "FUSIONADA", "fusionada_en_id": 9001},
+               {"parte_id": 5004, "estado": "DATOS_CAMBIARON", "huella": "h1", "nota": "El alto pasó de 400 a 410 mm en el catálogo."}]
+    with psycopg.connect(bd, autocommit=True) as c:
+        assert c.execute("select app.fn_registrar_cambios_catalogo(%s)", (json.dumps(cambios),)).fetchone()[0]["tareas"] == 2
     cambios = {t["item_code"]: t["detalle"] for t in tareas(como(entorno, "sup1"), "CAMBIO_CATALOGO")}
-    assert cambios["RAD00103"] == {"parte_id": 5003, "estado": "FUSIONADA", "fusionada_en_id": 9001}
-    assert cambios["RAD00105"] == {"parte_id": 5005, "estado": "NO_EXISTE"}
+    assert cambios["RAD00103"] == {"parte_id": 5003, "estado": "FUSIONADA", "fusionada_en_id": 9001, "clave": "FUSIONADA:9001"}
+    assert cambios["RAD00104"]["nota"] == "El alto pasó de 400 a 410 mm en el catálogo."

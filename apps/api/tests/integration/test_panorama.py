@@ -36,7 +36,8 @@ class VentasFalsas:
             yield VentaMes("RAD00999", mes(atras), 5000)
 
     def referencias(self):
-        yield Referencia("RAD00188", "AX", mes(1))
+        yield Referencia("RAD00188", "AX", mes(1))                             # la clase viene de aquí (ADR 0023)
+        yield Referencia("RAD00174", "CZ", mes(1))
         yield Referencia("RAD00999", "AX", mes(1))
 
 
@@ -94,7 +95,7 @@ def test_ventana_de_ventas_cubre_dos_periodos_completos():
 
 def test_actualizar_ventas_solo_guarda_articulos_de_nexo(entorno):
     _, _, r, _ = entorno
-    assert r.articulos == 2 and r.filas == 48 and r.referencias == 1      # RAD00999 no existe en Nexo
+    assert r.articulos == 2 and r.filas == 48 and r.referencias == 2      # RAD00999 no existe en Nexo
 
 
 def test_importar_fotos_es_repetible_y_reporta_anomalias(entorno):
