@@ -13,7 +13,14 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    ```sql
    create database nexo;
    ```
-2. **Clonar** el repositorio en el servidor y crear el `.env` en la raíz (nunca se versiona) a partir de `.env.example`.
+2. **Clonar** el repositorio en el servidor (rama `main`) y crear el `.env` en la raíz (nunca se versiona) a partir de
+   `.env.example`, o copiando el `.env` de desarrollo. Si se copia, revisar estas diferencias:
+   - `NEXO_*` apunta a la base `nexo` del **servidor** PostgreSQL, no al contenedor `postgres` de desarrollo.
+   - `REDIS_URL` no hace falta: Compose lo fija al Redis interno.
+   - `AUTOCARE_*`, `MERCADO_EXTERNO_*`, `CONSOLIDACION_*`, `CLICKHOUSE_*` y `MINIO_*` sirven tal cual si el servidor llega a las
+     mismas IP (probar desde el servidor; en desarrollo pasan por la VPN). `MINIO_SECURE=false` para el MinIO interno.
+   - `MINIO_FOTOS_*` (escritura de fotos) es opcional al principio: sin ella no se suben fotos.
+
    Lo mínimo para arrancar:
    ```bash
    NEXO_HOST=<IP del servidor PostgreSQL>   # no "postgres": ese nombre solo existe en el entorno de desarrollo
@@ -24,23 +31,29 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    ```
    Opcionales: `NEXO_PUERTO` (por defecto 80), `NEXO_PUERTO_HTTPS` (443), `NEXO_SITIO` (por defecto `:80`; con un nombre interno
    como `nexo.empresa.local`, Caddy sirve HTTPS con su propia autoridad certificadora) y `NEXO_MIGRAR_AL_ARRANCAR` (por defecto `true`).
-3. **Levantar**:
+3. **MercadoExterno** (una vez por versión del esquema): aplicar sus migraciones pendientes (incluye `V003__configuraciones.sql`,
+   que usa la pestaña Aplicaciones), desde una máquina con el repositorio y acceso al servidor:
+   ```bash
+   uv run db/aplicar.py mercado_externo --servidor     # usa MERCADO_EXTERNO_* del .env
+   ```
+4. **Levantar**:
    ```bash
    docker compose up -d --build
    docker compose ps                # api y web en "healthy"
    ```
    Con `NEXO_MIGRAR_AL_ARRANCAR=true`, la API aplica las migraciones pendientes de la base `nexo` al arrancar.
-4. **Catálogo de atributos PIES** (una vez, y cada vez que se actualice AutoCare), desde una máquina con el repositorio y acceso a
+5. **Catálogo de atributos PIES** (una vez, y cada vez que se actualice AutoCare), desde una máquina con el repositorio y acceso a
    AutoCare y a la base `nexo`:
    ```bash
    uv run db/ref/cargar_ref.py nexo     # usa AUTOCARE_* y NEXO_* del .env
    ```
-5. **Primer administrador** (una sola vez). Imprime una contraseña temporal que se cambia al entrar:
+6. **Primer administrador** (una sola vez). Imprime una contraseña temporal que se cambia al entrar:
    ```bash
    docker compose exec api python -m nexo_api.cli crear-admin <usuario> "<Nombre completo>"
    ```
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
-6. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
+   **Fotos existentes** (una vez, repetible): `docker compose exec api python -m nexo_api.cli importar-fotos`.
+7. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
    `{"estado":"ok","migracion":"0009"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Tareas programadas

@@ -7,6 +7,8 @@ services:
     env_file: .env
     environment:
       NEXO_MIGRAR_AL_ARRANCAR: ${NEXO_MIGRAR_AL_ARRANCAR:-true}
+      # Fijo aquí: el Redis de Compose se llama "redis" sin importar lo que traiga el .env (en desarrollo puede ser otro)
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       redis:
         condition: service_healthy
