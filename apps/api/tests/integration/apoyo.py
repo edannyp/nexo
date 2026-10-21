@@ -23,9 +23,9 @@ def articulo(item_code: str, **campos) -> dict:
     return {**BASE, "item_code": item_code, **campos}
 
 
-def cargar(c: psycopg.Connection, filas: list[dict]) -> dict:
-    """Lo que hace el ETL: un lote en staging y luego fn_procesar_staging."""
-    lote = c.execute("insert into staging.lote default values returning lote_id").fetchone()[0]
+def cargar(c: psycopg.Connection, filas: list[dict], completo: bool = False) -> dict:
+    """Lo que hace el ETL: un lote en staging y luego fn_procesar_staging. `completo` = foto completa (migración 0012)."""
+    lote = c.execute("insert into staging.lote (completo) values (%s) returning lote_id", (completo,)).fetchone()[0]
     for codigo, nombre in MARCAS:
         c.execute("insert into staging.sap_marca values (%s, %s, %s) on conflict (marca_codigo) do update set lote_id = excluded.lote_id",
                   (codigo, nombre, lote))
