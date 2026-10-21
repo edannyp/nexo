@@ -110,6 +110,7 @@ def obtener_panorama(_: UsuarioActual, tipo: TipoArticulo, c: Conexion) -> Panor
                count(*) filter (where t.id is null) as faltan
         from app.articulo a
         join meta.atributo_config r on r.part_terminology_id = a.part_terminology_id and r.habilitado and r.obligatorio
+                                    and r.obsoleto_en is null
         left join app.articulo_atributo t on t.articulo_id = a.id and t.paid = r.paid
         where {del_tipo}
         group by r.paid, r.etiqueta, r.nombre, r.orden order by r.orden nulls last, r.paid
@@ -117,7 +118,7 @@ def obtener_panorama(_: UsuarioActual, tipo: TipoArticulo, c: Conexion) -> Panor
     completos = c.execute(text(f"""
         select count(*) from app.articulo a where {del_tipo} and not exists (
           select 1 from meta.atributo_config r
-          where r.part_terminology_id = a.part_terminology_id and r.habilitado and r.obligatorio
+          where r.part_terminology_id = a.part_terminology_id and r.habilitado and r.obligatorio and r.obsoleto_en is null
             and not exists (select 1 from app.articulo_atributo t
                             where t.articulo_id = a.id and t.paid = r.paid and t.confirmado_por is not null))
     """), p).scalar_one()

@@ -45,9 +45,18 @@ def test_no_toca_app_ni_borra_staging(bd, roles):
     etl, _ = roles
     with como(bd, etl) as c:
         for sql in ("select count(*) from app.articulo", "update app.articulo set descripcion = 'x'",
-                    "delete from staging.articulo_sap", "select app.fn_transicionar(1, 'VALIDADO', 'USUARIO', '1')"):
+                    "delete from staging.articulo_sap", "update staging.articulo_sap set descripcion = 'x'",
+                    "select app.fn_transicionar(1, 'VALIDADO', 'USUARIO', '1')"):
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 c.execute(sql)
+
+
+def test_pregunta_que_articulos_conoce_nexo(bd, roles):
+    etl, otro = roles
+    with como(bd, etl) as c:
+        assert "RAD00188" in {r[0] for r in c.execute("select * from app.fn_articulos_conocidos()")}
+    with como(bd, otro) as c, pytest.raises(psycopg.errors.InsufficientPrivilege):
+        c.execute("select * from app.fn_articulos_conocidos()")
 
 
 def test_nadie_mas_procesa_lotes(bd, roles):

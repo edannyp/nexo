@@ -91,10 +91,13 @@ Las marcadas con 🔒 las hace cumplir la base: si el proceso las viola, la escr
 9. **Aplicaciones ACES.** 🔒 Exactamente uno de `base_vehicle_id` o `equipment_base_id`, y deben existir en AutoCare,
    o ser IDs ≥ 1 000 000 000 de MercadoExterno. Las regiones son opcionales (`parte_aplicacion_region`).
    Los calificadores que no se resuelvan a ID (motor en texto) van en `notas`.
-10. **Lo que no se puede estandarizar no se inventa.** Un vehículo que no se pudo llevar a `base_vehicle_id` va a
+10. **Lo obsoleto de AutoCare** (ADR 0024). Lo que AutoCare quitó queda en `ref` con `obsoleto_en`. 🔒 No se asigna en filas
+    nuevas ni al cambiar el valor (tipo de parte, atributo, valor permitido, vehículo); lo que ya lo usaba se conserva y se puede
+    editar. Usar solo lo vigente: `obsoleto_en is null`.
+11. **Lo que no se puede estandarizar no se inventa.** Un vehículo que no se pudo llevar a `base_vehicle_id` va a
     `aplicacion_sin_homologar` con su `motivo`. Un dato contradictorio va a `conflicto`. Si es un vehículo que falta en AutoCare,
     se registra en MercadoExterno (`fn_registrar_vehiculo`) y se usa el ID que devuelve.
-11. **Imágenes.** Solo URL (o bucket y objeto de MinIO); no se copian.
+12. **Imágenes.** Solo URL (o bucket y objeto de MinIO); no se copian.
 
 ## Cómo empezar (ambiente local)
 

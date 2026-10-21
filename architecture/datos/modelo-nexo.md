@@ -24,6 +24,11 @@
 >   `app.fn_registrar_cambios_catalogo`), `SECURITY DEFINER` y sin `EXECUTE` público.
 > - `0012_etl_foto_completa.sql`: lotes de foto completa (`staging.lote.completo`); lo que no viene se inactiva como `NO_EN_SAP`
 >   (defensa `LOTE_INCOMPLETO`, parámetro `etl.max_no_en_sap`); un `POR_VALIDAR` que cambia en SAP vuelve a `PENDIENTE`.
+> - `0013_staging_por_lote.sql`: `staging` con una fila por artículo y lote (solo `INSERT`), marcas y modelos validados por lote,
+>   `LOTE_YA_PROCESADO`, limpieza de lotes viejos (`etl.lotes_conservados`) y `app.fn_articulos_conocidos`.
+> - `0014_autocare_versionado.sql`: copia de AutoCare versionada (ADR 0024). `obsoleto_en` en `meta.atributo_config` y
+>   `meta.atributo_valor_permitido` (lo obsoleto no se ofrece ni se asigna de nuevo; `ATRIBUTO_OBSOLETO`) y
+>   `meta.historial_referencia` (altas, cambios, bajas e impacto de cada carga).
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones

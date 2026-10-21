@@ -30,6 +30,8 @@ Son seguras ante llamadas repetidas o simultáneas: registrar dos veces lo mismo
 - **Regiones VCdb** (`GTM`, `SLV`, `HND`…): solo las que existen en `ref.region`.
 - **Motor identificable:** litros o código de motor; el submodelo es «Base» si no tiene otro nombre.
 - **Nunca `DELETE`** (lo impide la base). Lo que AutoCare incluya después lo reconcilia el equipo de Nexo.
+- **`ref` es una copia de AutoCare** (ADR 0024): lo que AutoCare quita queda con `obsoleto_en`, no se borra. Las funciones lo siguen
+  viendo como "existe en AutoCare" (no lo dupliques registrándolo como propio).
 - **Sin DDL:** las tablas y funciones vienen de `db/mercado_externo/migraciones/`. Si falta algo, se pide al equipo de Nexo.
 - **Credenciales solo en `.env`** (no leas `.env`). Nunca en código, documentos ni commits.
 - **Las pruebas usan la base local**, nunca el servidor.

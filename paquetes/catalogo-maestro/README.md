@@ -16,7 +16,7 @@ La memoria y el historial de Claude Code viven en el volumen `claude-config`: so
 | `CLAUDE.md` | Instrucciones para Claude: contrato, lo que Nexo necesita y reglas |
 | `db/consolidacion/` | El contrato, las migraciones reales y el ejemplo de carga |
 | `db/pruebas/` | Pruebas del contrato |
-| `db/mercado_externo/` | Para registrar vehículos que no están en AutoCare (regla 10 del contrato) |
+| `db/mercado_externo/` | Para registrar vehículos que no están en AutoCare (regla 11 del contrato) |
 | `contexto/` | Documentos de gobernanza copiados de Nexo (no se editan aquí) |
 | `base-local/` | Script para levantar Consolidación local |
 
@@ -28,5 +28,5 @@ grant grp_consolidacion_carga to consolidacion_carga;   -- base articulos_consol
 grant connect on database db_diagrams to consolidacion_carga;
 grant connect on database autocare_global to consolidacion_carga;
 ```
-Más el `SELECT` en las tablas de `db_diagrams` y `autocare_global` que use el proceso. Para la regla 10, en `mercado_externo`:
+Más el `SELECT` en las tablas de `db_diagrams` y `autocare_global` que use el proceso. Para la regla 11, en `mercado_externo`:
 `grant grp_mercado_registro to consolidacion_carga;`.

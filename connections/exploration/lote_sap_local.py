@@ -51,9 +51,9 @@ cols = ", ".join(f'i."{k}"' for k in MAPEO)
 cur.execute(f'select {cols}, c2."Name" from "{s}"."OITM" i left join "{s}"."@IGT_CAT2" c2 on c2."Code" = i."U_SubCat" '
             f'where i."U_Categoria" in ({",".join("?" * len(CATS))})', CATS)
 filas = cur.fetchall()
-# Foto completa: también los que ya se habían enviado y hoy están en otra categoría (así Nexo sabe que salieron del alcance)
+# Foto completa: también los que Nexo ya conoce y hoy están en otra categoría (así Nexo sabe que salieron del alcance)
 with psycopg.connect(destino_dsn) as c:
-    enviados = {r[0] for r in c.execute("select item_code from staging.articulo_sap")}
+    enviados = {r[0] for r in c.execute("select * from app.fn_articulos_conocidos()")}
 faltan = sorted(enviados - {f[0] for f in filas})
 for i in range(0, len(faltan), 500):
     lote_codigos = faltan[i:i + 500]
@@ -61,21 +61,17 @@ for i in range(0, len(faltan), 500):
                 f'where i."ItemCode" in ({",".join("?" * len(lote_codigos))})', lote_codigos)
     filas += cur.fetchall()
 h.close()
-print(f"SAP: {len(marcas)} marcas, {len(modelos)} modelos, {len(filas)} artículos (8 categorías + {len(faltan)} enviados antes)")
+print(f"SAP: {len(marcas)} marcas, {len(modelos)} modelos, {len(filas)} artículos (8 categorías + {len(faltan)} que Nexo ya conoce)")
 
 destino = list(MAPEO.values()) + ["subcategoria_nombre", "datos_sap", "extraido_en", "lote_id"]
 with psycopg.connect(destino_dsn, autocommit=True) as c:
     lote = c.execute("insert into staging.lote (completo) values (true) returning lote_id").fetchone()[0]
     with c.transaction():
-        c.cursor().executemany("insert into staging.sap_marca values (%s, %s, %s) on conflict (marca_codigo) do update "
-                               "set nombre = excluded.nombre, lote_id = excluded.lote_id", [(*m, lote) for m in marcas])
-        c.cursor().executemany("insert into staging.sap_modelo values (%s, %s, %s, %s, %s) on conflict (marca_codigo, modelo_codigo) "
-                               "do update set nombre = excluded.nombre, tamano = excluded.tamano, lote_id = excluded.lote_id",
-                               [(*m, lote) for m in modelos])
-        ahora = datetime.datetime.now(datetime.UTC)
-        set_ = ", ".join(f"{k} = excluded.{k}" for k in destino if k != "item_code")
-        c.cursor().executemany(f"insert into staging.articulo_sap ({', '.join(destino)}) values ({', '.join(['%s'] * len(destino))}) "
-                               f"on conflict (item_code) do update set {set_}",
+        # Una fila por artículo y lote, solo INSERT (migración 0013): lo mismo que el modo append de Spark/JDBC
+        c.cursor().executemany("insert into staging.sap_marca values (%s, %s, %s)", [(*m, lote) for m in marcas])
+        c.cursor().executemany("insert into staging.sap_modelo values (%s, %s, %s, %s, %s)", [(*m, lote) for m in modelos])
+        ahora = datetime.datetime.now(datetime.timezone.utc)
+        c.cursor().executemany(f"insert into staging.articulo_sap ({', '.join(destino)}) values ({', '.join(['%s'] * len(destino))})",
                                [(*[None if v == "" else v for v in f[:-1]], f[-1], json.dumps({k: j(v) for k, v in zip(MAPEO, f)}), ahora, lote)
                                 for f in filas])
     print("fn_procesar_staging:", c.execute("select app.fn_procesar_staging(%s)", (lote,)).fetchone()[0])
