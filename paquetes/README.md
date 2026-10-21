@@ -7,8 +7,8 @@ le toca y una base local igual a la de producción.
 | Paquete | Proceso | Escribe en |
 |---|---|---|
 | `etl-sap` | ETL de entrada: SAP Business One → Nexo | `staging` de `nexo` (`10.10.60.6`) |
-| `catalogo-maestro` | Carga del catálogo maestro: diagramas y scraping → Consolidación | `articulos_consolidacion` (`10.20.20.6`) |
-| `ia-vehiculos` | IA con búsqueda web: vehículos fuera de AutoCare | `mercado_externo` (`10.20.20.6`) |
+| `catalogo-maestro` | Carga del catálogo maestro: diagramas y scraping → Consolidación | `consolidacion_articulos` (`10.10.60.6`) |
+| `ia-vehiculos` | IA con búsqueda web: vehículos fuera de AutoCare | `mercado_externo` (`10.10.60.6`) |
 | `agente-revision-catalogo` | Agente de IA: cambios del catálogo maestro → verificaciones de Nexo | funciones de `nexo` (`10.10.60.6`) |
 
 ```bash

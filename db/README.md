@@ -9,6 +9,9 @@ Paquete de contrato para los procesos de otros proyectos. Nexo tendrá sus migra
 | [ref/](ref/) | — | Copia de referencia de AutoCare para validar en la base | `cargar_ref.py` |
 | [pruebas/](pruebas/) | bases locales desechables | — | `probar.py` |
 
+**Producción (2026-10-21):** `consolidacion_articulos` y `mercado_externo` viven en **10.10.60.6** (PostgreSQL 18), junto a `nexo`;
+su dueño es `postgres`, que aplica las migraciones. AutoCare (`autocare_global`) sigue en 10.20.20.6, solo lectura.
+
 ## Flujo
 1. **Migraciones:** `uv run db/aplicar.py <base>` aplica en orden `migraciones/V###__*.sql`, cada una en su transacción, y
    registra versión y checksum en `public.esquema_version`. Una migración aplicada **no se edita**: se agrega otra.

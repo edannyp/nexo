@@ -93,12 +93,12 @@ La subida usa una llave de MinIO **aparte**, con escritura limitada a `rlt-dru/i
 fotos necesita un usuario con rol `FOTOS`.
 
 ## Catálogo de vehículos (pestaña Aplicaciones)
-La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y `MERCADO_EXTERNO_*` en el `.env` (el usuario de
-MercadoExterno con `grp_mercado_registro`). MercadoExterno debe tener aplicada la migración `V003__configuraciones.sql`
+La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y `MERCADO_EXTERNO_*` en el `.env` (10.10.60.6, base
+`mercado_externo`, usuario con los permisos de `grp_mercado_registro`). MercadoExterno debe tener aplicada la migración `V003__configuraciones.sql`
 (`uv run db/aplicar.py mercado_externo --servidor`). Sin estas variables, la pestaña muestra las aplicaciones pero no permite buscar.
 
 ## Catálogo maestro (pestaña Emparejamiento y diagramas)
-La API lee Consolidación con `CONSOLIDACION_*` (usuario con `app_lectura`). Los diagramas guardados en MinIO se muestran con URLs
+La API lee Consolidación con `CONSOLIDACION_*` (10.10.60.6, base `consolidacion_articulos`, usuario `app_lectura` miembro de `grp_app_lectura`). Los diagramas guardados en MinIO se muestran con URLs
 firmadas (requiere `MINIO_*`). Sin Consolidación, la pestaña muestra lo ya vinculado pero no busca candidatos.
 
 ## Actualizar
