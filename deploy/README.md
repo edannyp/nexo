@@ -67,7 +67,7 @@ psql -h <servidor> -U postgres -d nexo -v clave='<contraseña larga>' -f deploy/
 ```
 | Usuario | Puede |
 |---|---|
-| `etl_entrada` | leer y escribir `staging` (artículos de SAP) y ejecutar `app.fn_procesar_staging` |
+| `etl_entrada` | leer e insertar en `staging` (artículos de SAP) y ejecutar `app.fn_procesar_staging` y `app.fn_articulos_conocidos` |
 | `agente_revision_catalogo` | ejecutar `app.fn_partes_emparejadas`, `app.fn_datos_emparejamiento` y `app.fn_registrar_cambios_catalogo` |
 
 Ninguno lee ni escribe las tablas de `app`: las funciones corren con los permisos de su dueño.
