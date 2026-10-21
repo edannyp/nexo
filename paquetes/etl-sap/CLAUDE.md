@@ -19,15 +19,22 @@ Por cada corrida, conectado a `nexo` con el usuario `etl_entrada`:
 2. `staging.sap_marca` (`@IGT_MARCAS`: código, nombre) y `staging.sap_modelo` (`@IGT_LINEA`: marca, LineId, nombre, tamaño):
    **completos en cada lote**. Nexo valida `U_Marca` con las marcas y modelos **de ese mismo lote**.
 3. `staging.articulo_sap`: **una fila por artículo y lote, solo `INSERT`** (sin *upsert*: encaja con el modo append de
-   Spark/JDBC), con `datos_sap` (la fila cruda de SAP en JSON), `extraido_en` y `lote_id`, de:
+   Spark/JDBC), con `datos_sap`, `extraido_en` (un solo momento por lote) y `lote_id`, de:
    - **todos** los artículos de `OITM` de las 8 categorías, **sin filtrar por subcategoría** (Nexo decide qué está en alcance);
    - **más** los `item_code` que Nexo ya conoce (`select * from app.fn_articulos_conocidos()`) aunque hoy estén en otra
      categoría. Así Nexo sabe que salieron del alcance. Lo que ya no exista en SAP simplemente no se envía.
+   `datos_sap` = los 42 campos de `OITM` de `mapeo-fuentes.md`, con los **nombres de SAP** como llaves y los valores **tal como
+   vienen** (`''` incluido): se arma desde bronze, no desde las columnas renombradas. Ejemplo exacto en `referencia/lote_sap_local.py`.
 4. `select app.fn_procesar_staging(lote_id)` → devuelve `{nuevos, actualizados, sin_cambios, reabiertos, inactivados, activados,
    descartados, no_en_sap}`. **Regístralo** en el log de la corrida.
 
-Un lote no se procesa dos veces (`LOTE_YA_PROCESADO`). Nexo conserva en `staging` los últimos 7 lotes procesados y limpia los
-anteriores: **el historial completo de SAP es tuyo** (capa *bronze*).
+Un lote no se procesa dos veces (`LOTE_YA_PROCESADO`). Nexo conserva en `staging` los últimos 7 lotes procesados y limpia todo lo
+anterior, también los lotes que nunca se procesaron: **el historial completo de SAP es tuyo** (capa *bronze*).
+
+**Implementación libre:** el contrato es el SQL y el comportamiento, no el lenguaje ni el driver. Spark JDBC para leer HANA y
+`psycopg2` para publicar en Nexo sirven igual que lo de `referencia/`. Los pasos 1 a 4 van en **una sola tarea** (no en tareas
+separadas de Airflow): si falla y se reintenta, abre un lote nuevo y el resultado es el mismo. Ante `LOTE_INCOMPLETO`, falla sin
+reintentar (en Airflow, `AirflowFailException`) y alerta.
 
 ## Cómo encaja con una arquitectura medallion (Airflow + Spark + HDFS)
 | Capa | Qué guarda | Regla |
@@ -60,6 +67,8 @@ cortada). **No reintentes a ciegas:** alerta y revisa.
 
 ## Reglas que no se negocian
 - **Solo `staging`.** El usuario `etl_entrada` no puede leer ni escribir `app`; si algo lo necesita, se está saliendo del contrato.
+- **Tipos sin silencios.** Las columnas de `staging` tienen tipo (`integer`, `numeric`, `text`). Si un valor no convierte, que
+  lo rechace Postgres: no lo conviertas a `null` en silencio (por ejemplo, un `cast` de Spark).
 - **Valores crudos, nombres canónicos.** Se renombra (`SHeight1` → `panal_alto`) pero no se convierte ni se limpia: las medidas van con
   su unidad (`panal_alto_unidad` = `OLGT.UnitCode`), los ceros y vacíos como vienen. `''` de SAP → `NULL`.
 - **No calcula `hash_control`** ni decide estados, inactivos o hallazgos: eso es de Nexo.
@@ -80,6 +89,9 @@ cortada). **No reintentes a ciegas:** alerta y revisa.
 ## Cómo probar
 1. `bash base-local/levantar.sh` crea (o recrea) la base local con **las mismas migraciones que producción** y el usuario
    `etl_entrada` con los mismos permisos.
+   Si tu devcontainer no tiene el servicio `postgres`, basta un PostgreSQL 18 aparte:
+   `docker run -d --name nexo-pg -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:18` y
+   `NEXO_LOCAL_HOST=localhost bash base-local/levantar.sh` (o `host.docker.internal` desde dentro de un contenedor).
 2. Corre el ETL contra la base local (`NEXO_*` del `.env` apuntan a `postgres` por defecto).
 3. `psql "$NEXO_LOCAL_ADMIN" -f base-local/verificar.sql` muestra artículos por categoría y línea, hallazgos de calidad y el resultado
    de cada lote.
@@ -98,4 +110,6 @@ forma de `OITM` y cubre al menos:
 
 ## Convenciones
 - Documentación y nombres de dominio en español; código técnico en inglés cuando sea idiomático.
-- Python 3.13 con `uv`. Conexiones con `psycopg` (Nexo) y `hdbcli` (SAP).
+- El devcontainer de este paquete trae Python 3.13 con `uv`, `psycopg` y `hdbcli` para la referencia y las pruebas; el ETL puede
+  usar el stack de tu proyecto (ver *Implementación libre*).
+- SAP de producción: esquema `SBO_LIVE_RLT`; se leen `OITM`, `@IGT_CAT2`, `@IGT_MARCAS` y `@IGT_LINEA`.
