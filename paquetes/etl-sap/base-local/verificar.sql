@@ -7,6 +7,9 @@ select c.codigo_sap, c.nombre, a.linea, count(*) filter (where a.activo) as acti
 from app.articulo a join app.categoria c on c.id = a.categoria_id
 group by 1, 2, 3 order by 1, 3;
 
+\echo '== Inactivos por motivo (SAP_CONGELADO, NOMBRE_INACTIVO, FUERA_DE_ALCANCE, NO_EN_SAP)'
+select motivo_inactivo, count(*) from app.articulo where not activo group by 1 order by 2 desc;
+
 \echo '== Hallazgos de calidad de SAP (lo que Nexo reporta para corregir en SAP)'
 select tipo, count(*) from app.hallazgo_calidad_sap where corregido_en is null group by 1 order by 2 desc;
 
