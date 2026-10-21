@@ -114,11 +114,13 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
                coalesce((select json_agg(json_build_object('valid_value_id', v.valid_value_id, 'valor', v.valor, 'valor_es', tr.valor_es)
                                          order by v.valor)
                          from meta.atributo_valor_permitido v left join meta.traduccion_valor tr using (valid_value_id)
-                         where v.part_terminology_id = r.part_terminology_id and v.paid = r.paid), '[]') as opciones
+                         where v.part_terminology_id = r.part_terminology_id and v.paid = r.paid
+                           and (v.obsoleto_en is null or v.valid_value_id = t.valid_value_id)), '[]') as opciones
         from meta.atributo_config r
         left join app.articulo_atributo t on t.articulo_id = :id and t.paid = r.paid
         left join app.usuario u on u.id = t.confirmado_por
-        where r.part_terminology_id = :pt and r.habilitado
+        -- Lo que AutoCare dejó obsoleto se muestra solo si el artículo ya tiene valor
+        where r.part_terminology_id = :pt and r.habilitado and (r.obsoleto_en is null or t.id is not null)
         order by r.orden nulls last, r.paid
     """), {"id": a.id, "pt": a.part_terminology_id}).all()
 
