@@ -65,3 +65,16 @@ def test_los_lotes_sin_procesar_tambien_se_limpian(conn):
     cargar(conn, [articulo("RAD00505")])
     assert filas(reciente) == 0                                             # ya quedó fuera de la ventana
     assert conn.execute("select count(*) from staging.lote where lote_id = %s", (abandonado,)).fetchone()[0] == 1
+
+
+def test_datos_sap_se_actualiza_aunque_no_cambie_la_huella(conn):
+    lote = lote_crudo(conn, [], [articulo("RAD00506")])
+    conn.execute("select app.fn_procesar_staging(%s)", (lote,))
+    lote = conn.execute("insert into staging.lote (completo) values (false) returning lote_id").fetchone()[0]
+    f = articulo("RAD00506")
+    cols = list(f) + ["datos_sap", "extraido_en", "lote_id"]
+    conn.execute(f"insert into staging.articulo_sap ({', '.join(cols)}) values ({', '.join(['%s'] * len(cols))})",
+                 list(f.values()) + [json.dumps({"ItemCode": "RAD00506", "U_ID_Aces": None}), "now()", lote])
+    r = conn.execute("select app.fn_procesar_staging(%s)", (lote,)).fetchone()[0]
+    assert r["sin_cambios"] == 1
+    assert art(conn, "RAD00506")["datos_sap"] == {"ItemCode": "RAD00506", "U_ID_Aces": None}

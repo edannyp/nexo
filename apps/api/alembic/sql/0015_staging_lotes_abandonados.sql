@@ -1,7 +1,9 @@
 -- Nexo 0015 · Limpieza de lotes sin procesar en staging
 -- Un lote que falló (LOTE_INCOMPLETO, error del ETL a medias) o que nunca se procesó conservaba sus filas para siempre, porque la
 -- limpieza de 0013 solo tocaba lotes procesados. Ahora se limpia todo lo anterior al más antiguo de los lotes procesados que se
--- conservan (etl.lotes_conservados). El ETL no tiene que hacer nada. Mismo cuerpo que 0013 salvo la limpieza del final.
+-- conservan (etl.lotes_conservados). El ETL no tiene que hacer nada.
+-- Además, un artículo sin cambios en su huella actualiza igual su datos_sap (la fila cruda de SAP que muestra la ficha).
+-- Mismo cuerpo que 0013 salvo esas dos cosas.
 
 create or replace function app.fn_procesar_staging(p_lote_id bigint) returns jsonb
 language plpgsql security definer set search_path = app, staging, meta, audit, public, pg_temp as $$
@@ -102,7 +104,8 @@ begin
       end if;
       res := jsonb_set(res, '{actualizados}', to_jsonb((res->>'actualizados')::int + 1));
     else
-      update app.articulo set ultimo_lote_id = p_lote_id, activo = v_activo, motivo_inactivo = v_motivo
+      -- Sin cambios en lo que importa, pero datos_sap (la fila cruda que se muestra en la ficha) se mantiene al día con SAP
+      update app.articulo set ultimo_lote_id = p_lote_id, activo = v_activo, motivo_inactivo = v_motivo, datos_sap = n.datos_sap
       where id = a.id returning * into a;
       res := jsonb_set(res, '{sin_cambios}', to_jsonb((res->>'sin_cambios')::int + 1));
     end if;
