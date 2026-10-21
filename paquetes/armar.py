@@ -62,7 +62,7 @@ PAQUETES: dict[str, dict] = {
     },
     "catalogo-maestro": {
         "titulo": "Carga del catálogo maestro: diagramas y scraping → Consolidación",
-        "postgres": "postgres:16",      # el servidor de Consolidación (10.20.20.6) es PostgreSQL 16
+        "postgres": "postgres:18",      # Consolidación vive en 10.10.60.6, PostgreSQL 18
         "deps": ["psycopg[binary]>=3.2", "python-dotenv>=1.0", "pytest>=8"],
         "copiar": {
             "contexto/categorias.md": "context/categorias.md",
@@ -77,7 +77,7 @@ PAQUETES: dict[str, dict] = {
     },
     "ia-vehiculos": {
         "titulo": "IA con búsqueda web: vehículos fuera de AutoCare → MercadoExterno",
-        "postgres": "postgres:16",
+        "postgres": "postgres:18",
         "deps": ["psycopg[binary]>=3.2", "python-dotenv>=1.0", "pytest>=8"],
         "copiar": {
             **{f"contexto/fuentes/{n}": f"context/fuentes/{n}" for n in ("mercado-externo.md", "autocare.md")},

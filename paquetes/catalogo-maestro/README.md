@@ -20,10 +20,10 @@ La memoria y el historial de Claude Code viven en el volumen `claude-config`: so
 | `contexto/` | Documentos de gobernanza copiados de Nexo (no se editan aquí) |
 | `base-local/` | Script para levantar Consolidación local |
 
-## Para el administrador de PostgreSQL (producción, `10.20.20.6`)
+## Para el administrador de PostgreSQL (producción, `10.10.60.6`)
 ```sql
 create role consolidacion_carga login password '<contraseña larga>';
-grant grp_consolidacion_carga to consolidacion_carga;   -- base articulos_consolidacion: escribe catalogo y carga
+grant grp_consolidacion_carga to consolidacion_carga;   -- base consolidacion_articulos: escribe catalogo y carga
 -- Lectura de las fuentes:
 grant connect on database db_diagrams to consolidacion_carga;
 grant connect on database autocare_global to consolidacion_carga;

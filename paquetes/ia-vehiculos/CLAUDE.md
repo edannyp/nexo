@@ -39,8 +39,8 @@ Son seguras ante llamadas repetidas o simultáneas: registrar dos veces lo mismo
 ## Ambientes
 | | Base | Usuario |
 |---|---|---|
-| Desarrollo | `mercado_externo` en el contenedor `postgres` (PostgreSQL 16) | `postgres` |
-| Producción | `mercado_externo` en `10.20.20.6` (PostgreSQL 16) | uno en `grp_mercado_registro` (lo crea el administrador) |
+| Desarrollo | `mercado_externo` en el contenedor `postgres` (PostgreSQL 18) | `postgres` |
+| Producción | `mercado_externo` en `10.10.60.6` (PostgreSQL 18) | uno en `grp_mercado_registro` (lo crea el administrador) |
 
 ## Cómo probar
 1. `bash base-local/levantar.sh`: MercadoExterno local con las migraciones reales y la referencia de AutoCare (mínima o real).

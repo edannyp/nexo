@@ -39,8 +39,8 @@ Y una regla que Nexo necesita: **los `parte.id` son estables**. Nexo los guarda 
 ## Ambientes
 | | Base | Usuario |
 |---|---|---|
-| Desarrollo | `articulos_consolidacion` en el contenedor `postgres` (PostgreSQL 16) | `postgres` |
-| Producción | `articulos_consolidacion` en `10.20.20.6` (PostgreSQL 16) | uno en `grp_consolidacion_carga` (lo crea el administrador) |
+| Desarrollo | `articulos_consolidacion` en el contenedor `postgres` (PostgreSQL 18) | `postgres` |
+| Producción | `consolidacion_articulos` en `10.10.60.6` (PostgreSQL 18) | uno en `grp_consolidacion_carga` (lo crea el administrador) |
 
 ## Cómo probar
 1. `bash base-local/levantar.sh`: crea Consolidación local con las migraciones reales, la referencia mínima de AutoCare (o la real si

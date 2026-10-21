@@ -52,7 +52,7 @@ Con el usuario `agente_revision_catalogo` en `nexo` (solo puede ejecutar estas t
 | | Nexo | Consolidación |
 |---|---|---|
 | Desarrollo | `nexo` local, `agente_revision_catalogo` / `agente` | `articulos_consolidacion` local, `postgres` |
-| Producción | `nexo` en `10.10.60.6`, `agente_revision_catalogo` | `articulos_consolidacion` en `10.20.20.6`, usuario de `grp_app_lectura` |
+| Producción | `nexo` en `10.10.60.6`, `agente_revision_catalogo` | `consolidacion_articulos` en `10.10.60.6`, usuario de `grp_app_lectura` |
 
 ## Cómo probar
 1. `bash base-local/levantar.sh`: Consolidación local con tres partes (1, 2, 3) y Nexo local con tres artículos validados emparejados

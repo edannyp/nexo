@@ -19,7 +19,7 @@ La memoria y el historial de Claude Code viven en el volumen `claude-config`: so
 | `contexto/` | Documentos de gobernanza copiados de Nexo (no se editan aquí) |
 | `base-local/` | Script para levantar MercadoExterno local |
 
-## Para el administrador de PostgreSQL (producción, `10.20.20.6`)
+## Para el administrador de PostgreSQL (producción, `10.10.60.6`)
 ```sql
 create role ia_vehiculos login password '<contraseña larga>';
 grant grp_mercado_registro to ia_vehiculos;   -- base mercado_externo: lee y registra con las funciones
