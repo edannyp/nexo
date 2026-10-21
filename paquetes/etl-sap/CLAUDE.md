@@ -17,13 +17,30 @@ Lee antes de proponer o escribir código:
 Por cada corrida, conectado a `nexo` con el usuario `etl_entrada`:
 1. `insert into staging.lote (completo) values (true) returning lote_id` → abre un lote de **foto completa**.
 2. `staging.sap_marca` (`@IGT_MARCAS`: código, nombre) y `staging.sap_modelo` (`@IGT_LINEA`: marca, LineId, nombre, tamaño):
-   **completos en cada lote**, con *upsert*. Nexo los usa para decidir si `U_Marca` es una marca válida.
-3. `staging.articulo_sap`, con *upsert* por `item_code`, `datos_sap` (la fila cruda de SAP en JSON), `extraido_en` y `lote_id`, de:
+   **completos en cada lote**. Nexo valida `U_Marca` con las marcas y modelos **de ese mismo lote**.
+3. `staging.articulo_sap`: **una fila por artículo y lote, solo `INSERT`** (sin *upsert*: encaja con el modo append de
+   Spark/JDBC), con `datos_sap` (la fila cruda de SAP en JSON), `extraido_en` y `lote_id`, de:
    - **todos** los artículos de `OITM` de las 8 categorías, **sin filtrar por subcategoría** (Nexo decide qué está en alcance);
-   - **más** los `item_code` que ya enviaste antes (`select item_code from staging.articulo_sap`) aunque hoy estén en otra
+   - **más** los `item_code` que Nexo ya conoce (`select * from app.fn_articulos_conocidos()`) aunque hoy estén en otra
      categoría. Así Nexo sabe que salieron del alcance. Lo que ya no exista en SAP simplemente no se envía.
 4. `select app.fn_procesar_staging(lote_id)` → devuelve `{nuevos, actualizados, sin_cambios, reabiertos, inactivados, activados,
    descartados, no_en_sap}`. **Regístralo** en el log de la corrida.
+
+Un lote no se procesa dos veces (`LOTE_YA_PROCESADO`). Nexo conserva en `staging` los últimos 7 lotes procesados y limpia los
+anteriores: **el historial completo de SAP es tuyo** (capa *bronze*).
+
+## Cómo encaja con una arquitectura medallion (Airflow + Spark + HDFS)
+| Capa | Qué guarda | Regla |
+|---|---|---|
+| Bronze | Cada extracción de `OITM`, `@IGT_MARCAS`, `@IGT_LINEA` y `@IGT_CAT2`, tal cual, con su fecha | Es el historial completo de SAP |
+| Silver | Columnas renombradas a los nombres de `mapeo-fuentes.md` y tipos correctos | **Sin limpiar ni convertir valores**: unidades, marcas, ceros y textos como vienen. Normalizar es trabajo de Nexo; si llega normalizado, las huellas no cuadran |
+| Gold | Las tres tablas con la forma exacta de `staging` (`sap_marca`, `sap_modelo`, `articulo_sap`) | Se escriben en Nexo en modo append, en un lote nuevo, y luego se llama a `app.fn_procesar_staging` |
+
+- Tus tablas gold y ClickHouse sirven para tu analítica; Nexo no las lee.
+- **No detectes cambios ni decidas estados para Nexo**: Nexo compara, reabre, inactiva y reporta hallazgos. Tu pipeline puede medir
+  cambios para su propio monitoreo, pero a Nexo solo le entrega la foto.
+- Si más adelante necesitas **leer** datos de Nexo (por ejemplo, artículos validados para tu analítica), se pide al equipo de Nexo
+  una vista de solo lectura con su usuario: no se leen ni se escriben las tablas internas de Nexo.
 
 ## Lo que puede pasar en SAP y lo que hace Nexo (no lo programes tú)
 | En SAP pasa… | Nexo hace |
@@ -50,7 +67,7 @@ cortada). **No reintentes a ciegas:** alerta y revisa.
 - **SAP es solo lectura.** Nunca un `INSERT/UPDATE` en HANA.
 - **Sin DDL.** El esquema de `nexo` lo gobiernan las migraciones de Nexo. Si hace falta una columna o un cambio, se pide al equipo
   de Nexo; no se crea aquí.
-- **Idempotente.** Correr dos veces seguidas no cambia nada la segunda vez (`sin_cambios` = todo).
+- **Idempotente.** Correr dos veces seguidas (dos lotes) no cambia nada la segunda vez (`sin_cambios` = todo).
 - **Credenciales solo en `.env`**: nunca en código, documentos ni commits. No leas `.env` (está denegado); usa los nombres de las
   variables.
 

@@ -71,7 +71,7 @@ PAQUETES: dict[str, dict] = {
             "contexto/arquitectura/modelo-consolidacion.md": "architecture/datos/modelo-consolidacion.md",
             **{f"contexto/arquitectura/adr/{n}": ADR + n for n in (
                 "0009-esquemas-consolidacion-y-mercado-externo.md", "0011-consolidacion-catalogo-maestro.md",
-                "0019-catalogo-configurable-atributos.md")},
+                "0019-catalogo-configurable-atributos.md", "0024-copia-autocare-versionada.md")},
             **DB,
         },
     },
@@ -83,7 +83,8 @@ PAQUETES: dict[str, dict] = {
             **{f"contexto/fuentes/{n}": f"context/fuentes/{n}" for n in ("mercado-externo.md", "autocare.md")},
             "contexto/arquitectura/modelo-mercado-externo.md": "architecture/datos/modelo-mercado-externo.md",
             **{f"contexto/arquitectura/adr/{n}": ADR + n for n in (
-                "0009-esquemas-consolidacion-y-mercado-externo.md", "0014-extension-vcdb-vehiculos-custom.md")},
+                "0009-esquemas-consolidacion-y-mercado-externo.md", "0014-extension-vcdb-vehiculos-custom.md",
+                "0024-copia-autocare-versionada.md")},
             **DB,
         },
     },

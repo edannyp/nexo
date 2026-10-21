@@ -30,6 +30,8 @@ Y una regla que Nexo necesita: **los `parte.id` son estables**. Nexo los guarda 
 - **Sin DDL.** Las tablas, vistas y funciones vienen de `db/consolidacion/migraciones/` (las de Nexo). Si hace falta un cambio,
   se pide al equipo de Nexo.
 - **Nunca `DELETE`** (lo impide la base).
+- **Solo lo vigente de AutoCare** (ADR 0024): lo que AutoCare quitó queda en `ref` con `obsoleto_en`; la base rechaza asignarlo
+  en filas nuevas (tipo de parte, atributo, valor, vehículo). Toma los valores de `ref` con `obsoleto_en is null`.
 - **Fuentes de solo lectura:** `db_diagrams`, AutoCare y los sitios de los proveedores no se modifican.
 - **Credenciales solo en `.env`** (no leas `.env`; usa los nombres de las variables). Nunca en código, documentos ni commits.
 - **Las pruebas usan la base local**, nunca los servidores.
