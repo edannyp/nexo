@@ -26,18 +26,14 @@ def articulo(item_code: str, **campos) -> dict:
 def cargar(c: psycopg.Connection, filas: list[dict], completo: bool = False) -> dict:
     """Lo que hace el ETL: un lote en staging y luego fn_procesar_staging. `completo` = foto completa (migración 0012)."""
     lote = c.execute("insert into staging.lote (completo) values (%s) returning lote_id", (completo,)).fetchone()[0]
-    for codigo, nombre in MARCAS:
-        c.execute("insert into staging.sap_marca values (%s, %s, %s) on conflict (marca_codigo) do update set lote_id = excluded.lote_id",
-                  (codigo, nombre, lote))
+    for codigo, nombre in MARCAS:                                                  # catálogos completos en cada lote
+        c.execute("insert into staging.sap_marca values (%s, %s, %s)", (codigo, nombre, lote))
     for marca, modelo, nombre, tamano in MODELOS:
-        c.execute("insert into staging.sap_modelo values (%s, %s, %s, %s, %s) on conflict (marca_codigo, modelo_codigo) "
-                  "do update set lote_id = excluded.lote_id", (marca, modelo, nombre, tamano, lote))
-    for f in filas:
+        c.execute("insert into staging.sap_modelo values (%s, %s, %s, %s, %s)", (marca, modelo, nombre, tamano, lote))
+    for f in filas:                                                                # una fila por artículo y lote, sin upsert
         cols = list(f) + ["datos_sap", "extraido_en", "lote_id"]
         vals = list(f.values()) + [json.dumps({"ItemCode": f["item_code"]}), "now()", lote]
-        set_ = ", ".join(f"{k} = excluded.{k}" for k in cols if k != "item_code")
-        c.execute(f"insert into staging.articulo_sap ({', '.join(cols)}) values ({', '.join(['%s'] * len(cols))}) "
-                  f"on conflict (item_code) do update set {set_}", vals)
+        c.execute(f"insert into staging.articulo_sap ({', '.join(cols)}) values ({', '.join(['%s'] * len(cols))})", vals)
     return c.execute("select app.fn_procesar_staging(%s)", (lote,)).fetchone()[0]
 
 
