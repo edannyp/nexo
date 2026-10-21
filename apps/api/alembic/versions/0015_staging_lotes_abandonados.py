@@ -1,4 +1,4 @@
-"""Staging: limpia también los lotes que nunca se procesaron.
+"""Staging: limpia también los lotes que nunca se procesaron; datos_sap al día aunque la huella no cambie.
 
 Revision ID: 0015
 Revises: 0014

@@ -27,3 +27,6 @@ especificaciones.png
 
 # Paquetes armados para otros equipos (paquetes/armar.py)
 entregables/
+
+# Documentos que intercambiamos con los desarrolladores de los procesos externos (no se versionan)
+/comunicacion-externa/
