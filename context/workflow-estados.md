@@ -35,7 +35,8 @@ stateDiagram-v2
    Una aplicación **de vehículo** solo se confirma con **submodelo y motor** (decisión UX 4, 2026-10-19; la base lo exige desde la migración 0009: `aplicacion_vehiculo_completa`).
 5. **Regla de checksum**: si `fn_procesar_staging` detecta otro `hash_control` en un artículo `VALIDADO` o `SINCRONIZADO`, lo regresa
    a `PENDIENTE` (actor `PROCESO:ETL`, motivo `HASH_CAMBIO`) **conservando** el emparejamiento y los datos ya confirmados, y mostrando
-   al operador qué campos de SAP cambiaron. En `PENDIENTE`, `POR_VALIDAR` o `RECHAZADO` solo se actualizan los datos y el hash.
+   al operador qué campos de SAP cambiaron. Desde 2026-10-20 también un `POR_VALIDAR` que cambia en SAP vuelve a `PENDIENTE` (para
+   que el supervisor no valide datos que ya cambiaron). En `PENDIENTE` o `RECHAZADO` solo se actualizan los datos y el hash.
 6. **Reapertura**: el administrador o el supervisor pueden regresar un `VALIDADO` o `SINCRONIZADO` a `PENDIENTE` con motivo.
 7. **Verificación** (mantenimiento): ver abajo. No cambia el estado salvo que encuentre un problema.
 8. **Concurrencia**: un artículo solo puede editarlo un usuario a la vez. El usuario toma el siguiente artículo de su bandeja con

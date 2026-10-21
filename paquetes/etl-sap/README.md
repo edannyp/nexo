@@ -11,6 +11,8 @@ SAP Business One al esquema `staging` de Nexo, con Claude Code listo para trabaj
 
 La memoria y el historial de Claude Code viven en un volumen de Docker (`claude-config`): sobreviven a reconstruir el contenedor.
 
+**Empieza por `ENTREGA.md`:** qué recibes, qué pedir, las etapas y cuándo está terminado.
+
 ## Qué hay aquí
 | Carpeta | Contenido |
 |---|---|

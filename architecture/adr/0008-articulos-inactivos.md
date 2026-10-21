@@ -9,7 +9,8 @@ y 7 con "INACTIVO" en el nombre que siguen activos en SAP. Además, un artículo
 (cambio de categoría o de subcategoría).
 
 ## Decisión
-- `app.articulo` tiene `activo boolean not null default true` y `motivo_inactivo` (`SAP_CONGELADO` | `NOMBRE_INACTIVO` | `FUERA_DE_ALCANCE`).
+- `app.articulo` tiene `activo boolean not null default true` y `motivo_inactivo` (`SAP_CONGELADO` | `NOMBRE_INACTIVO` | `FUERA_DE_ALCANCE`
+  | `NO_EN_SAP`, este último desde la migración 0012: no vino en un lote de foto completa).
 - `app.fn_procesar_staging` lo calcula en cada carga: inactivo si `frozenFor = 'Y'`, si la descripción contiene `INACTIV`
   o si el artículo ya no cumple el filtro de `context/categorias.md`. Si vuelve a cumplir, se reactiva.
 - La bandera es **ortogonal al estado** del workflow: el artículo conserva su estado, pero:

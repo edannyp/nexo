@@ -54,7 +54,7 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
    **Fotos existentes** (una vez, repetible): `docker compose exec api python -m nexo_api.cli importar-fotos`.
 7. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0011"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0012"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Usuarios de los procesos externos
 Una vez cada uno, como superusuario, después de que la API migró a `0011` (permisos mínimos, ADR 0017). La contraseña se pasa al
