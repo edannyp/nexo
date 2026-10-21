@@ -9,6 +9,7 @@ documento es para ti: qué recibes, qué pedir, cómo avanzar y cuándo está te
 - Una base `nexo` local idéntica a la de producción (`base-local/`), con el usuario `etl_entrada` y sus mismos permisos.
 - Una lectura de referencia de SAP (`referencia/lote_sap_local.py`): muestra la consulta y el orden correctos. **No es el ETL.**
 - Cómo encaja con tu arquitectura medallion (Airflow, Spark, HDFS): sección *Cómo encaja…* de `CLAUDE.md`.
+- Las respuestas del equipo de Nexo a tu plan (`RESPUESTAS-NEXO.md`).
 
 ## Qué necesitas pedir
 | Qué | A quién | Cuándo |

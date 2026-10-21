@@ -32,7 +32,12 @@ Cada proceso de otro proyecto que lee o escribe Nexo tiene aquí su contrato. Mi
      del `etl.max_no_en_sap` (5 %) de los activos, y al menos 10, rechaza el lote entero con `LOTE_INCOMPLETO` y no aplica nada.
 - **Devuelve** `{nuevos, actualizados, sin_cambios, reabiertos, inactivados, activados, descartados, no_en_sap}`: el ETL lo registra.
   Un lote no se procesa dos veces (`LOTE_YA_PROCESADO`). Nexo conserva en `staging` los últimos `etl.lotes_conservados` (7) lotes
-  procesados; el historial completo de SAP lo guarda el ETL en su propio almacenamiento (capa *bronze*).
+  procesados y limpia todo lo anterior, también los lotes que nunca se procesaron (migración 0015); el historial completo de SAP lo
+  guarda el ETL en su propio almacenamiento (capa *bronze*).
+- **Implementación libre:** el contrato es el SQL y el comportamiento, no el lenguaje ni el driver (Spark JDBC, `psycopg2`… sirven).
+  Abrir el lote, escribir y procesar van en **una sola tarea**: un reintento abre un lote nuevo y da el mismo resultado
+  (idempotente). Ante `LOTE_INCOMPLETO`, fallar sin reintentar y alertar. Tipos: que Postgres rechace un valor que no convierte; no
+  convertirlo a `null` en silencio.
   Ante `LOTE_INCOMPLETO` no se reintenta a ciegas: se revisa la lectura de SAP.
 - **Cómo lo verifica Nexo** (primera carga en producción y cada vez que cambie el ETL): justo después de la corrida, se carga la misma
   SAP en una base local con `connections/exploration/lote_sap_local.py` (referencia) y se compara con

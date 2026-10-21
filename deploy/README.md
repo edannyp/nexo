@@ -56,7 +56,7 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
    **Fotos existentes** (una vez, repetible): `docker compose exec api python -m nexo_api.cli importar-fotos`.
 7. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0014"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0015"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Usuarios de los procesos externos
 Una vez cada uno, como superusuario, después de que la API migró a `0011` (permisos mínimos, ADR 0017). La contraseña se pasa al
@@ -67,7 +67,7 @@ psql -h <servidor> -U postgres -d nexo -v clave='<contraseña larga>' -f deploy/
 ```
 | Usuario | Puede |
 |---|---|
-| `etl_entrada` | leer y escribir `staging` (artículos de SAP) y ejecutar `app.fn_procesar_staging` |
+| `etl_entrada` | leer e insertar en `staging` (artículos de SAP) y ejecutar `app.fn_procesar_staging` y `app.fn_articulos_conocidos` |
 | `agente_revision_catalogo` | ejecutar `app.fn_partes_emparejadas`, `app.fn_datos_emparejamiento` y `app.fn_registrar_cambios_catalogo` |
 
 Ninguno lee ni escribe las tablas de `app`: las funciones corren con los permisos de su dueño.

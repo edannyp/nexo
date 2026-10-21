@@ -56,6 +56,16 @@ correcta al validar.
 
 **Fuera del hash:** precio, existencias, costo promedio, `frozenFor`, fechas de creación y modificación de SAP.
 
+### Marcas, modelos y `datos_sap` (confirmado 2026-10-21 con el desarrollador del ETL)
+- `staging.sap_marca` = `@IGT_MARCAS` (`Code`, `Name`); `staging.sap_modelo` = `@IGT_LINEA` (`Code`, `LineId`, `U_Linea`,
+  `U_Tamanio`). `@IGT_LINEA` es la tabla hija de `@IGT_MARCAS`: su `Code` **es el código de la marca padre** (verificado con SAP
+  real: los 1 636 modelos tienen su marca). Un artículo apunta a su modelo con `U_Marca` + `U_Linea` (= `LineId`).
+- `datos_sap` (JSONB): los **42 campos de `OITM`** de la tabla de arriba, con los **nombres de SAP** como llaves (`ItemCode`,
+  `SHeight1`…) y los valores **tal como vienen** (`''` incluido; decimales como número). Sin `@IGT_CAT2.Name` (va en
+  `subcategoria_nombre`). Se arma desde la lectura cruda (bronze), no desde las columnas renombradas. No entra en el hash: se muestra en
+  la pestaña *Datos SAP* de la consola. Ejemplo exacto: `connections/exploration/lote_sap_local.py`.
+- `extraido_en`: un solo momento por lote. Esquema de SAP en producción: `SBO_LIVE_RLT`.
+
 ### Cálculo del `hash_control`
 - Lo calcula **Nexo** en `app.fn_procesar_staging`, no el ETL.
 - `sha256` sobre los valores **ya normalizados** de las columnas con Hash = Sí, en el orden de la tabla, separados por `\x1f`,
