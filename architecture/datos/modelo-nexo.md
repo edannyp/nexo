@@ -29,6 +29,8 @@
 > - `0014_autocare_versionado.sql`: copia de AutoCare versionada (ADR 0024). `obsoleto_en` en `meta.atributo_config` y
 >   `meta.atributo_valor_permitido` (lo obsoleto no se ofrece ni se asigna de nuevo; `ATRIBUTO_OBSOLETO`) y
 >   `meta.historial_referencia` (altas, cambios, bajas e impacto de cada carga).
+> - `0015_staging_lotes_abandonados.sql`: la limpieza de `staging` también quita los lotes que nunca se procesaron, fuera de la
+>   ventana de `etl.lotes_conservados` (un fallo reciente se conserva para diagnosticarlo).
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones
