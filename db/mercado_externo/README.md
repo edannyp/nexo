@@ -76,6 +76,10 @@ erDiagram
 Toda tabla propia guarda `origen` (`IA_WEB`/`APP`), `creado_por`, `evidencia` (lista JSON de URLs o fichas), `confianza`
 y `estado` (`ACTIVO`, `REEMPLAZADO` con `reemplazado_por_id` cuando AutoCare lo incluya, `DESCARTADO`).
 
+## Referencia de AutoCare (ADR 0024)
+`ref` es una copia de AutoCare. Lo que AutoCare quita queda con `obsoleto_en` (no se borra) y cada carga queda en
+`ref.historial_carga`. Las funciones de registro siguen viendo lo obsoleto como "existe en AutoCare", para no duplicarlo.
+
 ## Lo que la base rechaza
 - Registrar sin evidencia, con rango de años inválido o con una región que no existe en VCdb.
 - Una configuración sin submodelo, sin litros ni código de motor, o con un vehículo base que no existe.

@@ -8,17 +8,18 @@ Cada proceso de otro proyecto que lee o escribe Nexo tiene aquí su contrato. Mi
 > Implementado en `apps/api/alembic/sql/0001_nucleo.sql`, 0010 y 0012; pruebas en `test_nucleo.py`, `test_etl_permisos.py` y
 > `test_etl_foto_completa.py` (`apps/api/tests/integration/`).
 
-- **Escribe en:** solo `staging`, con *upsert*. No toca nada del esquema `app`.
-- **Usuario:** `etl_entrada` (`deploy/sql/usuario-etl.sql`): `SELECT/INSERT/UPDATE` en `staging` y `EXECUTE` de
-  `app.fn_procesar_staging`, que corre con los permisos de su dueño (migración 0010). No puede leer ni escribir `app`.
+- **Escribe en:** solo `staging`, **agregando filas**: una por artículo y lote, sin *upsert* (migración 0013; encaja con el modo
+  append de Spark/JDBC). No toca nada del esquema `app`.
+- **Usuario:** `etl_entrada` (`deploy/sql/usuario-etl.sql`): `SELECT/INSERT` en `staging` y `EXECUTE` de
+  `app.fn_procesar_staging` y `app.fn_articulos_conocidos`, que corre con los permisos de su dueño (migración 0010). No puede leer ni escribir `app`.
   1. `staging.lote`: abre un lote como **foto completa** (`insert into staging.lote (completo) values (true) returning lote_id`).
   2. `staging.sap_marca` (`@IGT_MARCAS`: código, nombre) y `staging.sap_modelo` (`@IGT_LINEA`: marca, `LineId`, nombre, tamaño), **completos**
-     en cada lote: Nexo los usa para decidir si `U_Marca` es válida (si no, es basura → `null` + hallazgo de calidad).
-  3. `staging.articulo_sap`: *upsert* por `item_code`.
+     en cada lote (Nexo valida cada artículo con las marcas y modelos **de su mismo lote**): Nexo los usa para decidir si `U_Marca` es válida (si no, es basura → `null` + hallazgo de calidad).
+  3. `staging.articulo_sap`: una fila por `item_code` en el lote (solo `INSERT`).
 - **Columnas:** las de la columna *Campo Nexo* de `mapeo-fuentes.md`, con nombres canónicos (ADR 0007). El ETL **solo renombra** y escribe valores crudos; las medidas van con su unidad original (`panal_alto` + `panal_alto_unidad` = `OLGT.UnitCode`, etc.); `subcategoria_nombre` = `@IGT_CAT2.Name`. Además lleva `congelado_sap` (`frozenFor`), `datos_sap` JSONB (fila cruda), `extraido_en` y `lote_id`.
 - **Qué envía (foto completa, decisión 2026-10-20):** en cada corrida, **todos** los artículos de `OITM` de las 8 categorías de
-  `context/categorias.md`, sin filtrar por subcategoría (Nexo decide qué está en alcance), **más** los `item_code` que ya envió antes
-  (`select item_code from staging.articulo_sap`) aunque hoy estén en otra categoría: así Nexo sabe que salieron del alcance. Lo que
+  `context/categorias.md`, sin filtrar por subcategoría (Nexo decide qué está en alcance), **más** los `item_code` que Nexo ya conoce
+  (`select * from app.fn_articulos_conocidos()`) aunque hoy estén en otra categoría: así Nexo sabe que salieron del alcance. Lo que
   ya no exista en SAP simplemente no se envía.
 - **No calcula** `hash_control`: lo calcula Nexo sobre los valores normalizados (`mapeo-fuentes.md`).
 - **Después de cargar:** llama a `app.fn_procesar_staging(lote_id)`, que:
@@ -30,6 +31,8 @@ Cada proceso de otro proyecto que lee o escribe Nexo tiene aquí su contrato. Mi
   6. en un lote completo, inactiva como `NO_EN_SAP` los activos que no vinieron (se reactivan si vuelven). **Defensa:** si faltan más
      del `etl.max_no_en_sap` (5 %) de los activos, y al menos 10, rechaza el lote entero con `LOTE_INCOMPLETO` y no aplica nada.
 - **Devuelve** `{nuevos, actualizados, sin_cambios, reabiertos, inactivados, activados, descartados, no_en_sap}`: el ETL lo registra.
+  Un lote no se procesa dos veces (`LOTE_YA_PROCESADO`). Nexo conserva en `staging` los últimos `etl.lotes_conservados` (7) lotes
+  procesados; el historial completo de SAP lo guarda el ETL en su propio almacenamiento (capa *bronze*).
   Ante `LOTE_INCOMPLETO` no se reintenta a ciegas: se revisa la lectura de SAP.
 - **Cómo lo verifica Nexo** (primera carga en producción y cada vez que cambie el ETL): justo después de la corrida, se carga la misma
   SAP en una base local con `connections/exploration/lote_sap_local.py` (referencia) y se compara con
