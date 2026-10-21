@@ -22,6 +22,8 @@
 > - `0011_clase_clickhouse_y_revision.sql`: la clase de venta de `app.v_indicador_venta` viene de la clasificación de ClickHouse
 >   (ADR 0023); contrato del agente de revisión del catálogo (`app.fn_partes_emparejadas`, `app.fn_datos_emparejamiento`,
 >   `app.fn_registrar_cambios_catalogo`), `SECURITY DEFINER` y sin `EXECUTE` público.
+> - `0012_etl_foto_completa.sql`: lotes de foto completa (`staging.lote.completo`); lo que no viene se inactiva como `NO_EN_SAP`
+>   (defensa `LOTE_INCOMPLETO`, parámetro `etl.max_no_en_sap`); un `POR_VALIDAR` que cambia en SAP vuelve a `PENDIENTE`.
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones
