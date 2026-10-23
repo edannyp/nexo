@@ -420,6 +420,9 @@ export function Articulo() {
                 <Lock className="size-4" aria-hidden /> Tomar
               </Boton>
             )}
+            {!a.reserva && a.activo && a.acciones.length === 0 && ['PENDIENTE', 'RECHAZADO'].includes(a.estado) && (
+              <span className="text-sm text-suave">Para tomarlo necesitas el rol Operador o Supervisor.</span>
+            )}
             {mia && (
               <Boton
                 variante="fantasma"

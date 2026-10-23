@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Nexo API
  * Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.
- * OpenAPI spec version: 0.5.0
+ * OpenAPI spec version: 0.6.0
  */
 import {
   useMutation,
@@ -142,6 +142,7 @@ export interface Aplicaciones {
   version: number;
   editable: boolean;
   razon_no_editable: string | null;
+  puede_tomar: boolean;
   catalogo_disponible: boolean;
   sugerencia_sap: SugerenciaSap | null;
   grupos: GrupoAplicacion[];

@@ -1,6 +1,6 @@
 [project]
 name = "nexo-api"
-version = "0.6.0"
+version = "0.6.1"
 description = "API de Nexo (FastAPI) y migraciones de la base nexo"
 requires-python = ">=3.13"
 dependencies = [
