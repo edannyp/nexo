@@ -78,6 +78,12 @@ const COLUMNAS = [
     ),
     meta: { orden: 'anio' },
   }),
+  col.accessor('vehiculo_principal', {
+    header: 'Vehículo principal',
+    cell: (c) => (
+      <span className="block max-w-56 truncate">{c.getValue() ?? <span className="text-suave">—</span>}</span>
+    ),
+  }),
   col.display({
     id: 'medidas',
     header: 'Medidas core (mm)',
@@ -241,6 +247,19 @@ function PanelFiltros({ f, poner }: { f: FiltrosExplorar; poner: (cambios: Parti
         <TresEstados etiqueta="Con foto" valor={f.con_foto} alCambiar={(v) => poner({ con_foto: v })} />
         <TresEstados etiqueta="Emparejado" valor={f.emparejado} alCambiar={(v) => poner({ emparejado: v })} />
         <TresEstados etiqueta="Hallazgo SAP" valor={f.con_hallazgo} alCambiar={(v) => poner({ con_hallazgo: v })} />
+      </Faceta>
+      <Faceta titulo="Vehículo principal">
+        <TresEstados etiqueta="Tiene" valor={f.con_principal} alCambiar={(v) => poner({ con_principal: v })} />
+        <input
+          key={f.vehiculo ?? ''}
+          type="search"
+          aria-label="Marca o modelo del vehículo principal"
+          placeholder="Marca o modelo (Enter)"
+          defaultValue={f.vehiculo ?? ''}
+          className="h-8 w-full rounded-md border border-borde bg-superficie px-2 text-sm"
+          onBlur={(e) => poner({ vehiculo: e.currentTarget.value.trim() || undefined })}
+          onKeyDown={(e) => e.key === 'Enter' && poner({ vehiculo: e.currentTarget.value.trim() || undefined })}
+        />
       </Faceta>
       <Faceta titulo="Clase de venta">
         {['A', 'B', 'C', 'SIN_VENTA'].map((c) => (

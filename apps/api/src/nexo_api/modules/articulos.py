@@ -50,6 +50,7 @@ class ArticuloFila(BaseModel):
     modelo_vehiculo: str | None
     anio_desde: int | None
     anio_hasta: int | None
+    vehiculo_principal: str | None # "Toyota Hilux 2005–2015" (ADR 0025); null si aún no lo tiene
     panal_alto_mm: Decimal | None
     panal_largo_mm: Decimal | None
     panal_ancho_mm: Decimal | None
@@ -73,7 +74,7 @@ class PaginaArticulos(BaseModel):
 
 _COLUMNAS = """
     a.id, a.item_code, a.descripcion, a.estado::text as estado, a.version, a.marca_vehiculo, a.modelo_vehiculo,
-    a.anio_desde, a.anio_hasta, a.panal_alto_mm, a.panal_largo_mm, a.panal_ancho_mm,
+    a.anio_desde, a.anio_hasta, vp.texto as vehiculo_principal, a.panal_alto_mm, a.panal_largo_mm, a.panal_ancho_mm,
     cardinality(app.fn_requisitos_por_validar(a.id)) as faltan,
     (select count(*) from app.articulo_imagen i where i.articulo_id = a.id and i.origen = 'PROPIA') as fotos,
     exists (select 1 from app.articulo_parte x where x.articulo_id = a.id) as emparejado,
@@ -88,6 +89,9 @@ _DESDE = """
     left join (select articulo_id, clase, participacion, tendencia from app.v_indicador_venta
                where categoria_id = :cat and linea = cast(:linea as app.linea)) v on v.articulo_id = a.id
     left join app.usuario u on u.id = a.asignado_a
+    left join lateral (
+        select concat_ws(' ', min(x.marca), min(x.modelo), concat_ws('–', min(x.anio), nullif(max(x.anio), min(x.anio)))) as texto
+        from app.articulo_aplicacion x where x.articulo_id = a.id and x.es_principal having count(*) > 0) vp on true
 """
 _ORDEN = {
     Orden.VENTA: "coalesce(v.clase, 'Z'), v.participacion desc nulls last, a.item_code",
@@ -124,6 +128,8 @@ def listar_articulos(
     con_foto: bool | None = None,
     emparejado: bool | None = None,
     con_hallazgo: bool | None = None,
+    con_principal: bool | None = None,
+    vehiculo: Annotated[str | None, Query(max_length=60, description="Marca o modelo del vehículo principal")] = None,
     clase: Annotated[list[str] | None, Query(description="A, B, C o SIN_VENTA")] = None,
     reserva: Reserva | None = None,
     orden: Orden = Orden.VENTA,
@@ -150,6 +156,11 @@ def listar_articulos(
     if con_hallazgo is not None:
         filtros.append(f"{'' if con_hallazgo else 'not '}exists (select 1 from app.hallazgo_calidad_sap h "
                        "where h.articulo_id = a.id and h.corregido_en is null)")
+    if con_principal is not None:
+        filtros.append(f"vp.texto is {'not ' if con_principal else ''}null")
+    if vehiculo and vehiculo.strip():
+        p["veh"] = f"%{vehiculo.strip()}%"
+        filtros.append("vp.texto ilike :veh")
     if clase:
         p["clases"] = [x for x in clase if x in {"A", "B", "C"}]
         sin_venta = "SIN_VENTA" in clase
@@ -251,8 +262,8 @@ def _requisitos(c: Connection, articulo_id: int, part_terminology_id: int | None
         if cod.startswith("ATRIBUTO:"):
             nombre = cod.split(":", 1)[1]
             salida.append(Requisito(codigo=cod, etiqueta=etiquetas.get(nombre, nombre), pestana="ficha"))
-        elif cod == "APLICACION_O_EMPAREJAMIENTO":
-            salida.append(Requisito(codigo=cod, etiqueta="Aplicación o emparejamiento", pestana="aplicaciones"))
+        elif cod == "VEHICULO_PRINCIPAL":
+            salida.append(Requisito(codigo=cod, etiqueta="Vehículo principal (confirmado)", pestana="aplicaciones"))
         elif cod == "TIPO_DE_PARTE":
             salida.append(Requisito(codigo=cod, etiqueta="Tipo de parte", pestana="ficha"))
         else:

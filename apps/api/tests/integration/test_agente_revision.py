@@ -57,7 +57,7 @@ def test_01_que_revisar_y_lo_validado(bd, entorno):
     parte, item, _, linea, principal, validado_en, _, _, atributos, aplicaciones = filas[0]
     assert (linea, principal, validado_en is not None) == ("IMPORTADO", True, True)
     assert atributos and all("valor_texto" in v or "valor_num" in v for v in atributos.values())   # solo lo confirmado
-    assert aplicaciones == [{"base_vehicle_id": 10, "sub_model_id": 5, "engine_config_id": 7}]
+    assert {"base_vehicle_id": 10, "sub_model_id": 5, "engine_config_id": 7} in aplicaciones   # además del vehículo principal
 
 
 def test_02_cambio_de_estado_a_todos_los_articulos_de_la_parte(bd, entorno):

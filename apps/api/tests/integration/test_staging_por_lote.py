@@ -57,7 +57,10 @@ def test_los_lotes_sin_procesar_tambien_se_limpian(conn):
     abandonado = lote_crudo(conn, [], [articulo("RAD00505")])               # el ETL escribió y nunca llamó a fn_procesar_staging
     cargar(conn, [articulo("RAD00505")])
     reciente = lote_crudo(conn, [], [articulo("RAD00505")])                 # un fallo reciente se conserva para diagnosticarlo
-    filas = lambda lote: conn.execute("select count(*) from staging.articulo_sap where lote_id = %s", (lote,)).fetchone()[0]
+
+    def filas(lote: int) -> int:
+        return conn.execute("select count(*) from staging.articulo_sap where lote_id = %s", (lote,)).fetchone()[0]
+
     assert filas(abandonado) == 1
     for _ in range(conservar - 1):
         cargar(conn, [articulo("RAD00505")])

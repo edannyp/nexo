@@ -56,7 +56,7 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
    **Fotos existentes** (una vez, repetible): `docker compose exec api python -m nexo_api.cli importar-fotos`.
 7. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0015"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0016"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Usuarios de los procesos externos
 Una vez cada uno, como superusuario, después de que la API migró a `0011` (permisos mínimos, ADR 0017). La contraseña se pasa al
@@ -89,16 +89,16 @@ Requieren `CLICKHOUSE_*` (ventas) y `MINIO_*` (fotos; `MINIO_SECURE=false` para 
 
 ## Fotos propias (pantalla Fotos)
 La subida usa una llave de MinIO **aparte**, con escritura limitada a `rlt-dru/imagenes_inventario/` (ADR 0013):
-`MINIO_FOTOS_ACCESS_KEY` y `MINIO_FOTOS_SECRET_KEY`. Sin ella, la APP muestra las fotos pero no permite subir. El encargado de
+`MINIO_FOTOS_ACCESS_KEY` y `MINIO_FOTOS_SECRET_KEY` (en producción, la misma llave de lectura si ya escribe en ese prefijo; ADR 0013). Sin ella, la APP muestra las fotos pero no permite subir. El encargado de
 fotos necesita un usuario con rol `FOTOS`.
 
 ## Catálogo de vehículos (pestaña Aplicaciones)
-La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y `MERCADO_EXTERNO_*` en el `.env` (el usuario de
-MercadoExterno con `grp_mercado_registro`). MercadoExterno debe tener aplicada la migración `V003__configuraciones.sql`
+La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y `MERCADO_EXTERNO_*` en el `.env` (10.10.60.6, base
+`mercado_externo`, usuario con los permisos de `grp_mercado_registro`). MercadoExterno debe tener aplicada la migración `V003__configuraciones.sql`
 (`uv run db/aplicar.py mercado_externo --servidor`). Sin estas variables, la pestaña muestra las aplicaciones pero no permite buscar.
 
 ## Catálogo maestro (pestaña Emparejamiento y diagramas)
-La API lee Consolidación con `CONSOLIDACION_*` (usuario con `app_lectura`). Los diagramas guardados en MinIO se muestran con URLs
+La API lee Consolidación con `CONSOLIDACION_*` (10.10.60.6, base `consolidacion_articulos`, usuario `app_lectura` miembro de `grp_app_lectura`). Los diagramas guardados en MinIO se muestran con URLs
 firmadas (requiere `MINIO_*`). Sin Consolidación, la pestaña muestra lo ya vinculado pero no busca candidatos.
 
 ## Actualizar

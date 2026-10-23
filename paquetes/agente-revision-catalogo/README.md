@@ -23,7 +23,7 @@ En `10.10.60.6`, base `nexo`, como superusuario:
 ```bash
 psql -h 10.10.60.6 -U postgres -d nexo -v clave='<contraseña larga>' -f base-local/sql/usuario-agente-revision-catalogo.sql
 ```
-En `10.20.20.6`, lectura de Consolidación:
+En `10.10.60.6` (base `consolidacion_articulos`), lectura de Consolidación:
 ```sql
 create role agente_revision_lectura login password '<contraseña larga>';
 grant grp_app_lectura to agente_revision_lectura;

@@ -32,7 +32,15 @@ const item = (bv: number, confirmado: boolean) => ({
 
 const actuales = {
   grupos: [
-    { titulo: '', detalle: '', anios: '', confirmados: 1, sugeridos: 1, items: [item(1, true), item(2, false)] },
+    {
+      titulo: '',
+      principal: false,
+      detalle: '',
+      anios: '',
+      confirmados: 1,
+      sugeridos: 1,
+      items: [item(1, true), item(2, false)],
+    },
   ],
 } as Aplicaciones;
 

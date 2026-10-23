@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Nexo API
  * Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.5.0
  */
 import {
   useMutation,
@@ -58,6 +58,7 @@ export interface Agregar {
      * @maxItems 200
      */
   items: NuevaAplicacion[];
+  principal?: boolean;
 }
 
 export interface PuntoSerie {
@@ -129,6 +130,7 @@ export interface SugerenciaSap {
  */
 export interface GrupoAplicacion {
   titulo: string;
+  principal: boolean;
   detalle: string;
   anios: string;
   confirmados: number;
@@ -216,6 +218,7 @@ export interface ArticuloFila {
   modelo_vehiculo: string | null;
   anio_desde: number | null;
   anio_hasta: number | null;
+  vehiculo_principal: string | null;
   panal_alto_mm: string | null;
   panal_largo_mm: string | null;
   panal_ancho_mm: string | null;
@@ -1113,6 +1116,11 @@ completitud?: Completitud | null;
 con_foto?: boolean | null;
 emparejado?: boolean | null;
 con_hallazgo?: boolean | null;
+con_principal?: boolean | null;
+/**
+ * Marca o modelo del vehículo principal
+ */
+vehiculo?: string | null;
 /**
  * A, B, C o SIN_VENTA
  */
@@ -5155,6 +5163,95 @@ export const useConfirmarAplicaciones = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getConfirmarAplicacionesMutationOptions(options), queryClient);
+    }
+
+export const getMarcarPrincipalUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/aplicaciones/principal`
+}
+
+/**
+ * @summary Marcar un grupo de aplicaciones como el vehículo principal
+ */
+export const marcarPrincipal = async (itemCode: string,
+    porIds: PorIds, options?: Parameters<typeof nexoFetch>[1]): Promise<Aplicaciones> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Aplicaciones>(getMarcarPrincipalUrl(itemCode),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(porIds)
+  }
+);}
+
+
+
+
+
+export const getMarcarPrincipalMutationKey = () => ['marcarPrincipal'] as const;
+
+export const getMarcarPrincipalMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof marcarPrincipal>>, TError,MarcarPrincipalMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof marcarPrincipal>>, TError,MarcarPrincipalMutationVariables, TContext> => {
+
+const mutationKey = getMarcarPrincipalMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof marcarPrincipal>>, MarcarPrincipalMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  marcarPrincipal(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarcarPrincipalMutationResult = NonNullable<Awaited<ReturnType<typeof marcarPrincipal>>>
+    export type MarcarPrincipalMutationBody = PorIds
+    export type MarcarPrincipalMutationError = ErrorType<void>
+    export type MarcarPrincipalMutationVariables = {itemCode: string;data: PorIds}
+
+    /**
+ * @summary Marcar un grupo de aplicaciones como el vehículo principal
+ */
+export const useMarcarPrincipal = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof marcarPrincipal>>, TError,MarcarPrincipalMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof marcarPrincipal>>,
+        TError,
+        MarcarPrincipalMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMarcarPrincipalMutationOptions(options), queryClient);
     }
 
 export const getQuitarAplicacionesUrl = (itemCode: string,) => {

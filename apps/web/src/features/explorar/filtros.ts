@@ -8,6 +8,8 @@ export interface FiltrosExplorar {
   con_foto?: boolean;
   emparejado?: boolean;
   con_hallazgo?: boolean;
+  con_principal?: boolean;
+  vehiculo?: string;
   clase?: string[];
   reserva?: Reserva;
   orden?: Orden;
@@ -32,6 +34,8 @@ export function validarExplorar(s: Record<string, unknown>): FiltrosExplorar {
     con_foto: siNo(s.con_foto),
     emparejado: siNo(s.emparejado),
     con_hallazgo: siNo(s.con_hallazgo),
+    con_principal: siNo(s.con_principal),
+    vehiculo: typeof s.vehiculo === 'string' && s.vehiculo.trim() ? s.vehiculo.trim() : undefined,
     clase: lista(s.clase, CLASES),
     reserva: uno(s.reserva, ['mia', 'libre', 'otros'] as Reserva[]),
     orden: uno(s.orden, ORDENES),
@@ -49,6 +53,8 @@ export function aBusqueda(f: FiltrosExplorar): Record<string, string | undefined
     con_foto: b(f.con_foto),
     emparejado: b(f.emparejado),
     con_hallazgo: b(f.con_hallazgo),
+    con_principal: b(f.con_principal),
+    vehiculo: f.vehiculo,
     clase: f.clase?.join(','),
     reserva: f.reserva,
     orden: f.orden,

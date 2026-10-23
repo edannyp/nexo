@@ -39,3 +39,11 @@ describe('filtros de Explorar en la URL', () => {
     expect(busquedaExplorar(busquedaExplorar({ con_foto: 'no' }))).toEqual({ con_foto: 'no' });
   });
 });
+
+describe('vehículo principal', () => {
+  it('viaja en la URL y vuelve igual', () => {
+    const f = validarExplorar({ con_principal: 'no', vehiculo: ' hilux ' });
+    expect(f).toEqual({ con_principal: false, vehiculo: 'hilux' });
+    expect(validarExplorar(aBusqueda(f))).toEqual(f);
+  });
+});
