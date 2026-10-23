@@ -46,7 +46,7 @@ def entorno(bd):
     with psycopg.connect(bd, autocommit=True) as c:
         cargar(c, [articulo("RAD00500", marca_vehiculo_codigo="00049", modelo_vehiculo_codigo=6, modelo_vehiculo="DMAX",
                             anio_desde=2010, anio_hasta=2012)])
-        ids = {u: crear_usuario(c, u, "OPERADOR") for u in ("op1", "op2")}
+        ids = {u: crear_usuario(c, u, "OPERADOR") for u in ("op1", "op2")} | {"adm": crear_usuario(c, "adm", "ADMINISTRADOR")}
         a = c.execute("select id from app.articulo where item_code = 'RAD00500'").fetchone()[0]
         # Heredadas de un equivalente: una completa y una sin motor
         c.execute("""insert into app.articulo_aplicacion (articulo_id, base_vehicle_id, sub_model_id, engine_config_id, origen)
@@ -73,7 +73,7 @@ def items(r: dict) -> dict:
 
 def test_01_sugerencia_de_sap_y_heredadas(entorno):
     r = como(entorno, "op1").get(URL).json()
-    assert not r["editable"] and r["catalogo_disponible"]
+    assert not r["editable"] and r["puede_tomar"] and r["catalogo_disponible"]
     s = r["sugerencia_sap"]
     assert (s["marca"], s["modelo"], s["desde"], s["hasta"]) == ("ISUZU", "DMAX", 2010, 2012)
     assert s["marca_catalogo"] == {"id": 21, "nombre": "Isuzu"} and s["modelos_candidatos"][0]["nombre"] == "D-Max"
@@ -177,3 +177,9 @@ def test_10_principal_es_un_solo_vehiculo_y_se_puede_cambiar(entorno):
     dmax = [i["id"] for g in r["grupos"] if g["titulo"] == "Isuzu D-Max" for i in g["items"]]
     assert op1.post(f"{URL}/principal", json={"version": r["version"], "ids": dmax}).status_code == 200
     assert hallazgo(entorno[2])[1] is False                              # volvió a coincidir con SAP: se cierra solo
+
+
+def test_11_sin_rol_de_trabajo_explica_por_que_no_puede_tomarlo(entorno):
+    r = como(entorno, "adm").get(URL).json()
+    assert not r["editable"] and not r["puede_tomar"]
+    assert r["razon_no_editable"].startswith("Tu usuario no tiene el rol Operador ni Supervisor")
