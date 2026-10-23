@@ -16,17 +16,15 @@ La memoria y el historial de Claude Code viven en el volumen `claude-config`: so
 | `CLAUDE.md` | Instrucciones para Claude: contrato, lo que Nexo necesita y reglas |
 | `db/consolidacion/` | El contrato, las migraciones reales y el ejemplo de carga |
 | `db/pruebas/` | Pruebas del contrato |
-| `db/mercado_externo/` | Para registrar vehículos que no están en AutoCare (regla 11 del contrato) |
+| `db/mercado_externo/` | Referencia: vehículos fuera de AutoCare (IDs ≥ 1 000 000 000) que puedes usar si ya existen; no se registran desde aquí |
 | `contexto/` | Documentos de gobernanza copiados de Nexo (no se editan aquí) |
 | `base-local/` | Script para levantar Consolidación local |
 
-## Para el administrador de PostgreSQL (producción, `10.10.60.6`)
+## Para los administradores de PostgreSQL
+**Consolidación (`10.10.60.6`, PostgreSQL 18)**, donde escribe el proceso:
 ```sql
 create role consolidacion_carga login password '<contraseña larga>';
 grant grp_consolidacion_carga to consolidacion_carga;   -- base consolidacion_articulos: escribe catalogo y carga
--- Lectura de las fuentes:
-grant connect on database db_diagrams to consolidacion_carga;
-grant connect on database autocare_global to consolidacion_carga;
 ```
-Más el `SELECT` en las tablas de `db_diagrams` y `autocare_global` que use el proceso. Para la regla 11, en `mercado_externo`:
-`grant grp_mercado_registro to consolidacion_carga;`.
+**Fuentes (`10.20.20.6`)**, solo lectura: un usuario con `connect` y `select` en `db_diagrams` y `db_scrapper` (las tablas que
+lee el proceso) y en `autocare_global`. La contraseña se entrega por un canal seguro; nunca va en el repositorio.

@@ -71,7 +71,8 @@ PAQUETES: dict[str, dict] = {
             "contexto/arquitectura/modelo-consolidacion.md": "architecture/datos/modelo-consolidacion.md",
             **{f"contexto/arquitectura/adr/{n}": ADR + n for n in (
                 "0009-esquemas-consolidacion-y-mercado-externo.md", "0011-consolidacion-catalogo-maestro.md",
-                "0019-catalogo-configurable-atributos.md", "0024-copia-autocare-versionada.md")},
+                "0019-catalogo-configurable-atributos.md", "0024-copia-autocare-versionada.md",
+                "0026-carga-catalogo-maestro.md")},
             **DB,
         },
     },

@@ -5,8 +5,9 @@
 """Copia de referencia de AutoCare (autocare_global) a Consolidación, MercadoExterno o Nexo, versionada (ADR 0024).
 
 - Consolidación / MercadoExterno: esquema `ref`, contra el que validan sus triggers.
-- Nexo: catálogo de atributos PIES (`meta.atributo_config`, ADR 0019) de los tipos de parte de `app.categoria`. Los atributos
-  nuevos entran **deshabilitados**; la carga solo actualiza `nombre` y `requiere_uom`, nunca la configuración.
+- Nexo: catálogo de atributos PIES (`meta.atributo_config`, ADR 0019) de los tipos de parte en alcance (`app.categoria` y
+  alternativas). Los atributos nuevos entran **deshabilitados**; la carga solo actualiza `nombre` y `requiere_uom`, nunca la
+  configuración.
 - PCdb/PAdb se copian **solo para nuestros tipos de parte** (las 8 categorías; `--todo` copia todo). VCdb se copia completo.
 - Cada carga se compara con la anterior: altas, cambios, bajas y reactivados por tabla. Lo que AutoCare quitó **no se borra**: se
   marca `obsoleto_en` (lo obsoleto no se asigna de nuevo; lo que ya lo usa se conserva). El resultado, con el **impacto** (lo
@@ -32,8 +33,11 @@ import psycopg
 from dotenv import load_dotenv
 
 RAIZ = Path(__file__).resolve().parents[2]
-# Tipos de parte (PCdb) de las 8 categorías de Nexo (app.categoria.part_terminology_id_defecto; context/categorias.md)
-TIPOS_ALCANCE = (2172, 6708, 12616, 2084, 48305, 10457, 10707)
+# Tipos de parte (PCdb) de las 8 categorías de Nexo (context/categorias.md): el de cada categoría y las alternativas que el operador
+# puede elegir (tanques de entrada/salida, enfriadores de transmisión, depósito de expansión, intercambiador). El catálogo maestro
+# trae piezas de esos tipos (ADR 0026).
+TIPOS_ALCANCE = (2172, 6708, 12616, 2084, 48305, 10457, 10707,
+                 2088, 17668, 20531, 17700, 17701, 63482, 64918)
 MAX_BAJAS = 0.20
 
 # (tabla destino, llave primaria, columnas, consulta en AutoCare)
@@ -222,8 +226,9 @@ def cargar(base: str, destino_dsn: str, origen_dsn: str, todo: bool = False, for
             nexo.read_only = True
         versiones = {r[0]: {"version": r[1], "publicacion": str(r[2])} for r in origen.execute(VERSIONES[3])}
         if base == "nexo":
-            pts = destino.execute("select string_agg(distinct part_terminology_id_defecto::text, ',') from app.categoria "
-                                  "where part_terminology_id_defecto is not null").fetchone()[0]
+            por_categoria = {r[0] for r in destino.execute(
+                "select part_terminology_id_defecto from app.categoria where part_terminology_id_defecto is not null")}
+            pts = ",".join(str(p) for p in sorted(por_categoria | set(TIPOS_ALCANCE)))
         else:
             pts = ",".join(str(p) for p in TIPOS_ALCANCE)
         resumen = []

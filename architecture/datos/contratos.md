@@ -45,8 +45,15 @@ Cada proceso de otro proyecto que lee o escribe Nexo tiene aquí su contrato. Mi
   hallazgos de calidad; si no, la herramienta lista los campos que difieren con ejemplos.
 
 ## Carga del catálogo maestro (scraping → Consolidación)
-> Nuestro esquema gobierna (ADR 0011): `modelo-consolidacion.md`, sección *Reglas del contrato para el proceso de carga*.
-- **Escribe en:** `articulos_consolidacion` (`catalogo.*`, `carga.*`). Nunca en Nexo.
+> Nuestro esquema gobierna (ADR 0011). Decisiones de la carga: ADR 0026. Contrato completo: `db/consolidacion/README.md`.
+- **Lee:** `db_diagrams` (diagramas y `jjradiator_cross_reference`) y `db_scrapper` (JJ Radiator), en 10.20.20.6, solo lectura.
+- **Escribe en:** `consolidacion_articulos` (10.10.60.6; `catalogo.*`, `carga.*`). Nunca en Nexo.
+- **Por corrida y fuente:** abre `carga.corrida` con `completa = true`, hace *upsert* de **todos** los registros de la fuente
+  (siempre marca `corrida_id`), y cierra con `select carga.fn_cerrar_corrida(corrida_id)` → `{no_vigentes, conflictos}`.
+  Ante `CORRIDA_INCOMPLETA` (faltaría > 5 %) marca la corrida `FALLIDA`, alerta y no reintenta a ciegas.
+- **Reglas de la carga:** solo nuestros tipos de parte; diagrama y JJ cruzados en una misma parte (confianza 1,0 confirmados, 0,5
+  dudosos); OEM confirmados (1,0) y pendientes (0,5); vehículos homologados solo si son inequívocos, el resto a
+  `aplicacion_sin_homologar`; espesor = primer número; imágenes de JJ copiadas a MinIO; prioridad diagramas > JJ.
 - **No** cambia estados de artículos: Consolidación no conoce SAP.
 - **La APP** lee Consolidación para que el operador empareje; lo confirmado se guarda en Nexo (`app.articulo_parte`).
   Lee `catalogo.v_parte_busqueda` (candidatos por `part_terminology_id`, medidas del panal como par sin orden ± tolerancia,

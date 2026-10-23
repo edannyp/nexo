@@ -113,6 +113,65 @@ def probar_consolidacion(dsn: str) -> None:
         check(True, "fusionar una parte en otra (sin borrar)")
 
 
+def probar_carga(dsn: str) -> None:
+    """Corridas de foto completa, defensa, conflictos de medidas y prioridad de fuentes (V004, ADR 0026)."""
+    print("\n== Consolidación: carga del catálogo maestro (foto completa y prioridad)")
+    with psycopg.connect(dsn, autocommit=True) as c:
+        q = lambda sql, p=None: c.execute(sql, p).fetchone()  # noqa: E731
+        diag, jj = (q("select id from catalogo.fuente where codigo = %s", (x,))[0] for x in ("DB_DIAGRAMS", "JJ_RADIATOR"))
+        check(q("select prioridad from catalogo.fuente where codigo = 'JJ_RADIATOR'")[0] == 2, "fuentes iniciales: diagramas 1, JJ 2")
+
+        def corrida(fuente: int) -> int:
+            return q("insert into carga.corrida (fuente_id, version_proceso, completa) values (%s, 'prueba', true) returning id", (fuente,))[0]
+
+        def registro(fuente: int, codigo: str, corrida_id: int, parte: int | None = None) -> int:
+            return q("""insert into catalogo.registro_fuente (fuente_id, id_en_fuente, datos_crudos, hash_contenido, parte_id,
+                                                          vinculo_metodo, vinculo_confianza, corrida_id)
+                        values (%s, %s, '{}', %s, %s, case when %s::bigint is not null then 'NUMERO'::catalogo.vinculo_metodo end,
+                                case when %s::bigint is not null then 1 end, %s)
+                        on conflict (fuente_id, id_en_fuente) do update set corrida_id = excluded.corrida_id, vigente = true
+                        returning id""", (fuente, codigo, f"h-{codigo}", parte, parte, parte, corrida_id))[0]
+
+        parte = q("insert into catalogo.parte (part_terminology_id, descripcion) values (2172, 'Radiador de prueba V004') returning id")[0]
+        cd = corrida(diag)
+        rd = registro(diag, "D-V004", cd, parte)
+        c.execute("insert into catalogo.parte_atributo (parte_id, registro_fuente_id, paid, valor_num, uom_code) values (%s, %s, 267, 770, 'MM')",
+                  (parte, rd))
+        c.execute("select carga.fn_cerrar_corrida(%s)", (cd,))
+
+        cj = corrida(jj)
+        rj = registro(jj, "JJ-0", cj, parte)                                       # la misma pieza en JJ, 5 mm más alta
+        c.execute("insert into catalogo.parte_atributo (parte_id, registro_fuente_id, paid, valor_num, uom_code) values (%s, %s, 267, 775, 'MM')",
+                  (parte, rj))
+        for i in range(1, 12):
+            registro(jj, f"JJ-{i}", cj)
+        r = q("select carga.fn_cerrar_corrida(%s)", (cj,))[0]
+        check(r == {"no_vigentes": 0, "conflictos": 1}, f"primera corrida de JJ: nada no vigente y 1 conflicto de medidas {r}")
+        conflicto = q("select tipo::text, detalle ->> 'paid' from catalogo.conflicto where parte_id = %s", (parte,))
+        check(conflicto == ("ATRIBUTO_DISCREPA", "267"), f"alto 770 (diagrama) vs 775 (JJ) → ATRIBUTO_DISCREPA {conflicto}")
+        alto = q("select panal_alto_mm from catalogo.v_parte_busqueda where parte_id = %s", (parte,))[0]
+        check(alto == 770, f"la búsqueda toma la medida del diagrama (prioridad 1), no la mayor ({alto})")
+        rechaza(c, "cerrar dos veces la misma corrida", "select carga.fn_cerrar_corrida(%s)", (cj,), "CORRIDA_CERRADA")
+
+        antes = q("select actualizado_en from catalogo.registro_fuente where id = %s", (rj,))[0]
+        cj2 = corrida(jj)
+        for i in range(0, 11):                                                     # JJ-11 ya no viene
+            registro(jj, f"JJ-{i}", cj2)
+        check(q("select actualizado_en from catalogo.registro_fuente where id = %s", (rj,))[0] == antes,
+              "un registro leído sin cambios solo marca la corrida: no cuenta como actualizado")
+        r = q("select carga.fn_cerrar_corrida(%s)", (cj2,))[0]
+        vigente = q("select vigente from catalogo.registro_fuente where fuente_id = %s and id_en_fuente = 'JJ-11'", (jj,))[0]
+        check(r["no_vigentes"] == 1 and not vigente and r["conflictos"] == 0,
+              f"foto completa: lo que no vino queda no vigente (no se borra) y el conflicto no se repite {r}")
+
+        cj3 = corrida(jj)                                                          # un scraping cortado: no trae nada
+        rechaza(c, "corrida que dejaría 11 de 11 no vigentes", "select carga.fn_cerrar_corrida(%s)", (cj3,), "CORRIDA_INCOMPLETA")
+        n = q("select count(*) from catalogo.registro_fuente where fuente_id = %s and vigente", (jj,))[0]
+        check(n == 11 and q("select estado::text from carga.corrida where id = %s", (cj3,))[0] == "EN_PROCESO",
+              f"la defensa no aplica nada: siguen {n} vigentes y la corrida abierta (el proceso la marca FALLIDA)")
+        c.execute("update carga.corrida set estado = 'FALLIDA', terminada_en = now() where id = %s", (cj3,))
+
+
 def probar_mercado(dsn: str) -> None:
     print("\n== MercadoExterno")
     ev = '["https://ejemplo.com/ficha"]'
@@ -183,7 +242,9 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--host", default="postgres")
     a = p.parse_args()
-    probar_consolidacion(preparar(a.host, "consolidacion", "ref_minimo_consolidacion.sql"))
+    consolidacion = preparar(a.host, "consolidacion", "ref_minimo_consolidacion.sql")
+    probar_consolidacion(consolidacion)
+    probar_carga(consolidacion)
     probar_mercado(preparar(a.host, "mercado_externo", "ref_minimo_mercado.sql"))
     fallos = [n for ok, n in resultados if not ok]
     print(f"\n{len(resultados) - len(fallos)}/{len(resultados)} pruebas OK")
