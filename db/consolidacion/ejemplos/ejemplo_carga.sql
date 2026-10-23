@@ -16,8 +16,8 @@ on conflict (nombre_norm) do nothing;
 -- 1. Abrir corrida ----------------------------------------------------------------------------
 create temp table ctx (corrida_id bigint) on commit drop;
 with c as (
-  insert into carga.corrida (fuente_id, version_proceso)
-  select id, 'ejemplo-1.0' from catalogo.fuente where codigo = 'DB_DIAGRAMS'
+  insert into carga.corrida (fuente_id, version_proceso, completa)    -- foto completa: trae TODO lo de la fuente (ADR 0026)
+  select id, 'ejemplo-1.0', true from catalogo.fuente where codigo = 'DB_DIAGRAMS'
   returning id
 )
 insert into ctx select id from c;
@@ -60,10 +60,8 @@ begin
     (v_parte, v_reg, 269, 608, 'MM', '335x608x16/22/26'),
     (v_parte, v_reg, 268, 16,  'MM', '335x608x16/22/26');
 
-  -- '16/22/26' sugiere variantes de espesor: se registra para revisión, no se adivina.
-  insert into catalogo.conflicto (parte_id, tipo, detalle)
-  values (v_parte, 'ATRIBUTO_DISCREPA',
-          jsonb_build_object('paid', 268, 'valores', jsonb_build_array(16, 22, 26), 'origen', 'core_size', 'registro_fuente_id', v_reg));
+  -- Espesor doble o triple ('16/22/26'): el espesor del panal es el PRIMER número; el texto completo queda en valor_original
+  -- para que el operador lo vea (ADR 0026). No se adivina qué son los demás.
 
   -- Solo se sabe la marca: no hay base vehicle posible → aplicación sin homologar (no se inventa).
   insert into catalogo.aplicacion_sin_homologar (parte_id, registro_fuente_id, marca_texto, motivo)
@@ -146,7 +144,9 @@ begin
 end $$;
 
 -- 2. Cerrar corrida ---------------------------------------------------------------------------
-update carga.corrida set estado = 'COMPLETA', terminada_en = now(), leidos = 3, insertados = 3
-where id = (select corrida_id from ctx);
+-- Los conteos los pone el proceso; carga.fn_cerrar_corrida marca no vigente lo que no vino (foto completa, con defensa),
+-- abre conflictos si las medidas de una parte difieren > 2 mm entre fuentes y deja la corrida COMPLETA.
+update carga.corrida set leidos = 3, insertados = 3 where id = (select corrida_id from ctx);
+select carga.fn_cerrar_corrida(corrida_id) from ctx;
 
 commit;
