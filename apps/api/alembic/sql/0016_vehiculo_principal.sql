@@ -13,7 +13,8 @@ alter table app.articulo_aplicacion
   add column marca        text,
   add column modelo       text;
 comment on column app.articulo_aplicacion.es_principal is
-  'Del vehículo principal del artículo (ADR 0025). Todas las filas principales son el mismo vehículo, submodelo y motor (o equipo).';
+  'Del vehículo principal del artículo (ADR 0025). Todas las filas principales son la misma marca, modelo y submodelo (o equipo); '
+  'el motor puede tener un engine_config_id distinto por rango de años aunque sea el mismo.';
 comment on column app.articulo_aplicacion.make_id is 'Copia del catálogo al agregar la aplicación (el vehículo base no cambia de marca).';
 
 create index articulo_aplicacion_principal on app.articulo_aplicacion (articulo_id) where es_principal;
@@ -27,7 +28,7 @@ language sql stable as $$
       case when not exists (select 1 from app.articulo_aplicacion x where x.articulo_id = a.id and x.es_principal)
              or exists (select 1 from app.articulo_aplicacion x where x.articulo_id = a.id and x.es_principal
                         and x.confirmado_por is null)
-             or (select count(distinct (x.make_id, x.model_id, x.sub_model_id, x.engine_config_id, x.equipment_base_id))
+             or (select count(distinct (x.make_id, x.model_id, x.sub_model_id, x.equipment_base_id))
                  from app.articulo_aplicacion x where x.articulo_id = a.id and x.es_principal) > 1
            then 'VEHICULO_PRINCIPAL' end
     ]

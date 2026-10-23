@@ -1,5 +1,6 @@
 """Aplicaciones del artículo: sugerencia de SAP traducida al catálogo, agregar desde el selector (confirmadas), confirmar sugeridas
-completas, quitar, y la misma regla de edición que la ficha (propuesta UX §6.4, decisión 4). El catálogo de vehículos es un doble."""
+completas, quitar, el vehículo principal (ADR 0025) y la misma regla de edición que la ficha (propuesta UX §6.4, decisión 4). El
+catálogo de vehículos es un doble."""
 
 import psycopg
 import pytest
@@ -26,7 +27,9 @@ class CatalogoFalso:
         return [Modelo(900, "Rodeo"), Modelo(901, "D-Max"), Modelo(902, "Trooper")] if marca_id == 21 else []
 
     def base_vehicles(self, ids):
-        return {i: BaseVehicle(2000 + i % 100, "Isuzu", "D-Max") for i in ids}
+        # 1-99: Isuzu D-Max; 100 en adelante: Toyota Tacoma (para el vehículo principal distinto de SAP)
+        return {i: BaseVehicle(2000 + i % 100, *(("Isuzu", "D-Max", 21, 901) if i < 100 else ("Toyota", "Tacoma", 76, 950)))
+                for i in ids}
 
     def submodelos(self, ids):
         return {i: "LS" for i in ids}
@@ -130,3 +133,47 @@ def test_07_cambios_auditados_con_el_usuario(entorno):
     with psycopg.connect(bd) as c:
         actores = {r[0] for r in c.execute("select actor from audit.auditoria_evento where entidad = 'app.articulo_aplicacion'")}
     assert str(ids["op1"]) in actores
+
+
+def requisitos(cliente) -> list[str]:
+    return [x["codigo"] for x in cliente.get("/api/v1/articulos/RAD00500").json()["requisitos"]]
+
+
+def hallazgo(bd) -> tuple | None:
+    with psycopg.connect(bd) as c:
+        return c.execute("""select valor, corregido_en is null from app.hallazgo_calidad_sap h join app.articulo a on a.id = h.articulo_id
+                            where a.item_code = 'RAD00500' and h.tipo = 'VEHICULO_DISTINTO' order by h.id desc limit 1""").fetchone()
+
+
+def test_08_vehiculo_principal_obligatorio(entorno):
+    op1 = como(entorno, "op1")
+    assert "VEHICULO_PRINCIPAL" in requisitos(op1)
+    r = op1.get(URL).json()
+    dmax = [i["id"] for i in r["grupos"][0]["items"]]
+    p = op1.post(f"{URL}/principal", json={"version": r["version"], "ids": dmax}).json()
+    assert p["grupos"][0]["principal"] and p["version"] == r["version"] + 1
+    assert "VEHICULO_PRINCIPAL" not in requisitos(op1)
+    assert hallazgo(entorno[2]) is None                                   # ISUZU DMAX 2010–2012 = Isuzu D-Max 2010–2013
+
+
+def test_09_principal_distinto_de_sap_abre_hallazgo(entorno):
+    op1 = como(entorno, "op1")
+    v = op1.get(URL).json()["version"]
+    tacoma = [{"base_vehicle_id": b, "sub_model_id": 6, "engine_config_id": 8} for b in (110, 111)]
+    r = op1.post(URL, json={"version": v, "items": tacoma, "principal": True}).json()
+    assert [(g["titulo"], g["principal"]) for g in r["grupos"]] == [("Toyota Tacoma", True), ("Isuzu D-Max", False)]
+    valor, abierto = hallazgo(entorno[2])
+    assert abierto and valor == "SAP: ISUZU DMAX 2010–2012 · Nexo: Toyota Tacoma 2010–2011"
+    a = op1.get("/api/v1/articulos?cat=25&linea=IMPORTADO&vehiculo=tacoma").json()
+    assert [x["vehiculo_principal"] for x in a["items"] if x["item_code"] == "RAD00500"] == ["Toyota Tacoma 2010–2011"]
+
+
+def test_10_principal_es_un_solo_vehiculo_y_se_puede_cambiar(entorno):
+    op1 = como(entorno, "op1")
+    r = op1.get(URL).json()
+    todos = [i["id"] for g in r["grupos"] for i in g["items"]]
+    mal = op1.post(f"{URL}/principal", json={"version": r["version"], "ids": todos})
+    assert mal.status_code == 422 and mal.json()["title"] == "Elige un solo vehículo"
+    dmax = [i["id"] for g in r["grupos"] if g["titulo"] == "Isuzu D-Max" for i in g["items"]]
+    assert op1.post(f"{URL}/principal", json={"version": r["version"], "ids": dmax}).status_code == 200
+    assert hallazgo(entorno[2])[1] is False                              # volvió a coincidir con SAP: se cierra solo

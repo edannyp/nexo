@@ -268,12 +268,12 @@ def marcar_principal(item_code: str, datos: PorIds, usuario: UsuarioActual, c: C
                                   modelo = :modelo where id = :id"""),
                           {"id": f.id, "mk": bv.make_id, "mo": bv.model_id, "anio": bv.anio, "marca": bv.marca, "modelo": bv.modelo})
         elegidas = c.execute(text("""select count(*) as n,
-                                            count(distinct (make_id, model_id, sub_model_id, engine_config_id, equipment_base_id)) as grupos
+                                            count(distinct (make_id, model_id, sub_model_id, equipment_base_id)) as grupos
                                      from app.articulo_aplicacion where articulo_id = :a and id = any(:ids)"""),
                              {"a": a.id, "ids": datos.ids}).one()
         if elegidas.n != len(set(datos.ids)) or elegidas.grupos != 1:
             raise Problema(422, "Elige un solo vehículo",
-                           "El vehículo principal es un mismo vehículo, submodelo y motor (en uno o varios años).")
+                           "El vehículo principal es una misma marca, modelo y submodelo (en uno o varios años), o un mismo equipo.")
         c.execute(text("""update app.articulo_aplicacion set es_principal = (id = any(:ids))
                           where articulo_id = :a and (es_principal or id = any(:ids))"""), {"a": a.id, "ids": datos.ids})
         subir_version(c, a.id)
