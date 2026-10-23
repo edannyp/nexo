@@ -6,6 +6,7 @@ import {
   useListarConfiguraciones,
   useListarMarcas,
   useListarModelos,
+  useMarcarPrincipal,
   useQuitarAplicaciones,
   useRegistrarVehiculoExterno,
   type Aplicaciones as RespuestaAplicaciones,
@@ -15,7 +16,7 @@ import {
   type SugerenciaSap,
 } from '@nexo/api-client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, CircleCheck, Plus, Search, Trash2 } from 'lucide-react';
+import { Check, CircleCheck, Plus, Search, Star, Trash2 } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { cn } from '@/shared/cn';
@@ -67,19 +68,26 @@ function Grupo({
   ocupado,
   alConfirmar,
   alQuitar,
+  alHacerPrincipal,
 }: {
   g: GrupoAplicacion;
   editable: boolean;
   ocupado: boolean;
   alConfirmar: (ids: number[]) => void;
   alQuitar: (ids: number[]) => void;
+  alHacerPrincipal: (ids: number[]) => void;
 }) {
   const porConfirmar = g.items.filter((i) => !i.confirmado && i.completa);
   const incompletas = g.items.filter((i) => !i.completa);
   const origenes = [...new Set(g.items.filter((i) => !i.confirmado).map((i) => ORIGEN[i.origen] ?? i.origen))];
   return (
-    <li className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
+    <li className={cn('flex flex-wrap items-start justify-between gap-2 px-4 py-3', g.principal && 'bg-superficie-2')}>
       <div className="min-w-0">
+        {g.principal && (
+          <Insignia className="mb-1 gap-1 border-primario text-primario">
+            <Star className="size-3" aria-hidden /> Vehículo principal
+          </Insignia>
+        )}
         <p className="text-sm font-medium">
           {g.titulo} <span className="text-suave tabular-nums">{g.anios}</span>
         </p>
@@ -100,10 +108,24 @@ function Grupo({
               Falta {g.detalle.includes('Sin submodelo') ? 'submodelo' : 'motor'}: búscalo en el selector
             </span>
           )}
+          {g.principal && g.sugeridos > 0 && (
+            <span className="text-por-validar">Confírmalo para poder enviar a revisión</span>
+          )}
         </div>
       </div>
       {editable && (
         <div className="flex gap-1">
+          {!g.principal && (
+            <Boton
+              variante="fantasma"
+              className="h-8 px-2 text-xs"
+              disabled={ocupado}
+              title="Hacer vehículo principal"
+              onClick={() => alHacerPrincipal(g.items.map((i) => i.id))}
+            >
+              <Star className="size-4" aria-hidden /> Principal
+            </Boton>
+          )}
           {porConfirmar.length > 0 && (
             <Boton
               variante="secundario"
@@ -186,11 +208,13 @@ function Selector({
   r: RespuestaAplicaciones;
   inicial: Busqueda;
   ocupado: boolean;
-  alAgregar: (items: NuevaAplicacion[], alTerminar: () => void) => void;
+  alAgregar: (items: NuevaAplicacion[], principal: boolean, alTerminar: () => void) => void;
   alRegistrar: (b: Busqueda) => void;
 }) {
   const [b, setB] = useState<Busqueda>(inicial);
   const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
+  const hayPrincipal = r.grupos.some((g) => g.principal);
+  const [principal, setPrincipal] = useState(!hayPrincipal);
   const aniosValidos = b.desde >= 1900 && b.hasta >= b.desde && b.hasta - b.desde <= MAX_ANIOS;
   const rango = { desde: b.desde, hasta: b.hasta };
 
@@ -336,14 +360,38 @@ function Selector({
         </div>
       )}
 
+      {items.length > 0 && (
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4"
+            checked={principal}
+            onChange={(e) => setPrincipal(e.target.checked)}
+          />
+          <span>
+            <span className="font-medium">Es el vehículo principal</span>
+            <span className="block text-xs text-suave">
+              {hayPrincipal
+                ? 'Reemplaza al vehículo principal actual. Elige un solo submodelo.'
+                : 'El artículo aún no tiene vehículo principal (ACES). Elige un solo submodelo.'}
+            </span>
+          </span>
+        </label>
+      )}
+      {principal && marcadas.size > 1 && (
+        <p className="text-sm text-rechazado">
+          El vehículo principal es un solo submodelo: marca solo uno o quita «principal».
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <button type="button" className="text-sm text-suave underline" onClick={() => alRegistrar(b)}>
           ¿No está el vehículo? Regístralo en MercadoExterno
         </button>
         <Boton
-          disabled={!items.length || items.length > MAX_ITEMS}
+          disabled={!items.length || items.length > MAX_ITEMS || (principal && marcadas.size > 1)}
           cargando={ocupado}
-          onClick={() => alAgregar(items, () => setMarcadas(new Set()))}
+          onClick={() => alAgregar(items, principal, () => (setMarcadas(new Set()), setPrincipal(false)))}
         >
           <Plus className="size-4" aria-hidden />
           {items.length > MAX_ITEMS
@@ -495,6 +543,7 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
   const agregar = useAgregarAplicaciones();
   const confirmar = useConfirmarAplicaciones();
   const quitar = useQuitarAplicaciones();
+  const hacerPrincipal = useMarcarPrincipal();
   const [elegido, setSelector] = useState<Busqueda | null>(null);
   const [registro, setRegistro] = useState<Busqueda | null>(null);
   const [hecho, setHecho] = useState<string>();
@@ -508,13 +557,15 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
   if (q.isError) return <Aviso tono="error" titulo={q.error.problema.title} />;
   if (!r) return <p className="text-sm text-suave">Cargando las aplicaciones…</p>;
 
-  const ocupado = agregar.isPending || confirmar.isPending || quitar.isPending;
-  const error = [agregar.error, confirmar.error, quitar.error].find((e) => e instanceof ProblemaError);
+  const ocupado = agregar.isPending || confirmar.isPending || quitar.isPending || hacerPrincipal.isPending;
+  const error = [agregar.error, confirmar.error, quitar.error, hacerPrincipal.error].find(
+    (e) => e instanceof ProblemaError,
+  );
   const listo = (texto: string) => ({ onSuccess: () => setHecho(texto) });
-  const alAgregar = (items: NuevaAplicacion[], alTerminar?: () => void) => {
+  const alAgregar = (items: NuevaAplicacion[], principal: boolean, alTerminar?: () => void) => {
     setSelector(selector); // si se abrió solo, queda abierto aunque ya haya aplicaciones
     agregar.mutate(
-      { itemCode, data: { version: r.version, items } },
+      { itemCode, data: { version: r.version, items, principal } },
       {
         onSuccess: () => (
           setHecho(`${items.length} ${items.length === 1 ? 'año agregado' : 'años agregados'}.`),
@@ -524,6 +575,7 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
     );
   };
   const porConfirmar = r.grupos.flatMap((g) => g.items.filter((i) => !i.confirmado && i.completa).map((i) => i.id));
+  const sinPrincipal = !r.grupos.some((g) => g.principal);
   const total = r.grupos.reduce((n, g) => n + g.items.length, 0);
 
   return (
@@ -549,6 +601,12 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
         </Aviso>
       )}
       {hecho && !error && <Aviso tono="exito" titulo={hecho} />}
+      {r.editable && sinPrincipal && (
+        <Aviso tono="info" titulo="Falta el vehículo principal">
+          Es obligatorio para enviar a revisión: agrégalo con el selector (casilla «Es el vehículo principal») o marca
+          un vehículo de la lista con «Principal».
+        </Aviso>
+      )}
 
       {r.sugerencia_sap && (
         <TarjetaSap
@@ -600,6 +658,12 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
                 alQuitar={(ids) =>
                   quitar.mutate({ itemCode, data: { version: r.version, ids } }, listo('Aplicación quitada.'))
                 }
+                alHacerPrincipal={(ids) =>
+                  hacerPrincipal.mutate(
+                    { itemCode, data: { version: r.version, ids } },
+                    listo(`${g.titulo} es ahora el vehículo principal.`),
+                  )
+                }
               />
             ))}
           </ul>
@@ -621,7 +685,7 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
           <RegistrarVehiculo
             inicial={registro}
             alCerrar={() => setRegistro(null)}
-            alRegistrado={(items) => (setRegistro(null), alAgregar(items))}
+            alRegistrado={(items) => (setRegistro(null), alAgregar(items, sinPrincipal))}
           />
         )}
       </Dialogo>
