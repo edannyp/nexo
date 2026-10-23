@@ -8,7 +8,8 @@ Catálogo de diagramas técnicos (radiadores, intercoolers…) armado con catál
 Proyecto de scraping / IA.
 
 ## Acceso
-Mismo servidor Postgres que Consolidación (`CONSOLIDACION_HOST`), base `db_diagrams`. Explorado el 2026-10-15 en solo lectura.
+10.20.20.6, base `db_diagrams`, con las credenciales de `CONSOLIDACION_*` del `.env` (solo lectura). Explorado el 2026-10-15 y
+el 2026-10-23. Consolidación ya no vive ahí (está en 10.10.60.6).
 Las fotos de los diagramas están en MinIO, bucket `rlt-diagramas`; las tablas guardan URLs.
 
 ## Tablas / entidades clave
@@ -19,7 +20,9 @@ Las fotos de los diagramas están en MinIO, bucket `rlt-diagramas`; las tablas g
 | `oem_codigos` | 16 313 | OEM por diagrama, con `fuente` y `confianza` (`confirmado`, `revisar_manual`) |
 | `proveedor_codigos` | 197* | Código del competidor por diagrama (JJ Radiator, NRF, CSF, TYC) con `url_imagen` externa |
 | `proveedor_busqueda_config` | 8 | Plantillas de URL de búsqueda por proveedor |
-| `importaciones_pendientes`, `jjradiator_*` | 0 | Colas de trabajo del scraping |
+| `jjradiator_cross_reference` | 6 953 | Diagrama ↔ artículo de JJ (1 a 1): `match_status` (`confirmado` 4 138, `revisar_manual` 2 815), `match_reason` (`oem`, `dimensiones`, `oem_no_coincide`, `sin_evidencia_para_corroborar`) |
+| `jjradiator_sin_match` | 354 | Diagramas que no están en JJ, con un equivalente imputado y su confianza |
+| `importaciones_pendientes` | 1 363 | Cola de trabajo del scraping |
 
 *Las estadísticas dicen 197 filas, pero el conteo real por proveedor suma ~10 300.
 
