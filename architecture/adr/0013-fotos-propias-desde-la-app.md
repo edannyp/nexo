@@ -2,6 +2,8 @@
 
 - **Estado:** Aceptada. Importación inicial implementada: `python -m nexo_api.cli importar-fotos` (2026-10-19; 1 490 fotos de 485 artículos).
   Subida desde la APP implementada (2026-10-19): pantalla Fotos y pestaña Fotos; llave de escritura `MINIO_FOTOS_*`.
+  En producción (2026-10-21): importación hecha (1 490 fotos de 485 artículos) y `MINIO_FOTOS_*` = la misma llave de lectura
+  (ver *Ajuste*).
 - **Fecha:** 2026-10-15
 
 ## Contexto
@@ -22,3 +24,10 @@
 - El encargado de fotos necesita un usuario de la APP con rol `FOTOS`, no credenciales de MinIO.
 - El backend necesita un adaptador de MinIO (S3) con subida, listado y URLs prefirmadas para mostrar.
 - Hay que pedir una llave de MinIO de escritura acotada a `rlt-dru/imagenes_inventario/` (la actual se usa para lectura).
+
+## Ajuste (2026-10-21)
+La llave existente (`drustorage`) ya escribe en `rlt-dru/imagenes_inventario/`, así que en producción `MINIO_FOTOS_*` usa **esa
+misma llave** en vez de una aparte. Funciona igual: el código solo escribe bajo `imagenes_inventario/` (`SubidaMinio` rechaza otra
+ruta). Se pierde el aislamiento del lado de MinIO: si se filtrara la llave de la API, permitiría escribir donde `drustorage` pueda.
+Si se quiere recuperar, basta crear un usuario de MinIO con `s3:PutObject` sobre `rlt-dru/imagenes_inventario/*` y cambiar solo
+`MINIO_FOTOS_*` en el `.env`; no hay que tocar código.
