@@ -18,11 +18,13 @@ Lee antes de proponer o escribir código:
 ## Las fuentes (10.20.20.6, solo lectura)
 | Fuente (`catalogo.fuente`) | Base | Qué se lee | Prioridad |
 |---|---|---|---|
-| `DB_DIAGRAMS` | `db_diagrams` | `datos_maestros` (7 405 diagramas), `oem_codigos`, imágenes en MinIO `rlt-diagramas` | 1 |
+| `DB_DIAGRAMS` | `db_diagrams` | `datos_maestros` (7 405 diagramas, mantenidos por PICsys), `compatibilidades`, `oem_codigos`, `proveedor_codigos`, imágenes en MinIO `rlt-diagramas` | 1 |
 | `JJ_RADIATOR` | `db_scrapper` | `jjradiators_silver.articulos`, `articulo_detalle`, `articulo_oem` | 2 |
 | (cruce) | `db_diagrams` | `jjradiator_cross_reference`: qué diagrama es qué artículo de JJ | — |
 
 Las dos fuentes ya vienen creadas en la base (migración V004). Fuentes nuevas (NRF, CSF, TYC…) se acuerdan antes con Nexo.
+El agente de visión (`staging_radiadores`, `silver_*`) **no** es fuente de esta carga. Respuestas del equipo de Nexo a tu plan:
+`RESPUESTAS-NEXO.md`.
 
 ## Cada corrida, por fuente
 1. `insert into carga.corrida (fuente_id, version_proceso, completa) values (…, …, true) returning id` → **foto completa**.
@@ -40,15 +42,20 @@ nada: marca la corrida `FALLIDA`, alerta y **no reintentes a ciegas**. Casi siem
 | En la fuente pasa… | Qué haces tú | Qué hace la base |
 |---|---|---|
 | Artículo de JJ de un tipo fuera de alcance (termostato, tapón, herramienta) | No se carga | — |
-| Radiator / Truck Radiator, AC Condensers, Intercooler, Radiator Tanks | Parte con 2172, 6708, 12616 o 48305/17700/17701 | 🔒 Rechaza un tipo que no esté en PCdb o esté obsoleto |
+| Radiator / Truck Radiator, AC Condensers, Intercooler, Radiator Tanks | Parte con 2172, 6708, 12616 o 48305 (17700/17701 solo si el texto dice inlet/outlet) | 🔒 Rechaza un tipo que no esté en PCdb o esté obsoleto |
+| Diagrama con `parte` (texto) que no mapea a un tipo | Fuera de la carga; se anota en `carga.corrida.notas` | — |
 | Diagrama y JJ con cruce `confirmado` | Los dos registros a la misma parte, `vinculo_confianza` 1,0 | — |
 | Cruce `revisar_manual` | Misma parte, `vinculo_confianza` 0,5; si el OEM no coincide, conflicto `NUMERO_DUPLICADO` con los dos OEM | — |
 | Diagrama o JJ sin cruce | Parte propia | — |
-| OEM `confirmado*` / `pendiente` o sin dato | `parte_numero` con `confianza` 1,0 / 0,5 | 🔒 OEM exige `marca_pieza_id` |
+| El cruce de una pieza ya unida cambia o desaparece | La parte no se toca; conflicto `POSIBLE_FUSION` con el cambio | — |
+| Dos diagramas apuntan al mismo JJ | El JJ va con el de cruce más fuerte; `POSIBLE_FUSION` entre las dos partes | — |
+| OEM `confirmado*` / `pendiente` o sin dato | `parte_numero` con `confianza` 1,0 / 0,5; marca = la del vehículo si es real, si no «Sin marca» | 🔒 OEM exige `marca_pieza_id` |
+| OEM abreviado (`2025001000/1100`) | Se expande en las dos fuentes; el reconstruido con 0,2 menos de confianza | — |
 | OEM `inconcluso` (`-`, `11061-`) o `descartado_manual` | No se publica (queda en `datos_crudos`) | — |
 | `375×728×16/26` | 267/269 = 375 y 728 (el orden no importa); 268 = **16**; texto en `valor_original` | 🔒 Medidas con `uom_code` `MM` |
+| Tanque `598.5x76.6` | 270 = 598,5 y 316 = 76,6 (MM). En JJ, `core_size` es el tanque y `tank_size` el panal | — |
 | Medidas del diagrama y de JJ difieren > 2 mm | Las guardas las dos, cada una con su registro | Conflicto `ATRIBUTO_DISCREPA`; Nexo ve la del diagrama |
-| Vehículo inequívoco (`NISSAN VERSA 2007-2012`) | `parte_aplicacion` por año con su `base_vehicle_id` (submodelo y motor si están claros) | 🔒 El vehículo debe existir en AutoCare y no estar obsoleto |
+| Vehículo inequívoco (`NISSAN VERSA 2007-2012`: marca, modelo y años) | `parte_aplicacion` por año con su `base_vehicle_id` (submodelo y motor si están claros). En Nexo llega como sugerencia que el operador confirma | 🔒 El vehículo debe existir en AutoCare y no estar obsoleto |
 | Vehículo ambiguo, en chino, solo la marca o fuera de AutoCare | `aplicacion_sin_homologar` con el texto y su `motivo` | — (el proceso de IA de vehículos registra después los que faltan) |
 | Imagen de JJ | Copia en MinIO `rlt-diagramas/jjradiator/<archivo>` + `url` original en `parte_imagen` | — |
 | Artículo que JJ ya no publica | No viene en la corrida | Al cerrar: `vigente = false` (nunca se borra) |

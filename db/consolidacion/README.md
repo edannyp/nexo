@@ -86,15 +86,17 @@ Las marcadas con 🔒 las hace cumplir la base: si el proceso las viola, la escr
 6. **Tipo de parte.** 🔒 `part_terminology_id` debe existir en PCdb (2172 Radiator, 6708 A/C Condenser, 12616 Intercooler…;
    ver `context/categorias.md`).
 7. **Números.** `numero` tal como viene; `numero_norm` lo calcula la base (mayúsculas, solo `A-Z0-9`).
-   🔒 OEM, PROVEEDOR e INTERCAMBIO requieren `marca_pieza_id`; DPI no. Si un campo trae varios números (`2531022050/22070`),
-   se separan en filas y se expanden las abreviaturas, con menor `confianza`. **OEM verificados** (ADR 0026): confirmados con
+   🔒 OEM, PROVEEDOR e INTERCAMBIO requieren `marca_pieza_id`; DPI no. La marca de un OEM es la del vehículo si es una marca
+   real; si no se sabe, la marca reservada «Sin marca» (ADR 0026). Si un campo trae varios números (`2531022050/22070`),
+   se separan en filas y se expanden las abreviaturas (igual en todas las fuentes), con 0,2 menos de `confianza`. **OEM verificados** (ADR 0026): confirmados con
    `confianza` 1,0; pendientes o sin verificación, 0,5; los inconclusos (dato roto) y descartados no se publican (quedan en
    `datos_crudos`).
 8. **Atributos PAdb.** 🔒 El `paid` debe estar asignado a ese tipo de parte. 🔒 Exactamente uno de `valor_num`,
    `valid_value_id` o `valor_texto`. 🔒 Si PAdb asigna unidades al atributo, `valor_num` lleva `uom_code`.
    Longitudes **en mm**. `valor_original` guarda el texto de origen (`335x608x16/22/26`).
    Medidas del panal: 267 Core Height, 269 Core Width (largo), 268 Core Thickness (ancho). Con espesor doble o triple
-   (`16/26`), 268 = el **primer** número; no se adivina qué son los demás.
+   (`16/26`), 268 = el **primer** número; no se adivina qué son los demás. Tanque: 270 Inlet Header Length × 316 Inlet Header
+   Width (`598.5x76.6`); con dos anchos, solo `valor_original`.
 9. **Aplicaciones ACES.** 🔒 Exactamente uno de `base_vehicle_id` o `equipment_base_id`, y deben existir en AutoCare,
    o ser IDs ≥ 1 000 000 000 de MercadoExterno. Las regiones son opcionales (`parte_aplicacion_region`).
    Los calificadores que no se resuelvan a ID (motor en texto) van en `notas`.
@@ -110,7 +112,8 @@ Las marcadas con 🔒 las hace cumplir la base: si el proceso las viola, la escr
 13. **Misma pieza en varias fuentes** (ADR 0026). Los registros que son la misma pieza apuntan a la misma `parte`
     (`vinculo_metodo`, `vinculo_confianza`). Diagramas ↔ JJ: según `db_diagrams.jjradiator_cross_reference`; los `confirmado` con
     confianza 1,0 y los `revisar_manual` también se unen, con confianza 0,5 y, si el OEM no coincide, un conflicto
-    `NUMERO_DUPLICADO` con los dos OEM. Lo que no tiene cruce es una parte propia.
+    `NUMERO_DUPLICADO` con los dos OEM. Lo que no tiene cruce es una parte propia. **Una unión no se deshace sola:** si el cruce
+    cambia o desaparece en otra corrida, la parte queda igual y se abre `POSIBLE_FUSION` para revisión.
 14. **Prioridad de fuentes.** `catalogo.fuente.prioridad` (1 = más confiable): `DB_DIAGRAMS` 1, `JJ_RADIATOR` 2. La búsqueda
     toma cada medida de la fuente de mayor prioridad que siga vigente; se guardan todas. 🔒 Si las medidas del panal de una parte
     difieren más de 2 mm entre fuentes, `fn_cerrar_corrida` abre un conflicto `ATRIBUTO_DISCREPA`.
