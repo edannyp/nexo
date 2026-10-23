@@ -8,7 +8,9 @@
       "Bash(git log:*)"
     ],
     "deny": [
-      "Read(./.env)"
-    ]
+      "Read(./.env)",
+      "Read(/proyectos/**/.env)"
+    ],
+    "additionalDirectories": ["/proyectos"]
   }
 }
