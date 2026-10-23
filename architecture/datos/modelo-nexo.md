@@ -32,6 +32,8 @@
 > - `0015_staging_lotes_abandonados.sql`: la limpieza de `staging` también quita los lotes que nunca se procesaron, fuera de la
 >   ventana de `etl.lotes_conservados` (un fallo reciente se conserva para diagnosticarlo), y `datos_sap` se actualiza aunque la
 >   huella no cambie.
+> - `0016_vehiculo_principal.sql`: vehículo principal del artículo (ADR 0025): `articulo_aplicacion.es_principal` y copia de marca,
+>   modelo y año del catálogo; requisito `VEHICULO_PRINCIPAL`; hallazgo `VEHICULO_DISTINTO`; vista `app.v_vehiculo_principal`.
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones
