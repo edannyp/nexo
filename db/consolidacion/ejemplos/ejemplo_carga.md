@@ -11,7 +11,7 @@ Tres diagramas reales de `db_diagrams` (valores del 2026-10-15), cada uno con un
 | `dpi = '1816'` | `parte_numero` tipo `DPI` | |
 | `oem = '2531022050/22070'` | **dos** filas `OEM` de Hyundai: `25310-22050` (0.8) y `25310-22070` (0.6) | El segundo abrevia el sufijo; al expandirlo baja la confianza |
 | `alto_panal = 335`, `largo_panal = 608`, `ancho_panal = 16` | `parte_atributo` 267 = 335 MM, 269 = 608 MM, 268 = 16 MM | Nombres PAdb; `ancho_panal` es en realidad el espesor |
-| `core_size = '335x608x16/22/26'` | `valor_original` en cada medida + `conflicto` `ATRIBUTO_DISCREPA` | `16/22/26` sugiere variantes de espesor: se reporta, no se adivina |
+| `core_size = '335x608x16/22/26'` | 267 = 335, 269 = 608, 268 = **16** y `valor_original` en cada medida | Espesor doble o triple: el espesor es el primer número; no se adivina qué son los demás (ADR 0026) |
 | `marca = 'HYUNDAI'`, sin modelo ni años | `aplicacion_sin_homologar` (`MODELO_DESCONOCIDO`) | No hay base vehicle posible con solo la marca |
 
 ## Caso B — 918255: medidas solo en texto
@@ -36,3 +36,6 @@ que el vehículo existe en el mercado, se registra en MercadoExterno y se usa el
 - **Deduplicación entre fuentes:** si NRF o CSF traen una pieza con OEM `25310-22050` de Hyundai, su `registro_fuente` debería
   apuntar a la **misma** `parte` del caso A (`vinculo_metodo = 'NUMERO'`). Las reglas exactas están pendientes de acordar.
 - Imágenes (`parte_imagen`) y regiones (`parte_aplicacion_region`).
+
+La corrida se abre con `completa = true` (foto completa de la fuente) y se cierra con `select carga.fn_cerrar_corrida(id)`:
+marca no vigente lo que no vino, abre conflictos si las medidas de una parte difieren > 2 mm entre fuentes y la deja `COMPLETA`.

@@ -34,7 +34,7 @@ Consolidación no sabe nada de SAP: no tiene `item_code`, estados del workflow n
 | `nombre` | `text` | |
 | `tipo` | enum `tipo_fuente` | `CATALOGO_PROPIO`, `SCRAPING`, `LISTA_PROVEEDOR`, `MANUAL` |
 | `url_base` | `text` | |
-| `prioridad` | `smallint` | 1 = más confiable; desempata conflictos |
+| `prioridad` | `smallint` | 1 = más confiable; desempata conflictos (`DB_DIAGRAMS` 1, `JJ_RADIATOR` 2; V004) |
 | `activa` | `boolean` | |
 
 ### `catalogo.marca_pieza`
@@ -56,6 +56,7 @@ Una ejecución del proceso de carga por fuente.
 | `iniciada_en` / `terminada_en` | `timestamptz` | |
 | `estado` | enum | `EN_PROCESO`, `COMPLETA`, `FALLIDA` |
 | `version_proceso` | `text` | Versión del scraper o consolidador |
+| `completa` | `boolean` | Foto completa de la fuente: al cerrar con `carga.fn_cerrar_corrida`, lo no visto queda no vigente (ADR 0026) |
 | `leidos`, `insertados`, `actualizados`, `sin_cambios`, `errores` | `integer` | |
 | `notas` | `text` | |
 
@@ -185,9 +186,11 @@ Discrepancias entre fuentes que el proceso detecta y no resuelve solo.
   y `part_terminology_id` (el del filtro global, ADR 0010).
 
 ## Reglas del contrato para el proceso de carga
-1. *Upsert* por (`fuente_id`, `id_en_fuente`); si `hash_contenido` no cambió, no se toca nada.
+> Las reglas completas y vigentes están en `db/consolidacion/README.md` (ADR 0026: foto completa, OEM, medidas, vehículos,
+> imágenes, misma pieza y prioridad de fuentes).
+1. *Upsert* por (`fuente_id`, `id_en_fuente`); siempre se marca `corrida_id` (visto); si `hash_contenido` no cambió, nada más.
 2. Nunca `DELETE`: lo que desaparece de la fuente queda `vigente = false`; las partes se `FUSIONAN` o `DESCARTAN`.
-3. Toda corrida abre y cierra un `carga.corrida`.
+3. Toda corrida abre un `carga.corrida` de foto completa y se cierra con `carga.fn_cerrar_corrida` (defensa del 5 %).
 4. Los valores se validan contra AutoCare: `part_terminology_id` existe, `paid` está asignado a ese tipo de parte, `valid_value_id` es válido, `base_vehicle_id` existe.
 5. Lo que no se puede estandarizar va a `datos_crudos` o a `aplicacion_sin_homologar`, nunca a las columnas estándar.
 
