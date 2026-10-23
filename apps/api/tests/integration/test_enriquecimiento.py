@@ -41,7 +41,7 @@ def u(bd):
 
 def test_01_requisitos_explican_lo_que_falta(conn, u):
     falta = requisitos(conn, "RAD00253")
-    assert "APLICACION_O_EMPAREJAMIENTO" in falta and "ATRIBUTO:Core Height" in falta
+    assert "VEHICULO_PRINCIPAL" in falta and "ATRIBUTO:Core Height" in falta
     assert "EQUIVALENTE_IMPORTADO" not in requisitos(conn, "RLT00496")  # la equivalencia no bloquea (pregunta 24)
     falla(conn, "REQUISITOS_INCOMPLETOS", transicionar, "RAD00253", "POR_VALIDAR", "USUARIO", u["op"])
 
@@ -62,14 +62,14 @@ def test_02_atributos_sap_son_sugerencia_hasta_confirmar(conn, u):
     assert (etiquetas[269], etiquetas[268]) == ("Largo", "Ancho")         # vocabulario del negocio
 
     conn.execute("update app.articulo_atributo set confirmado_por = %s, confirmado_en = now() where articulo_id = %s", (u["op"], a))
-    assert requisitos(conn, "RAD00253") == ["APLICACION_O_EMPAREJAMIENTO", "ATRIBUTO:Tank Material"]
+    assert requisitos(conn, "RAD00253") == ["VEHICULO_PRINCIPAL", "ATRIBUTO:Tank Material"]
     conn.execute("update meta.atributo_config set obligatorio = false where part_terminology_id = 2172 and paid = 305")
-    assert requisitos(conn, "RAD00253") == ["APLICACION_O_EMPAREJAMIENTO"]  # opcional: ya no bloquea
+    assert requisitos(conn, "RAD00253") == ["VEHICULO_PRINCIPAL"]  # opcional: ya no bloquea
     conn.execute("update meta.atributo_config set obligatorio = true where part_terminology_id = 2172 and paid = 305")
     assert "ATRIBUTO:Tank Material" in requisitos(conn, "RAD00253")
     conn.execute("insert into app.articulo_atributo (articulo_id, paid, valid_value_id, origen, confirmado_por, confirmado_en) "
                  "values (%s, 305, 890, 'MANUAL', %s, now())", (a, u["op"]))   # el operador captura lo que falta
-    assert requisitos(conn, "RAD00253") == ["APLICACION_O_EMPAREJAMIENTO"]
+    assert requisitos(conn, "RAD00253") == ["VEHICULO_PRINCIPAL"]
 
 
 def test_03_aplicaciones_vehiculo_o_equipo(conn, u):
@@ -90,6 +90,11 @@ def test_03_aplicaciones_vehiculo_o_equipo(conn, u):
     with pytest.raises(psycopg.errors.UniqueViolation):                  # solo una parte principal
         conn.execute("insert into app.articulo_parte (articulo_id, parte_id, es_principal, origen, confirmado_por) "
                      "values (%s, 7002, true, 'CONSOLIDACION', %s)", (a, u["op"]))
+    assert requisitos(conn, "RAD00253") == ["VEHICULO_PRINCIPAL"]       # emparejar y aplicar no basta (ADR 0025)
+    conn.execute("update app.articulo_aplicacion set es_principal = true where articulo_id = %s and base_vehicle_id < 1000000000", (a,))
+    conn.execute("update app.articulo_aplicacion set es_principal = true where articulo_id = %s and equipment_base_id = 700001", (a,))
+    assert requisitos(conn, "RAD00253") == ["VEHICULO_PRINCIPAL"]       # el principal es UN vehículo (aquí, vehículo y equipo)
+    conn.execute("update app.articulo_aplicacion set es_principal = false where articulo_id = %s and equipment_base_id = 700001", (a,))
     assert requisitos(conn, "RAD00253") == []
     assert transicionar(conn, "RAD00253", "POR_VALIDAR", "USUARIO", u["op"]) == "POR_VALIDAR"
     assert transicionar(conn, "RAD00253", "VALIDADO", "USUARIO", u["sup"]) == "VALIDADO"
@@ -114,7 +119,8 @@ def test_04_equivalencia_y_herencia(conn, u):
                              "and confirmado_por is null", (f,)).fetchone()[0]
     assert sugeridas == 4                                                # el operador las confirma
     falta = requisitos(conn, "RLT00496")
-    assert "APLICACION_O_EMPAREJAMIENTO" not in falta                   # heredó la parte
+    assert "VEHICULO_PRINCIPAL" in falta                                # heredó el principal, pero como sugerencia por confirmar
+    assert conn.execute("select count(*) from app.articulo_aplicacion where articulo_id = %s and es_principal", (f,)).fetchone()[0] == 2
 
 
 def test_05_foto_nueva_en_validado_crea_verificacion(conn, u):

@@ -33,7 +33,7 @@ def cliente(bd):
 
 def test_salud_lista_reporta_la_migracion(cliente):
     r = cliente.get("/api/v1/salud/lista")
-    assert r.status_code == 200 and r.json() == {"estado": "ok", "migracion": "0015"}
+    assert r.status_code == 200 and r.json() == {"estado": "ok", "migracion": "0016"}
 
 
 def test_categorias_con_activos_por_linea(cliente):

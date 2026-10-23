@@ -111,7 +111,7 @@ def test_panorama(entorno):
     d = cliente(motor).get("/api/v1/panorama?cat=25&linea=IMPORTADO").json()
     assert d["activos"] == 3
     assert d["por_estado"] == {"PENDIENTE": 2, "POR_VALIDAR": 0, "RECHAZADO": 1, "VALIDADO": 0, "SINCRONIZADO": 0}
-    assert d["cobertura"] == {"con_foto": 1, "fotos": 2, "emparejados": 1, "con_aplicacion": 0}
+    assert d["cobertura"] == {"con_foto": 1, "fotos": 2, "emparejados": 1, "con_aplicacion": 1}
     assert d["atencion"]["rechazados"] == 1 and d["atencion"]["hallazgos_sap"] >= 1
 
     alto = next(a for a in d["ficha"]["atributos"] if a["etiqueta"] == "Alto")

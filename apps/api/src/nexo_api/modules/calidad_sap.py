@@ -24,6 +24,7 @@ DESCRIPCION_TIPO = {
     "NOMBRE_INACTIVO_SIN_CONGELAR": "Dice INACTIVO en el nombre pero no está congelado",
     "MEDIDAS_INVERTIDAS": "Alto y largo intercambiados",
     "SUBCATEGORIA_INCONSISTENTE": "Subcategoría que no corresponde a la categoría",
+    "VEHICULO_DISTINTO": "El vehículo de SAP no es el vehículo principal que confirmó Nexo",
 }
 
 

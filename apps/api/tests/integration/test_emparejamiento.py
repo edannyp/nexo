@@ -148,7 +148,7 @@ def test_04_la_primera_queda_principal_y_cumple_el_requisito(entorno):
     assert [(p["parte_id"], p["es_principal"], p["confirmado_por"]) for p in r["vinculadas"]] == [(7002, True, "op1")]
     assert r["traidos"] is None and [c["parte"]["parte_id"] for c in r["candidatos"]] == [7001]   # ya no aparece como candidata
     requisitos = [x["codigo"] for x in op1.get(URL).json()["requisitos"]]
-    assert "APLICACION_O_EMPAREJAMIENTO" not in requisitos
+    assert "VEHICULO_PRINCIPAL" in requisitos                 # emparejar ya no basta: falta el vehículo principal (ADR 0025)
 
 
 def test_05_vincular_principal_trae_sugerencias_sin_pisar(entorno):

@@ -64,10 +64,15 @@ def crear_usuario(c, usuario: str, *roles: str) -> int:
 
 
 def completar(c, item_code: str, usuario_id: int, parte_id: int = 5001) -> None:
-    """Lo que hace el operador antes de enviar a revisión: emparejar y confirmar los atributos obligatorios."""
+    """Lo que hace el operador antes de enviar a revisión: emparejar, confirmar el vehículo principal (el mismo que dice SAP) y los
+    atributos obligatorios."""
     aid = c.execute("select id from app.articulo where item_code = %s", (item_code,)).fetchone()[0]
     c.execute("insert into app.articulo_parte (articulo_id, parte_id, es_principal, origen, confirmado_por) "
               "values (%s, %s, true, 'CONSOLIDACION', %s) on conflict do nothing", (aid, parte_id, usuario_id))
+    c.execute("""insert into app.articulo_aplicacion (articulo_id, base_vehicle_id, sub_model_id, engine_config_id, origen, confirmado_por,
+                                                      confirmado_en, es_principal, make_id, model_id, anio, marca, modelo)
+                 select a.id, 99999, 5, 7, 'MANUAL', %s, now(), true, 1, 1, a.anio_desde, a.marca_vehiculo, a.modelo_vehiculo
+                 from app.articulo a where a.id = %s on conflict do nothing""", (usuario_id, aid))
     c.execute("""insert into app.articulo_atributo (articulo_id, paid, valor_texto, origen, confirmado_por, confirmado_en)
                  select a.id, r.paid, 'confirmado', 'MANUAL', %s, now()
                  from app.articulo a join meta.atributo_config r on r.part_terminology_id = a.part_terminology_id

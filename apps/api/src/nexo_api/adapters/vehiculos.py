@@ -68,6 +68,8 @@ class BaseVehicle:
     anio: int
     marca: str
     modelo: str
+    make_id: int | None = None
+    model_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -146,8 +148,8 @@ class AutoCare:
         ids = list(ids)
         if not ids:
             return {}
-        return {f.base_vehicle_id: BaseVehicle(f.year_id, f.make_name, f.model_name) for f in self._filas("""
-            select bv.base_vehicle_id, bv.year_id, mk.make_name, mo.model_name from vcdb_base.base_vehicle bv
+        return {f.base_vehicle_id: BaseVehicle(f.year_id, f.make_name, f.model_name, f.make_id, f.model_id) for f in self._filas("""
+            select bv.base_vehicle_id, bv.year_id, mk.make_name, mo.model_name, bv.make_id, bv.model_id from vcdb_base.base_vehicle bv
             join vcdb_base.make mk using (make_id) join vcdb_base.model mo using (model_id)
             where bv.base_vehicle_id = any(:ids)""", {"ids": ids})}
 
@@ -214,8 +216,9 @@ class MercadoExterno:
         ids = list(ids)
         if not ids:
             return {}
-        return {f.base_vehicle_id: BaseVehicle(f.year_id, f.make_name, f.model_name) for f in self._filas(
-            "select base_vehicle_id, year_id, make_name, model_name from vcdb.v_base_vehicle where base_vehicle_id = any(:ids)",
+        return {f.base_vehicle_id: BaseVehicle(f.year_id, f.make_name, f.model_name, f.make_id, f.model_id) for f in self._filas(
+            "select base_vehicle_id, year_id, make_name, model_name, make_id, model_id from vcdb.v_base_vehicle"
+            " where base_vehicle_id = any(:ids)",
             {"ids": ids})}
 
     def submodelos(self, ids: Iterable[int]) -> dict[int, str]:
