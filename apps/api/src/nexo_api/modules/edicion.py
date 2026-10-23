@@ -3,10 +3,11 @@
 
 from sqlalchemy import Connection, text
 
-from ..auth.dependencias import Usuario
+from ..auth.dependencias import Rol, Usuario
 from ..core.errores import Problema
 
 ESTADOS_EDITABLES = {"PENDIENTE", "RECHAZADO"}
+ROLES_TRABAJO = {Rol.OPERADOR, Rol.SUPERVISOR}       # quienes toman y trabajan artículos (bandeja de trabajo)
 
 
 def articulo(c: Connection, item_code: str, bloquear: bool = False):
@@ -26,9 +27,17 @@ def razon_no_editable(a, usuario: Usuario) -> str | None:
         return "El artículo está inactivo."
     if a.estado not in ESTADOS_EDITABLES:
         return "Solo se edita en Pendiente o Rechazado."
+    if not usuario.roles & ROLES_TRABAJO:
+        return ("Tu usuario no tiene el rol Operador ni Supervisor: pide a un administrador que te lo asigne "
+                "(Administración → Usuarios).")
     if not (a.asignado_a == usuario.id and a.reservado):
         return "Toma el artículo para editarlo." if not a.reservado else f"{a.reservado_por} lo está trabajando."
     return None
+
+
+def puede_tomar(a, usuario: Usuario) -> bool:
+    """Lo puede tomar ahora para editarlo: solo le falta reservarlo."""
+    return razon_no_editable(a, usuario) == "Toma el artículo para editarlo."
 
 
 def bloquear_para_editar(c: Connection, item_code: str, usuario: Usuario, version: int):

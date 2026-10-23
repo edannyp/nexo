@@ -8,6 +8,7 @@ import {
   useListarModelos,
   useMarcarPrincipal,
   useQuitarAplicaciones,
+  useReservarArticulo,
   useRegistrarVehiculoExterno,
   type Aplicaciones as RespuestaAplicaciones,
   type ConfiguracionAgrupada,
@@ -16,7 +17,7 @@ import {
   type SugerenciaSap,
 } from '@nexo/api-client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, CircleCheck, Plus, Search, Star, Trash2 } from 'lucide-react';
+import { Check, CircleCheck, Lock, Plus, Search, Star, Trash2 } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { cn } from '@/shared/cn';
@@ -544,6 +545,8 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
   const confirmar = useConfirmarAplicaciones();
   const quitar = useQuitarAplicaciones();
   const hacerPrincipal = useMarcarPrincipal();
+  const tomar = useReservarArticulo();
+  const consultas = useQueryClient();
   const [elegido, setSelector] = useState<Busqueda | null>(null);
   const [registro, setRegistro] = useState<Busqueda | null>(null);
   const [hecho, setHecho] = useState<string>();
@@ -558,7 +561,7 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
   if (!r) return <p className="text-sm text-suave">Cargando las aplicaciones…</p>;
 
   const ocupado = agregar.isPending || confirmar.isPending || quitar.isPending || hacerPrincipal.isPending;
-  const error = [agregar.error, confirmar.error, quitar.error, hacerPrincipal.error].find(
+  const error = [agregar.error, confirmar.error, quitar.error, hacerPrincipal.error, tomar.error].find(
     (e) => e instanceof ProblemaError,
   );
   const listo = (texto: string) => ({ onSuccess: () => setHecho(texto) });
@@ -581,8 +584,30 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
   return (
     <div className="space-y-4">
       {!r.editable && (
-        <Aviso tono="info" titulo="Solo lectura">
-          {r.razon_no_editable}
+        <Aviso tono="info" titulo={sinPrincipal ? 'Falta el vehículo principal' : 'Solo lectura'}>
+          {sinPrincipal && r.puede_tomar
+            ? 'Es obligatorio para enviar a revisión. Toma el artículo para agregarlo desde el selector.'
+            : r.razon_no_editable}
+          {r.puede_tomar && (
+            <Boton
+              variante="secundario"
+              className="mt-2 flex"
+              cargando={tomar.isPending}
+              onClick={() =>
+                tomar.mutate(
+                  { itemCode },
+                  {
+                    onSuccess: () =>
+                      void consultas.invalidateQueries({
+                        predicate: (c) => String(c.queryKey[0]).startsWith(`/api/v1/articulos/${itemCode}`),
+                      }),
+                  },
+                )
+              }
+            >
+              <Lock className="size-4" aria-hidden /> Tomar
+            </Boton>
+          )}
         </Aviso>
       )}
       {!r.catalogo_disponible && (

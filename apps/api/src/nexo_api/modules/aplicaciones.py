@@ -20,7 +20,7 @@ from ..auth.dependencias import Usuario, UsuarioActual
 from ..auth.registro import fijar_actor
 from ..core.bd import Conexion
 from ..core.errores import Problema
-from .edicion import articulo, bloquear_para_editar, razon_no_editable, subir_version
+from .edicion import articulo, bloquear_para_editar, puede_tomar, razon_no_editable, subir_version
 from .vehiculos import CatalogoOpcional, OpcionVehiculo, requerir_vehiculos
 
 router = APIRouter(prefix="/articulos/{item_code}/aplicaciones", tags=["aplicaciones"])
@@ -63,6 +63,7 @@ class Aplicaciones(BaseModel):
     version: int
     editable: bool
     razon_no_editable: str | None
+    puede_tomar: bool                      # no es editable solo porque falta tomarlo (la pestaña ofrece "Tomar")
     catalogo_disponible: bool
     sugerencia_sap: SugerenciaSap | None
     grupos: list[GrupoAplicacion]
@@ -189,7 +190,8 @@ def cargar_aplicaciones(c, item_code: str, usuario: Usuario, v: Vehiculos | None
                                       confirmados=sum(i.confirmado for i in items), sugeridos=sum(not i.confirmado for i in items),
                                       items=items))
     razon = razon_no_editable(a, usuario)
-    return Aplicaciones(version=a.version, editable=razon is None, razon_no_editable=razon, catalogo_disponible=v is not None,
+    return Aplicaciones(version=a.version, editable=razon is None, razon_no_editable=razon, puede_tomar=puede_tomar(a, usuario),
+                        catalogo_disponible=v is not None,
                         sugerencia_sap=sugerencia, grupos=salida)
 
 
