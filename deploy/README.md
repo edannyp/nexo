@@ -89,7 +89,7 @@ Requieren `CLICKHOUSE_*` (ventas) y `MINIO_*` (fotos; `MINIO_SECURE=false` para 
 
 ## Fotos propias (pantalla Fotos)
 La subida usa una llave de MinIO **aparte**, con escritura limitada a `rlt-dru/imagenes_inventario/` (ADR 0013):
-`MINIO_FOTOS_ACCESS_KEY` y `MINIO_FOTOS_SECRET_KEY`. Sin ella, la APP muestra las fotos pero no permite subir. El encargado de
+`MINIO_FOTOS_ACCESS_KEY` y `MINIO_FOTOS_SECRET_KEY` (en producción, la misma llave de lectura si ya escribe en ese prefijo; ADR 0013). Sin ella, la APP muestra las fotos pero no permite subir. El encargado de
 fotos necesita un usuario con rol `FOTOS`.
 
 ## Catálogo de vehículos (pestaña Aplicaciones)
