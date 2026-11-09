@@ -5,26 +5,31 @@ import {
   type ArticuloDetalle,
   type AtributoFicha,
 } from '@nexo/api-client';
-import { ChevronLeft, ChevronRight, ImageOff, Star, TriangleAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImagePlus, ImageOff, Star, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 
 import { cn } from '@/shared/cn';
-import { Insignia } from '@/shared/ui';
+import { FotosDelArticulo } from '@/features/fotos/FotosDelArticulo';
+import { Dialogo, Insignia } from '@/shared/ui';
 
 import { mostrar } from './Ficha';
 
 /** Pestañas del modo Trabajar a las que se puede saltar desde el resumen. */
-export type PestanaTrabajo = 'ficha' | 'aplicaciones' | 'emparejamiento' | 'equivalencia' | 'fotos';
+export type PestanaTrabajo = 'ficha' | 'aplicaciones' | 'emparejamiento' | 'equivalencia';
 
 const MEDIDAS = [267, 269, 268]; // alto, largo, ancho del panal (PAdb)
 
 const tarjeta = 'rounded-lg border border-borde bg-superficie p-4';
 const titulo = 'mb-2 text-xs font-medium tracking-wide text-suave uppercase';
 
-/** Fotos propias primero y luego las del catálogo maestro, de una en una. */
-function Carrusel({ itemCode }: { itemCode: string }) {
+/**
+ * Fotos propias primero y luego las del catálogo maestro, de una en una. Quien puede subir fotos (rol Fotos) las sube y ordena
+ * desde aquí, en un diálogo: no hay una pestaña aparte (ADR 0027).
+ */
+export function Carrusel({ itemCode }: { itemCode: string }) {
   const q = useListarFotos(itemCode);
   const [i, setI] = useState(0);
+  const [gestionar, setGestionar] = useState(false);
   const fotos = [
     ...(q.data?.propias ?? []).filter((f) => f.url).map((f) => ({ url: f.url as string, origen: 'Propia' })),
     ...(q.data?.proveedor ?? []).map((f) => ({ url: f.url, origen: 'Catálogo maestro' })),
@@ -65,14 +70,25 @@ function Carrusel({ itemCode }: { itemCode: string }) {
           </>
         )}
       </div>
-      {actual && (
-        <p className="mt-1.5 flex justify-between px-1 text-xs text-suave tabular-nums">
-          <span>{actual.origen}</span>
+      {(actual || q.data?.puede_subir) && (
+        <p className="mt-1.5 flex items-center justify-between gap-2 px-1 text-xs text-suave tabular-nums">
           <span>
-            {Math.min(i, fotos.length - 1) + 1} / {fotos.length}
+            {actual ? `${actual.origen} · ${Math.min(i, fotos.length - 1) + 1} / ${fotos.length}` : 'Sin fotos'}
           </span>
+          {q.data?.puede_subir && (
+            <button
+              type="button"
+              onClick={() => setGestionar(true)}
+              className="flex items-center gap-1 underline hover:text-texto"
+            >
+              <ImagePlus className="size-3.5" aria-hidden /> Subir u ordenar
+            </button>
+          )}
         </p>
       )}
+      <Dialogo abierto={gestionar} alCerrar={() => setGestionar(false)} titulo="Fotos del artículo">
+        {gestionar && <FotosDelArticulo itemCode={itemCode} />}
+      </Dialogo>
     </section>
   );
 }
@@ -99,7 +115,7 @@ function Descripciones({ a }: { a: ArticuloDetalle }) {
   );
 }
 
-function VehiculoPrincipal({ itemCode, alIr }: { itemCode: string; alIr?: (p: PestanaTrabajo) => void }) {
+export function VehiculoPrincipal({ itemCode, alIr }: { itemCode: string; alIr?: (p: PestanaTrabajo) => void }) {
   const q = useListarAplicaciones(itemCode);
   const grupos = q.data?.grupos ?? [];
   const principal = grupos.find((g) => g.principal);

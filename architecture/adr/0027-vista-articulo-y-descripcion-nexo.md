@@ -13,8 +13,13 @@ SAP, escrita a mano y sin formato fijo (`RAD. TOYOTA HILUX 2.4 M/03 A-RLT`, `RAD
 - **Dos modos.** Al abrir, un **Resumen** de solo lectura: carrusel de fotos (propias y del catálogo maestro), descripción de Nexo
   y la de SAP, ★ vehículo principal (ADR 0025), medidas del panal y atributos confirmados, qué falta para enviar a revisión, y
   Datos SAP e Historial como secciones plegables. **Trabajar** reserva el artículo y abre el espacio de edición (Ficha, Aplicaciones,
-  Emparejamiento, Equivalencia y Fotos) con un encabezado compacto (reserva, Soltar, Enviar a revisión, lo que falta). Si el
-  artículo ya está reservado por quien lo abre, se entra directo a Trabajar. Validar y Rechazar siguen en el encabezado del Resumen.
+  Emparejamiento y, en fabricados, Equivalencia) con un encabezado compacto (reserva, Soltar, Enviar a revisión, lo que falta). Si
+  el artículo ya está reservado por quien lo abre, se entra directo a Trabajar. Validar y Rechazar siguen en el encabezado del
+  Resumen.
+- **Lo necesario a la vista mientras se trabaja:** en Ficha, Aplicaciones y Equivalencia, un panel de contexto (a la derecha; arriba
+  en celular) con la **descripción sugerida** (con «Ajustar»), el **★ vehículo principal** y el carrusel de fotos (solo en pantalla
+  grande). Emparejamiento usa todo el ancho para comparar.
+- **Sin pestaña Fotos:** el carrusel las muestra; quien tiene el rol Fotos las sube y ordena desde el carrusel («Subir u ordenar»).
 - **Descripción de Nexo**, además de la de SAP (que no se toca): Nexo la propone sola con el **patrón de SAP sin abreviar**
   `TIPO MARCA MODELO M AA/AA MOTOR TRANSMISIÓN` y, en fabricados, el material (`RADIADOR TOYOTA HILUX M 05/15 2.5L MT`,
   `RADIADOR KENWORTH T600A M 14 COBRE LATON`), hasta 100 caracteres:
