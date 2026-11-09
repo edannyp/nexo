@@ -30,8 +30,7 @@ import { DescripcionNexo } from './DescripcionNexo';
 import { Emparejamiento } from './Emparejamiento';
 import { Equivalencia } from './Equivalencia';
 import { Ficha } from './Ficha';
-import { Resumen, type PestanaTrabajo } from './Resumen';
-import { FotosDelArticulo } from '@/features/fotos/FotosDelArticulo';
+import { Carrusel, Resumen, VehiculoPrincipal, type PestanaTrabajo } from './Resumen';
 
 const LATIDO_MS = 5 * 60_000;
 // Modo Trabajar (ADR 0027): las pestañas de edición. Datos SAP e Historial viven en el resumen.
@@ -40,8 +39,10 @@ const PESTANAS: readonly { id: PestanaTrabajo; etiqueta: string; soloFabricado?:
   { id: 'aplicaciones', etiqueta: 'Aplicaciones' },
   { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas' },
   { id: 'equivalencia', etiqueta: 'Equivalencia', soloFabricado: true },
-  { id: 'fotos', etiqueta: 'Fotos' },
 ];
+// Pestañas que se trabajan con el panel de contexto a la vista (fotos, descripción y vehículo principal). Emparejamiento
+// compara lado a lado y necesita todo el ancho.
+const CON_PANEL: readonly Vista[] = ['ficha', 'aplicaciones', 'equivalencia'];
 type Vista = 'resumen' | PestanaTrabajo;
 const EDITABLES = ['PENDIENTE', 'RECHAZADO'];
 
@@ -523,7 +524,6 @@ export function Articulo() {
 
       {trabajando ? (
         <>
-          <DescripcionNexo a={a} alGuardar={fijar} />
           {/* Pestañas: en celular se desplazan de lado */}
           <div
             role="tablist"
@@ -543,12 +543,33 @@ export function Articulo() {
               </button>
             ))}
           </div>
-          <div role="tabpanel">
-            {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
-            {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
-            {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} parteInicial={parteUrl} />}
-            {pestana === 'equivalencia' && <Equivalencia itemCode={itemCode} />}
-            {pestana === 'fotos' && <FotosDelArticulo itemCode={itemCode} />}
+          <div className={cn(CON_PANEL.includes(pestana) && 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]')}>
+            {/* Lo que se necesita a la vista mientras se trabaja: arriba en celular, a la derecha en pantalla grande */}
+            {CON_PANEL.includes(pestana) && (
+              <aside
+                aria-label="Contexto del artículo"
+                className="space-y-3 lg:sticky lg:top-40 lg:order-2 lg:self-start"
+              >
+                <DescripcionNexo a={a} alGuardar={fijar} />
+                <VehiculoPrincipal itemCode={itemCode} />
+                <div className="hidden lg:block">
+                  <Carrusel itemCode={itemCode} />
+                </div>
+              </aside>
+            )}
+            <div role="tabpanel" className="min-w-0 lg:order-1">
+              {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
+              {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
+              {pestana === 'emparejamiento' && (
+                <>
+                  <DescripcionNexo a={a} alGuardar={fijar} />
+                  <div className="mt-4">
+                    <Emparejamiento itemCode={itemCode} parteInicial={parteUrl} />
+                  </div>
+                </>
+              )}
+              {pestana === 'equivalencia' && <Equivalencia itemCode={itemCode} />}
+            </div>
           </div>
         </>
       ) : (
