@@ -71,15 +71,15 @@ export function Carrusel({ itemCode }: { itemCode: string }) {
         )}
       </div>
       {(actual || q.data?.puede_subir) && (
-        <p className="mt-1.5 flex items-center justify-between gap-2 px-1 text-xs text-suave tabular-nums">
-          <span>
+        <p className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-1 text-xs text-suave tabular-nums">
+          <span className="whitespace-nowrap">
             {actual ? `${actual.origen} · ${Math.min(i, fotos.length - 1) + 1} / ${fotos.length}` : 'Sin fotos'}
           </span>
           {q.data?.puede_subir && (
             <button
               type="button"
               onClick={() => setGestionar(true)}
-              className="flex items-center gap-1 underline hover:text-texto"
+              className="flex items-center gap-1 whitespace-nowrap underline hover:text-texto"
             >
               <ImagePlus className="size-3.5" aria-hidden /> Subir u ordenar
             </button>
