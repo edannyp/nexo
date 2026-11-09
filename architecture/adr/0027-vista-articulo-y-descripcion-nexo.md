@@ -22,6 +22,9 @@ SAP, escrita a mano y sin formato fijo (`RAD. TOYOTA HILUX 2.4 M/03 A-RLT`, `RAD
   pantalla grande y en celular; su contenido usa todo el ancho.
 - **Lo editable se distingue:** en la Ficha, cada campo que se edita en Nexo lleva un lápiz (y resalta el borde al pasar); la columna
   de SAP lleva un candado (solo lectura). Una leyenda lo explica. Sin permiso de edición no hay lápices.
+- **Comparar fotos al emparejar:** un modal amplio con las fotos del artículo a la izquierda y las imágenes del candidato a la
+  derecha (con miniaturas), y las medidas en el medio; recorre los candidatos (botones o flechas) y vincula desde ahí. Las imágenes
+  del catálogo copiadas a MinIO se muestran desde la copia (ADR 0026).
 - **Sin pestaña Fotos:** el carrusel las muestra; quien tiene el rol Fotos las sube y ordena desde el carrusel («Subir u ordenar»).
 - **Descripción de Nexo**, además de la de SAP (que no se toca): Nexo la propone sola con el **patrón de SAP sin abreviar**
   `TIPO MARCA MODELO M AA/AA MOTOR TRANSMISIÓN` y, en fabricados, el material (`RADIADOR TOYOTA HILUX M 05/15 2.5L MT`,
