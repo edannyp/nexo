@@ -34,6 +34,12 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
           'Artículos activos del tipo elegido, cuántos están validados, cuántos tienen la ficha completa y cuántos tienen foto propia.',
       },
       {
+        donde: '[data-recorrido="panorama-proceso"]',
+        titulo: 'El proceso',
+        texto:
+          'El recorrido de un artículo en notación BPMN: SAP lo trae, un operador lo completa, otro supervisor lo valida y el proceso de salida lo actualiza en SAP. Despliégalo con un clic en el título (recuerda tu elección) o ábrelo con «Ver en grande»; cada etapa muestra cuántos hay hoy.',
+      },
+      {
         donde: '[data-recorrido="panorama-graficos"]',
         titulo: 'Avance y atención',
         texto:
