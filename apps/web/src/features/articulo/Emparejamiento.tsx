@@ -11,11 +11,13 @@ import {
   type MedidasPanal,
   type ParteCatalogo,
 } from '@nexo/api-client';
-import { ArrowLeftRight, Check, ExternalLink, Link2, Search, Star, Unlink, X } from 'lucide-react';
+import { ArrowLeftRight, Check, Columns2, ExternalLink, Link2, Search, Star, Unlink, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { cn } from '@/shared/cn';
 import { Aviso, Boton, Dialogo, Insignia } from '@/shared/ui';
+
+import { ComparadorFotos } from './ComparadorFotos';
 
 const TOLERANCIAS = [5, 10, 15, 20];
 
@@ -98,12 +100,14 @@ function Comparar({
   e,
   ocupado,
   alVincular,
+  alCompararFotos,
 }: {
   itemCode: string;
   parteId: number;
   e: RespuestaEmparejamiento;
   ocupado: boolean;
   alVincular: (principal: boolean, traer: boolean) => void;
+  alCompararFotos: () => void;
 }) {
   const q = useCompararParte(itemCode, parteId, { tolerancia: e.tolerancia });
   const [traer, setTraer] = useState(true);
@@ -114,11 +118,16 @@ function Comparar({
 
   return (
     <div className="space-y-4 p-4">
-      <div>
-        <p className="font-medium">{c.parte.descripcion ?? `Parte ${c.parte.parte_id}`}</p>
-        <p className="text-xs text-suave">
-          Parte {c.parte.parte_id} · {c.parte.tipo_parte}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-medium">{c.parte.descripcion ?? `Parte ${c.parte.parte_id}`}</p>
+          <p className="text-xs text-suave">
+            Parte {c.parte.parte_id} · {c.parte.tipo_parte}
+          </p>
+        </div>
+        <Boton variante="secundario" onClick={alCompararFotos} title="Fotos del artículo y del candidato, lado a lado">
+          <Columns2 className="size-4" aria-hidden /> Comparar fotos
+        </Boton>
       </div>
       {c.invertida && (
         <Aviso tono="info" titulo="Alto y largo invertidos">
@@ -257,6 +266,7 @@ export function Emparejamiento({ itemCode, parteInicial }: { itemCode: string; p
   const [buscado, setBuscado] = useState('');
   const [elegida, setElegida] = useState<number | null>(parteInicial ?? null);
   const [hecho, setHecho] = useState<string>();
+  const [comparando, setComparando] = useState(false);
   const q = useObtenerEmparejamiento(itemCode, { tolerancia });
   const e = q.data;
   const busqueda = useBuscarPartes(
@@ -304,6 +314,9 @@ export function Emparejamiento({ itemCode, parteInicial }: { itemCode: string; p
       },
     );
   const lista: CandidatoParte[] | ParteCatalogo[] = buscado.length >= 2 ? (busqueda.data ?? []) : e.candidatos;
+  // El comparador de fotos recorre la misma lista (y la parte vista, si es una vinculada que no está en la lista)
+  const idsLista = lista.map((x) => ('puntaje' in x ? x.parte.parte_id : x.parte_id));
+  const idsComparar = visible && !idsLista.includes(visible) ? [visible, ...idsLista] : idsLista;
 
   return (
     <div className="space-y-4">
@@ -482,12 +495,27 @@ export function Emparejamiento({ itemCode, parteInicial }: { itemCode: string; p
                 e={e}
                 ocupado={vincular.isPending}
                 alVincular={(p, t) => alVincular(visible, p, t)}
+                alCompararFotos={() => setComparando(true)}
               />
             ) : (
               <p className="p-4 text-sm text-suave">Elige un candidato para compararlo con el artículo.</p>
             )}
           </section>
         </div>
+      )}
+
+      {visible && comparando && (
+        <ComparadorFotos
+          itemCode={itemCode}
+          e={e}
+          ids={idsComparar}
+          inicial={visible}
+          abierto={comparando}
+          ocupado={vincular.isPending}
+          alCerrar={() => setComparando(false)}
+          alCambiar={setElegida}
+          alVincular={alVincular}
+        />
       )}
     </div>
   );
