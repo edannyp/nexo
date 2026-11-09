@@ -375,7 +375,8 @@ export function Articulo() {
     <div className="space-y-4">
       <header
         className={cn(
-          'space-y-2 border-b border-borde pb-3',
+          'space-y-2 border-b border-borde',
+          trabajando ? 'pb-0' : 'pb-3',
           trabajando && 'sticky top-[6.5rem] z-[5] md:top-14 -mx-4 bg-fondo/95 px-4 backdrop-blur lg:-mx-6 lg:px-6',
         )}
       >
@@ -517,6 +518,25 @@ export function Articulo() {
             <FranjaTrabajo a={a} alGuardar={fijar} compacta />
           </div>
         )}
+        {trabajando && (
+          <>
+            {/* Pestañas, fijas con el encabezado: en celular se desplazan de lado */}
+            <div role="tablist" aria-label="Secciones de trabajo" className="-mb-px flex gap-1 overflow-x-auto">
+              {PESTANAS.filter((p) => !p.soloFabricado || a.linea === 'FABRICADO').map((p) => (
+                <button
+                  key={p.id}
+                  role="tab"
+                  type="button"
+                  aria-selected={pestana === p.id}
+                  onClick={() => setPestana(p.id)}
+                  className="border-b-2 border-transparent px-3 py-2 text-sm whitespace-nowrap text-suave aria-selected:border-primario aria-selected:font-medium aria-selected:text-texto"
+                >
+                  {p.etiqueta}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </header>
 
       {aviso && (
@@ -530,25 +550,6 @@ export function Articulo() {
           {/* En celular, la franja va aquí (sin fijar); en pantalla grande vive en el encabezado fijo */}
           <div className="lg:hidden">
             <FranjaTrabajo a={a} alGuardar={fijar} />
-          </div>
-          {/* Pestañas: en celular se desplazan de lado */}
-          <div
-            role="tablist"
-            aria-label="Secciones de trabajo"
-            className="-mx-4 flex gap-1 overflow-x-auto border-b border-borde px-4 lg:mx-0 lg:px-0"
-          >
-            {PESTANAS.filter((p) => !p.soloFabricado || a.linea === 'FABRICADO').map((p) => (
-              <button
-                key={p.id}
-                role="tab"
-                type="button"
-                aria-selected={pestana === p.id}
-                onClick={() => setPestana(p.id)}
-                className="border-b-2 border-transparent px-3 py-2 text-sm whitespace-nowrap text-suave aria-selected:border-primario aria-selected:font-medium aria-selected:text-texto"
-              >
-                {p.etiqueta}
-              </button>
-            ))}
           </div>
           <div role="tabpanel">
             {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}

@@ -18,7 +18,8 @@ SAP, escrita a mano y sin formato fijo (`RAD. TOYOTA HILUX 2.4 M/03 A-RLT`, `RAD
   Resumen.
 - **Lo necesario a la vista mientras se trabaja:** una franja en el encabezado fijo, con el código (en pantalla grande; en celular va
   debajo, sin fijar): la foto (carrusel compacto) y, a su lado, la **descripción sugerida** (con «Ajustar»), la de SAP y el
-  **★ vehículo principal**. Las pestañas usan todo el ancho.
+  **★ vehículo principal**. Las pestañas (Ficha, Aplicaciones, Emparejamiento…) también quedan fijas en ese encabezado, en
+  pantalla grande y en celular; su contenido usa todo el ancho.
 - **Lo editable se distingue:** en la Ficha, cada campo que se edita en Nexo lleva un lápiz (y resalta el borde al pasar); la columna
   de SAP lleva un candado (solo lectura). Una leyenda lo explica. Sin permiso de edición no hay lápices.
 - **Sin pestaña Fotos:** el carrusel las muestra; quien tiene el rol Fotos las sube y ordena desde el carrusel («Subir u ordenar»).
