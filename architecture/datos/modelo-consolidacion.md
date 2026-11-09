@@ -202,7 +202,8 @@ Discrepancias entre fuentes que el proceso detecta y no resuelve solo.
 ## Implementación
 El DDL versionado es la **fuente de verdad**: `db/consolidacion/migraciones/`. Contrato operativo, diagrama y ejemplo real:
 `db/consolidacion/README.md`. Además del diseño de arriba, el DDL agrega el esquema `ref` (copia de AutoCare para validar en la base,
-acotada y versionada: `obsoleto_en`, `ref.historial_carga`; ADR 0024)
+acotada y versionada: `obsoleto_en`, `ref.historial_carga`; ADR 0024). La vista de búsqueda toma cada medida de la fuente de mayor
+prioridad por índice (V005)
 y triggers que hacen cumplir las reglas.
 
 ## Pendiente
