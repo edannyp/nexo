@@ -26,7 +26,7 @@ const titulo = 'mb-2 text-xs font-medium tracking-wide text-suave uppercase';
  * Fotos propias primero y luego las del catálogo maestro, de una en una. Quien puede subir fotos (rol Fotos) las sube y ordena
  * desde aquí, en un diálogo: no hay una pestaña aparte (ADR 0027).
  */
-export function Carrusel({ itemCode }: { itemCode: string }) {
+export function Carrusel({ itemCode, compacto = false }: { itemCode: string; compacto?: boolean }) {
   const q = useListarFotos(itemCode);
   const [i, setI] = useState(0);
   const [gestionar, setGestionar] = useState(false);
@@ -38,7 +38,7 @@ export function Carrusel({ itemCode }: { itemCode: string }) {
   const mover = (d: number) => setI((x) => (x + d + fotos.length) % fotos.length);
 
   return (
-    <section aria-label="Fotos" className={cn(tarjeta, 'p-2')}>
+    <section aria-label="Fotos" className={cn(tarjeta, compacto ? 'p-1.5' : 'p-2')}>
       <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md bg-superficie-2">
         {q.isLoading ? (
           <span className="text-sm text-suave">Cargando fotos…</span>
@@ -55,17 +55,23 @@ export function Carrusel({ itemCode }: { itemCode: string }) {
               type="button"
               aria-label="Foto anterior"
               onClick={() => mover(-1)}
-              className="absolute top-1/2 left-1 -translate-y-1/2 rounded-full bg-fondo/80 p-1.5 hover:bg-fondo"
+              className={cn(
+                'absolute top-1/2 left-1 -translate-y-1/2 rounded-full bg-fondo/80 hover:bg-fondo',
+                compacto ? 'p-0.5' : 'p-1.5',
+              )}
             >
-              <ChevronLeft className="size-5" aria-hidden />
+              <ChevronLeft className={compacto ? 'size-4' : 'size-5'} aria-hidden />
             </button>
             <button
               type="button"
               aria-label="Foto siguiente"
               onClick={() => mover(1)}
-              className="absolute top-1/2 right-1 -translate-y-1/2 rounded-full bg-fondo/80 p-1.5 hover:bg-fondo"
+              className={cn(
+                'absolute top-1/2 right-1 -translate-y-1/2 rounded-full bg-fondo/80 hover:bg-fondo',
+                compacto ? 'p-0.5' : 'p-1.5',
+              )}
             >
-              <ChevronRight className="size-5" aria-hidden />
+              <ChevronRight className={compacto ? 'size-4' : 'size-5'} aria-hidden />
             </button>
           </>
         )}
@@ -73,15 +79,18 @@ export function Carrusel({ itemCode }: { itemCode: string }) {
       {(actual || q.data?.puede_subir) && (
         <p className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-1 text-xs text-suave tabular-nums">
           <span className="whitespace-nowrap">
-            {actual ? `${actual.origen} · ${Math.min(i, fotos.length - 1) + 1} / ${fotos.length}` : 'Sin fotos'}
+            {actual
+              ? `${compacto ? '' : `${actual.origen} · `}${Math.min(i, fotos.length - 1) + 1} / ${fotos.length}`
+              : 'Sin fotos'}
           </span>
           {q.data?.puede_subir && (
             <button
               type="button"
               onClick={() => setGestionar(true)}
               className="flex items-center gap-1 whitespace-nowrap underline hover:text-texto"
+              title="Subir u ordenar fotos"
             >
-              <ImagePlus className="size-3.5" aria-hidden /> Subir u ordenar
+              <ImagePlus className="size-3.5" aria-hidden /> {compacto ? 'Fotos' : 'Subir u ordenar'}
             </button>
           )}
         </p>
