@@ -16,6 +16,8 @@ import { fraccion, momento, numero, porcentaje } from '@/shared/formato';
 import { BarraApilada, FilaBarra, Leyenda, Medidor, Tendencia } from '@/shared/graficos';
 import { Aviso } from '@/shared/ui';
 
+import { DiagramaProceso } from './DiagramaProceso';
+
 function Bloque({ titulo, children, className }: { titulo: string; children: ReactNode; className?: string }) {
   return (
     <section className={cn('min-w-0 rounded-lg border border-borde bg-superficie p-4', className)} aria-label={titulo}>
@@ -301,6 +303,7 @@ export function Panorama() {
               detalle={`${numero(d.cobertura.fotos)} fotos`}
             />
           </div>
+          <DiagramaProceso porEstado={d.por_estado} />
           <div data-recorrido="panorama-graficos" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Avance d={d} />
             <Atencion d={d} verCalidad={tieneRol(usuario, ['SUPERVISOR', 'ADMINISTRADOR'])} />
