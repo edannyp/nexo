@@ -107,14 +107,15 @@ def _norm(s: str | None) -> str:
     return "".join(ch for ch in s.upper() if ch.isalnum())
 
 
-def _copia_catalogo(v: Vehiculos | None, ids) -> dict:
-    """Marca, modelo y año de cada vehículo base, para guardarlos con la aplicación (agrupar, filtrar, entregar a SAP)."""
+def _copia_catalogo(v: Vehiculos | None, ids, motores=()) -> tuple[dict, dict]:
+    """Marca, modelo y año de cada vehículo base, y el texto de cada motor, para guardarlos con la aplicación (agrupar, filtrar,
+    entregar a SAP y armar la descripción de Nexo). Si el catálogo no responde, la aplicación se guarda igual sin la copia."""
     if v is None:
-        return {}
+        return {}, {}
     try:
-        return v.base_vehicles(ids)
+        return v.base_vehicles(ids), v.motores(m for m in motores if m)
     except Problema:
-        return {}
+        return {}, {}
 
 
 def _sugerencia(c, a, v: Vehiculos | None) -> SugerenciaSap | None:
@@ -203,7 +204,7 @@ def listar_aplicaciones(item_code: str, usuario: UsuarioActual, c: Conexion, v: 
 @router.post("", response_model=Aplicaciones, summary="Agregar aplicaciones elegidas en el selector (quedan confirmadas)",
              responses={409: {"description": "No editable o versión distinta"}})
 def agregar_aplicaciones(item_code: str, datos: Agregar, usuario: UsuarioActual, c: Conexion, v: CatalogoOpcional) -> Aplicaciones:
-    bvs = _copia_catalogo(v, [it.base_vehicle_id for it in datos.items])
+    bvs, mots = _copia_catalogo(v, [it.base_vehicle_id for it in datos.items], [it.engine_config_id for it in datos.items])
     with c.begin():
         fijar_actor(c, usuario.id)
         a = bloquear_para_editar(c, item_code, usuario, datos.version)
@@ -214,11 +215,12 @@ def agregar_aplicaciones(item_code: str, datos: Agregar, usuario: UsuarioActual,
             bv = bvs.get(it.base_vehicle_id)
             p = {"a": a.id, "bv": it.base_vehicle_id, "sm": it.sub_model_id, "ec": it.engine_config_id, "u": usuario.id,
                  "pr": datos.principal, "mk": bv.make_id if bv else None, "mo": bv.model_id if bv else None,
-                 "anio": bv.anio if bv else None, "marca": bv.marca if bv else None, "modelo": bv.modelo if bv else None}
+                 "anio": bv.anio if bv else None, "marca": bv.marca if bv else None, "modelo": bv.modelo if bv else None,
+                 "motor": mots.get(it.engine_config_id)}
             # Si ya estaba (p. ej. sugerida por herencia), se confirma; si no, se agrega confirmada
             confirmada = c.execute(text("""
                 update app.articulo_aplicacion set confirmado_por = :u, confirmado_en = now(), es_principal = es_principal or :pr,
-                  make_id = :mk, model_id = :mo, anio = :anio, marca = :marca, modelo = :modelo
+                  make_id = :mk, model_id = :mo, anio = :anio, marca = :marca, modelo = :modelo, motor = :motor
                 where articulo_id = :a and base_vehicle_id = :bv and sub_model_id = :sm and engine_config_id = :ec
                   and equipment_base_id is null and transmission_id is null
                 returning id"""), p).first()
@@ -226,8 +228,8 @@ def agregar_aplicaciones(item_code: str, datos: Agregar, usuario: UsuarioActual,
                 c.execute(text("""
                     insert into app.articulo_aplicacion (articulo_id, base_vehicle_id, sub_model_id, engine_config_id, origen,
                                                          confirmado_por, confirmado_en, es_principal, make_id, model_id, anio,
-                                                         marca, modelo)
-                    values (:a, :bv, :sm, :ec, 'MANUAL', :u, now(), :pr, :mk, :mo, :anio, :marca, :modelo)"""), p)
+                                                         marca, modelo, motor)
+                    values (:a, :bv, :sm, :ec, 'MANUAL', :u, now(), :pr, :mk, :mo, :anio, :marca, :modelo, :motor)"""), p)
         subir_version(c, a.id)
     return cargar_aplicaciones(c, item_code, usuario, v)
 
@@ -255,11 +257,14 @@ def confirmar_aplicaciones(item_code: str, datos: PorIds, usuario: UsuarioActual
              responses={422: {"description": "Las aplicaciones no son un mismo vehículo, submodelo y motor"}})
 def marcar_principal(item_code: str, datos: PorIds, usuario: UsuarioActual, c: Conexion, v: CatalogoOpcional) -> Aplicaciones:
     a0 = articulo(c, item_code)
-    filas = c.execute(text("""select id, base_vehicle_id from app.articulo_aplicacion
-                              where articulo_id = :a and id = any(:ids) and make_id is null and base_vehicle_id is not null"""),
+    filas = c.execute(text("""select id, base_vehicle_id, engine_config_id from app.articulo_aplicacion
+                              where articulo_id = :a and id = any(:ids) and base_vehicle_id is not null
+                                and (make_id is null or (motor is null and engine_config_id is not null))"""),
                       {"a": a0.id, "ids": datos.ids}).all()
     c.rollback()
-    bvs = requerir_vehiculos(v).base_vehicles(f.base_vehicle_id for f in filas) if filas else {}
+    cat = requerir_vehiculos(v) if filas else None
+    bvs = cat.base_vehicles(f.base_vehicle_id for f in filas) if cat else {}
+    mots = cat.motores(f.engine_config_id for f in filas if f.engine_config_id) if cat else {}
     with c.begin():
         fijar_actor(c, usuario.id)
         a = bloquear_para_editar(c, item_code, usuario, datos.version)
@@ -267,8 +272,9 @@ def marcar_principal(item_code: str, datos: PorIds, usuario: UsuarioActual, c: C
             bv = bvs.get(f.base_vehicle_id)
             if bv:
                 c.execute(text("""update app.articulo_aplicacion set make_id = :mk, model_id = :mo, anio = :anio, marca = :marca,
-                                  modelo = :modelo where id = :id"""),
-                          {"id": f.id, "mk": bv.make_id, "mo": bv.model_id, "anio": bv.anio, "marca": bv.marca, "modelo": bv.modelo})
+                                  modelo = :modelo, motor = coalesce(motor, :motor) where id = :id"""),
+                          {"id": f.id, "mk": bv.make_id, "mo": bv.model_id, "anio": bv.anio, "marca": bv.marca, "modelo": bv.modelo,
+                           "motor": mots.get(f.engine_config_id)})
         elegidas = c.execute(text("""select count(*) as n,
                                             count(distinct (make_id, model_id, sub_model_id, equipment_base_id)) as grupos
                                      from app.articulo_aplicacion where articulo_id = :a and id = any(:ids)"""),

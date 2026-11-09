@@ -34,6 +34,8 @@
 >   huella no cambie.
 > - `0016_vehiculo_principal.sql`: vehículo principal del artículo (ADR 0025): `articulo_aplicacion.es_principal` y copia de marca,
 >   modelo y año del catálogo; requisito `VEHICULO_PRINCIPAL`; hallazgo `VEHICULO_DISTINTO`; vista `app.v_vehiculo_principal`.
+> - `0017_descripcion_nexo.sql`: descripción armada por Nexo (ADR 0027): `articulo.descripcion_nexo` y `descripcion_nexo_manual`,
+>   `app.fn_descripcion_nexo` (patrón de SAP sin abreviar desde el vehículo principal) y el motor copiado en `articulo_aplicacion`.
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones

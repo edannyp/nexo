@@ -183,3 +183,16 @@ def test_11_sin_rol_de_trabajo_explica_por_que_no_puede_tomarlo(entorno):
     r = como(entorno, "adm").get(URL).json()
     assert not r["editable"] and not r["puede_tomar"]
     assert r["razon_no_editable"].startswith("Tu usuario no tiene el rol Operador ni Supervisor")
+
+
+def test_12_descripcion_de_nexo_desde_el_principal_y_ajuste_manual(entorno):
+    op1 = como(entorno, "op1")
+    a = op1.get("/api/v1/articulos/RAD00500").json()
+    assert (a["descripcion_nexo"], a["descripcion_nexo_manual"]) == ("RADIADOR ISUZU D-MAX M 10/13 3.0L", False)
+    r = op1.put("/api/v1/articulos/RAD00500/descripcion", json={"version": a["version"], "texto": "  radiador isuzu  dmax especial "})
+    assert r.status_code == 200 and (r.json()["descripcion_nexo"], r.json()["descripcion_nexo_manual"]) == (
+        "RADIADOR ISUZU DMAX ESPECIAL", True)
+    r = op1.put("/api/v1/articulos/RAD00500/descripcion", json={"version": r.json()["version"], "texto": None})
+    assert (r.json()["descripcion_nexo"], r.json()["descripcion_nexo_manual"]) == ("RADIADOR ISUZU D-MAX M 10/13 3.0L", False)
+    assert como(entorno, "op2").put("/api/v1/articulos/RAD00500/descripcion",
+                                    json={"version": r.json()["version"], "texto": "X"}).status_code == 409   # no lo tiene reservado

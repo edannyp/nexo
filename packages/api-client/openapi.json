@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexo API",
     "description": "Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "paths": {
     "/api/v1/salud": {
@@ -1004,6 +1004,61 @@
           },
           "404": {
             "description": "No existe"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/descripcion": {
+      "put": {
+        "tags": [
+          "articulos"
+        ],
+        "summary": "Ajustar la descripción de Nexo a mano, o volver a la automática (texto null)",
+        "operationId": "ajustar_descripcion",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DescripcionNexo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticuloDetalle"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No editable o versión distinta"
           },
           "422": {
             "description": "Validation Error",
@@ -3771,6 +3826,21 @@
             ],
             "title": "Descripcion"
           },
+          "descripcion_nexo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion Nexo"
+          },
+          "descripcion_nexo_manual": {
+            "type": "boolean",
+            "title": "Descripcion Nexo Manual"
+          },
           "estado": {
             "$ref": "#/components/schemas/Estado"
           },
@@ -3923,6 +3993,8 @@
           "id",
           "item_code",
           "descripcion",
+          "descripcion_nexo",
+          "descripcion_nexo_manual",
           "estado",
           "version",
           "activo",
@@ -5043,6 +5115,32 @@
           "password"
         ],
         "title": "Credenciales"
+      },
+      "DescripcionNexo": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "texto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Texto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "DescripcionNexo"
       },
       "Emparejamiento": {
         "properties": {

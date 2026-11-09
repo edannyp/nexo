@@ -37,7 +37,7 @@ const opcionTexto = (o: { valor: string; valor_es?: string | null }) =>
   o.valor_es ? `${o.valor} (${o.valor_es})` : o.valor;
 
 /** Texto legible de un valor guardado. */
-function mostrar(a: AtributoFicha, v?: ValorAtributo | null): string {
+export function mostrar(a: AtributoFicha, v?: ValorAtributo | null): string {
   if (!v) return '';
   if (v.valid_value_id != null) {
     const o = a.opciones.find((x) => x.valid_value_id === v.valid_value_id);

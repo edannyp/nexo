@@ -128,6 +128,9 @@ services:
     command: sleep infinity
     volumes:
       - ..:/workspace:cached
+      # Opcional: tus otros proyectos (la carpeta que contiene a esta), en SOLO LECTURA, para que Claude Code los consulte.
+      # Descomenta, ajusta la ruta si hace falta y usa "Rebuild Container". Ver README, sección "Ver tus otros proyectos".
+      # - ../..:/proyectos:ro
       - claude-config:/home/vscode/.claude
       - commandhistory:/home/vscode/.commandhistory
     environment:
@@ -151,6 +154,21 @@ services:
 """
     texto += "\nvolumes:\n  claude-config:\n  commandhistory:\n" + ("  pgdata:\n" if postgres else "")
     return texto
+
+
+OTROS_PROYECTOS = """
+## Ver tus otros proyectos (opcional)
+El contenedor solo ve esta carpeta (`/workspace`). Si Claude Code necesita consultar tus otros proyectos (por ejemplo, el código
+que ya tienes del proceso), móntalos en **solo lectura**:
+1. En `.devcontainer/docker-compose.yml`, descomenta `- ../..:/proyectos:ro`. `../..` es la carpeta que contiene a este paquete;
+   ajústala si tus proyectos están en otro lugar. Monta solo la carpeta de proyectos, nunca todo tu directorio personal.
+2. En `.claude/settings.json`, agrega `"additionalDirectories": ["/proyectos"]` dentro de `"permissions"` (o abre Claude Code con
+   `claude --add-dir /proyectos`). La regla que impide leer los `.env` de esos proyectos ya viene puesta.
+3. **Rebuild Container** (o `devcontainer up --workspace-folder . --remove-existing-container`).
+
+Claude puede leer `/proyectos` pero no modificarlo. Si mueves la carpeta del paquete, vuelve a crear el contenedor: queda atado a
+la ruta donde se creó.
+"""
 
 
 def pyproject(nombre: str, titulo: str, deps: list[str]) -> str:
@@ -190,6 +208,8 @@ def armar(nombre: str) -> Path:
         (destino / ".devcontainer/devcontainer.json").read_text().replace("{{NOMBRE}}", nombre))
     (destino / ".devcontainer/docker-compose.yml").write_text(compose(nombre, p["postgres"]))
     (destino / "pyproject.toml").write_text(pyproject(nombre, p["titulo"], p["deps"]))
+    leeme = destino / "README.md"
+    leeme.write_text(leeme.read_text().rstrip("\n") + "\n" + OTROS_PROYECTOS)
     (destino / "contexto/LEEME.md").write_text(
         "# Contexto copiado de Nexo\n\nEstos documentos vienen del repositorio de Nexo (gobernanza del artículo) y se regeneran con\n"
         "`paquetes/armar.py`. **No se editan aquí**: si algo no cuadra, se pide el cambio al equipo de Nexo. Algunos enlaces internos\n"

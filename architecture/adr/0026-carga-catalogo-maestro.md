@@ -7,7 +7,8 @@
 El proceso 2 llena Consolidación (ADR 0011) desde dos fuentes en 10.20.20.6: `db_diagrams` (7 405 diagramas propios, con OEM y
 medidas en texto) y `db_scrapper` (JJ Radiator: 15 513 artículos de 9 tipos, vehículo en texto libre, OEM con estado de
 verificación). `db_diagrams.jjradiator_cross_reference` ya cruza diagrama ↔ JJ (6 953 cruces 1 a 1: 4 138 confirmados por OEM o
-dimensiones y 2 815 «revisar_manual»). El proceso lo construye otro desarrollador (con un agente de IA); Nexo define el contrato.
+dimensiones y 2 815 «revisar_manual»). El proceso lo construye otro desarrollador; Nexo define el contrato. `datos_maestros` lo
+mantiene PICsys (app con revisión humana); el agente de visión (`staging_radiadores`) es otro esfuerzo y no es fuente de esta carga.
 
 ## Decisión
 1. **Tipos:** solo los de las categorías de Nexo: Radiator y Truck Radiator → 2172, AC Condensers → 6708, Intercooler → 12616,
@@ -32,3 +33,18 @@ dimensiones y 2 815 «revisar_manual»). El proceso lo construye otro desarrolla
   conflictos lo dejan visible, y la trazabilidad por `registro_fuente_id` permite separarlas sin perder datos.
 - Un registro leído sin cambios igual actualiza `corrida_id` (sin cambiar `actualizado_en`): es lo que hace posible la foto completa.
 - Las fuentes nuevas (NRF, CSF, TYC…) necesitan su propia regla de cruce antes de entrar.
+
+## Precisiones (2026-10-23, plan del desarrollador)
+- **Cruce:** solo `jjradiator_cross_reference`, sin vetar con `proveedor_codigos` (decisión del negocio, aunque PICsys tiene 2 684
+  dudosos confirmados y 34 descartados por una persona). Una unión no se deshace sola: si el cruce cambia, conflicto
+  `POSIBLE_FUSION`. Si dos diagramas apuntan al mismo JJ, el JJ va con el de cruce más fuerte y se abre `POSIBLE_FUSION`.
+- **Marca del OEM:** la del vehículo cuando es una marca real; si no (`INTERCOOLER`, `CHINA`, vacía), la marca reservada
+  «Sin marca».
+- **Tipo de parte de los diagramas:** mapeo explícito del texto de `datos_maestros.parte`; lo que no mapee queda fuera y se reporta.
+  `Radiator Tanks` → 48305 salvo que el texto diga inlet/outlet.
+- **Medidas de tanque:** 270 Inlet Header Length × 316 Inlet Header Width, como Nexo con SAP. En JJ, `core_size` y `tank_size`
+  vienen intercambiados respecto de los diagramas.
+- **OEM abreviados:** misma expansión en las dos fuentes; el número reconstruido lleva 0,2 menos de confianza.
+- **Vehículos de JJ:** directo si marca, modelo y años son inequívocos; la revisión humana ocurre en Nexo, donde llegan como
+  sugerencias.
+- **Primera carga:** solo `DB_DIAGRAMS`; JJ después.
