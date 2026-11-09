@@ -11,6 +11,7 @@ import { Search, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { useUsuario } from '@/app/contexto-usuario';
 import { ESTADOS_CODIGO } from '@/features/articulo/Equivalencia';
 import { cn } from '@/shared/cn';
@@ -67,6 +68,7 @@ function CodigoEnLinea({
 
 /** Revisión de fabricados (propuesta UX §6.7, ADR 0018): código equivalente y su estado, filtrable. */
 export function Fabricados() {
+  useRecorrido('fabricados');
   const { filtro } = useFiltro();
   const usuario = useUsuario();
   const valida = usuario.roles.some((r) => r === 'SUPERVISOR' || r === 'ADMINISTRADOR');

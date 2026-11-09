@@ -4,6 +4,7 @@ import { ArrowLeftRight, Link2, Search, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { cn } from '@/shared/cn';
 import { EtiquetaEstado } from '@/shared/estados';
 import { Aviso, Boton, Insignia } from '@/shared/ui';
@@ -91,6 +92,7 @@ function ArticulosDeParte({ parteId, tolerancia }: { parteId: number; tolerancia
 
 /** Catálogo maestro, vista inversa (propuesta UX §6.8): qué partes tienen artículo y cuáles no. */
 export function Catalogo() {
+  useRecorrido('catalogo');
   const { filtro } = useFiltro();
   const [texto, setTexto] = useState('');
   const [q, setQ] = useState('');

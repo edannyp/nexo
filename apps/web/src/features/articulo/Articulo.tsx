@@ -23,6 +23,7 @@ import { cn } from '@/shared/cn';
 import { ESTADOS, EtiquetaEstado } from '@/shared/estados';
 import { momento, porcentaje } from '@/shared/formato';
 import { Tendencia } from '@/shared/graficos';
+import { useRecorrido } from '@/shared/recorrido';
 import { Aviso, Boton, Dialogo } from '@/shared/ui';
 
 import { Aplicaciones } from './Aplicaciones';
@@ -237,6 +238,7 @@ export function Articulo() {
   );
   // Sin elección: si ya lo tienes reservado, a trabajar; si no, el resumen
   const pestana: Vista = elegida ?? (a?.reserva?.mia ? 'ficha' : 'resumen');
+  useRecorrido(`articulo-${pestana}`);
   const [pendientesFicha, setPendientesFicha] = useState(0);
   // Cambiar de pestaña desmonta la ficha: si hay cambios sin guardar, se pregunta antes
   const setPestana = (p: Vista) => {
@@ -419,7 +421,7 @@ export function Articulo() {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div data-recorrido="articulo-acciones" className="flex flex-wrap items-center gap-2">
             {mia && restante !== null && (
               <span
                 className={cn(
@@ -437,7 +439,7 @@ export function Articulo() {
               </span>
             )}
             {!trabajando && puedeTrabajar && (
-              <Boton cargando={reservar.isPending} onClick={() => trabajar()}>
+              <Boton data-recorrido="articulo-trabajar" cargando={reservar.isPending} onClick={() => trabajar()}>
                 Trabajar <ChevronRight className="size-4" aria-hidden />
               </Boton>
             )}
@@ -567,7 +569,7 @@ export function Articulo() {
       ) : (
         <>
           <Resumen a={a} alIr={puedeTrabajar ? trabajar : undefined} />
-          <details className="group rounded-lg border border-borde bg-superficie">
+          <details data-recorrido="resumen-sap" className="group rounded-lg border border-borde bg-superficie">
             <summary className="cursor-pointer px-4 py-3 text-sm font-medium">Datos de SAP e identificación</summary>
             <div className="border-t border-borde p-4">
               <DatosSap a={a} />

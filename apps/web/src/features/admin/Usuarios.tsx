@@ -16,6 +16,7 @@ import { Check, Copy, KeyRound, LogOut, LockOpen, Pencil, Plus } from 'lucide-re
 import { useState, type FormEvent } from 'react';
 
 import { useUsuario } from '@/app/contexto-usuario';
+import { useRecorrido } from '@/shared/recorrido';
 import { Aviso, Boton, Campo, Dialogo, Insignia } from '@/shared/ui';
 
 const ROLES: { valor: Rol; nombre: string; descripcion: string }[] = [
@@ -236,6 +237,7 @@ type Accion =
 
 /** Administración de usuarios (ADR 0015): alta con contraseña temporal, roles, permisos, bloqueo y sesiones. */
 export function Usuarios() {
+  useRecorrido('usuarios');
   const yo = useUsuario();
   const consultas = useQueryClient();
   const lista = useListarUsuarios();
