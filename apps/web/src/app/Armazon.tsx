@@ -12,6 +12,8 @@ import { useEffect, useMemo } from 'react';
 
 import { Aviso, Boton } from '@/shared/ui';
 
+import { RecorridoProveedor, BotonAyuda } from '@/shared/recorrido';
+
 import { BotonTema } from './BotonTema';
 import { Busqueda } from './Busqueda';
 import { FiltroContexto } from './contexto-filtro';
@@ -19,6 +21,7 @@ import { UsuarioContexto } from './contexto-usuario';
 import { FiltroGlobal } from './FiltroGlobal';
 import { filtroGuardado, guardarFiltro, resolverFiltro, type Filtro } from './filtro';
 import { MenuUsuario } from './MenuUsuario';
+import { RECORRIDOS } from './recorridos';
 import { NavegacionInferior, NavegacionLateral } from './Navegacion';
 import { SECCIONES } from './navegacion';
 import { puedeVer, useSesion } from './sesion';
@@ -105,43 +108,46 @@ function ArmazonAutenticado({ usuario }: { usuario: UsuarioSesion }) {
   return (
     <UsuarioContexto.Provider value={usuario}>
       <FiltroContexto.Provider value={ctx}>
-        <div className="flex min-h-dvh flex-col">
-          <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">
-            Saltar al contenido
-          </a>
-          <header className="sticky top-0 z-10 border-b border-borde bg-superficie/95 backdrop-blur">
-            <div className="flex h-14 items-center gap-3 px-4">
-              <Marca />
+        <RecorridoProveedor>
+          <div className="flex min-h-dvh flex-col">
+            <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">
+              Saltar al contenido
+            </a>
+            <header className="sticky top-0 z-10 border-b border-borde bg-superficie/95 backdrop-blur">
+              <div className="flex h-14 items-center gap-3 px-4">
+                <Marca />
+                <FiltroGlobal
+                  className="hidden md:flex"
+                  categorias={categorias.data}
+                  error={categorias.isError}
+                  filtro={ctx.filtro}
+                  onCambiar={ctx.cambiar}
+                />
+                <div className="ml-auto flex items-center gap-1">
+                  <BotonAyuda recorridos={RECORRIDOS} />
+                  <Busqueda />
+                  <BotonTema />
+                  <MenuUsuario />
+                </div>
+              </div>
+              {/* En celular el filtro ocupa su propia fila, a todo lo ancho */}
               <FiltroGlobal
-                className="hidden md:flex"
+                className="px-4 pb-3 md:hidden"
                 categorias={categorias.data}
                 error={categorias.isError}
                 filtro={ctx.filtro}
                 onCambiar={ctx.cambiar}
               />
-              <div className="ml-auto flex items-center gap-1">
-                <Busqueda />
-                <BotonTema />
-                <MenuUsuario />
-              </div>
+            </header>
+            <div className="flex flex-1">
+              <NavegacionLateral secciones={secciones} />
+              <main id="contenido" className="min-w-0 flex-1 p-4 pb-24 lg:p-6">
+                <Outlet />
+              </main>
             </div>
-            {/* En celular el filtro ocupa su propia fila, a todo lo ancho */}
-            <FiltroGlobal
-              className="px-4 pb-3 md:hidden"
-              categorias={categorias.data}
-              error={categorias.isError}
-              filtro={ctx.filtro}
-              onCambiar={ctx.cambiar}
-            />
-          </header>
-          <div className="flex flex-1">
-            <NavegacionLateral secciones={secciones} />
-            <main id="contenido" className="min-w-0 flex-1 p-4 pb-24 lg:p-6">
-              <Outlet />
-            </main>
+            <NavegacionInferior secciones={secciones} />
           </div>
-          <NavegacionInferior secciones={secciones} />
-        </div>
+        </RecorridoProveedor>
       </FiltroContexto.Provider>
     </UsuarioContexto.Provider>
   );

@@ -56,6 +56,7 @@ export function Busqueda() {
   return (
     <>
       <button
+        data-recorrido="busqueda"
         type="button"
         onClick={() => dialogo.current?.showModal()}
         className="flex h-9 items-center gap-2 rounded-md border border-borde bg-superficie px-2 text-sm text-suave hover:text-texto md:w-64"

@@ -13,6 +13,7 @@ import { Check, Dices, Plus, TriangleAlert } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { useUsuario } from '@/app/contexto-usuario';
 import { cn } from '@/shared/cn';
 import { EtiquetaEstado } from '@/shared/estados';
@@ -106,6 +107,7 @@ function Tarjeta({
 
 /** Pantalla Verificación (propuesta UX §6.6, ADR 0012). */
 export function Verificacion() {
+  useRecorrido('verificacion');
   const { filtro } = useFiltro();
   const usuario = useUsuario();
   const esAdmin = usuario.roles.includes('ADMINISTRADOR');

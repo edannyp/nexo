@@ -4,6 +4,7 @@ import { Clock, ShieldAlert, TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { useUsuario } from '@/app/contexto-usuario';
 import { LINEAS } from '@/app/filtro';
 import { nombreCategoria } from '@/app/FiltroGlobal';
@@ -250,6 +251,7 @@ function Productividad({ d }: { d: DatosPanorama }) {
 
 /** Panorama del tipo de artículo del filtro global (architecture/ux/propuesta.md §6.1). */
 export function Panorama() {
+  useRecorrido('panorama');
   const { filtro } = useFiltro();
   const usuario = useUsuario();
   const q = useObtenerPanorama(filtro, { query: { placeholderData: (previo) => previo } });
@@ -278,7 +280,7 @@ export function Panorama() {
           className={cn('space-y-4 transition-opacity', q.isPlaceholderData && 'opacity-60')}
           aria-busy={q.isFetching}
         >
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div data-recorrido="panorama-cifras" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Cifra etiqueta="Artículos activos" valor={numero(d.activos)} />
             <Cifra
               etiqueta="Validados"
@@ -299,7 +301,7 @@ export function Panorama() {
               detalle={`${numero(d.cobertura.fotos)} fotos`}
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div data-recorrido="panorama-graficos" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Avance d={d} />
             <Atencion d={d} verCalidad={tieneRol(usuario, ['SUPERVISOR', 'ADMINISTRADOR'])} />
             <Completitud d={d} />

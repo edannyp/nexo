@@ -4,6 +4,7 @@ import { ArrowLeft, ScanLine } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { cn } from '@/shared/cn';
 import { EtiquetaEstado } from '@/shared/estados';
 import { Boton } from '@/shared/ui';
@@ -12,6 +13,7 @@ import { FotosDelArticulo } from './FotosDelArticulo';
 
 /** Pantalla del encargado de fotos (propuesta UX §6.9): buscar o escanear el código, subir, y lo que falta por fotografiar. */
 export function PantallaFotos() {
+  useRecorrido('fotos');
   const { filtro } = useFiltro();
   const [codigo, setCodigo] = useState('');
   const [elegido, setElegido] = useState<string | null>(null);
