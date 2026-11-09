@@ -118,11 +118,17 @@ export function Dialogo({
   alCerrar,
   titulo,
   children,
+  amplio = false,
+  pie,
 }: {
   abierto: boolean;
   alCerrar: () => void;
   titulo: string;
   children: ReactNode;
+  /** Casi a pantalla completa (comparar imágenes), con el contenido desplazable. */
+  amplio?: boolean;
+  /** Barra de acciones fija abajo. */
+  pie?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -137,7 +143,12 @@ export function Dialogo({
       aria-label={titulo}
       onClose={alCerrar}
       onClick={(e) => e.target === ref.current && alCerrar()}
-      className="m-auto w-[min(32rem,calc(100vw-1.5rem))] rounded-lg border border-borde bg-superficie p-0 text-texto backdrop:bg-black/40"
+      className={cn(
+        'm-auto rounded-lg border border-borde bg-superficie p-0 text-texto backdrop:bg-black/40',
+        amplio
+          ? 'h-[calc(100dvh-1.5rem)] w-[min(90rem,calc(100vw-1.5rem))] max-w-none backdrop:bg-black/70 open:flex open:flex-col'
+          : 'w-[min(32rem,calc(100vw-1.5rem))]',
+      )}
     >
       <div className="flex items-center justify-between border-b border-borde px-4 py-3">
         <h2 className="font-semibold">{titulo}</h2>
@@ -150,7 +161,8 @@ export function Dialogo({
           <X className="size-4" aria-hidden />
         </button>
       </div>
-      <div className="p-4">{abierto && children}</div>
+      <div className={cn('p-4', amplio && 'min-h-0 flex-1 overflow-y-auto')}>{abierto && children}</div>
+      {abierto && pie && <div className="border-t border-borde px-4 py-3">{pie}</div>}
     </dialog>
   );
 }

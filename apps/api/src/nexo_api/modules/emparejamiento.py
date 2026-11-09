@@ -349,9 +349,8 @@ def comparar_parte(item_code: str, parte_id: int, _: UsuarioActual, c: Conexion,
 
     imagenes = []
     for i in d.imagenes:
-        url = i.url
-        if url is None and firmador is not None and i.minio_objeto:
-            url = firmador.firmar(i.minio_objeto, i.minio_bucket)
+        # La copia en MinIO primero: los enlaces de los proveedores pueden caducar (ADR 0026); si no hay copia, la URL original
+        url = firmador.firmar(i.minio_objeto, i.minio_bucket) if firmador is not None and i.minio_objeto else i.url
         if url:
             imagenes.append(ImagenCatalogo(tipo=i.tipo, url=url))
     _, _, invertida = puntuar(medidas, Candidato(d.parte), tolerancia)

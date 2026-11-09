@@ -441,6 +441,12 @@ export function Articulo() {
                 Trabajar <ChevronRight className="size-4" aria-hidden />
               </Boton>
             )}
+            {/* Ya en Trabajar sin reserva (venció o se entró por un enlace): tomarlo sin salir de la pestaña */}
+            {trabajando && puedeTrabajar && !mia && (
+              <Boton cargando={reservar.isPending} onClick={() => trabajar(pestana as PestanaTrabajo)}>
+                <Lock className="size-4" aria-hidden /> Tomar para editar
+              </Boton>
+            )}
             {/* Fuera de Pendiente/Rechazado (p. ej. Por validar), tomarlo sigue siendo posible para quien tiene acciones */}
             {!a.reserva && a.activo && !EDITABLES.includes(a.estado) && a.acciones.length > 0 && (
               <Boton
