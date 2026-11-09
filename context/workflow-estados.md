@@ -27,8 +27,8 @@ stateDiagram-v2
 1. **Toda transición se registra** en la bitácora: estado origen, destino, actor (usuario o proceso), fecha y motivo.
 2. **Motivo obligatorio** en `RECHAZADO` y en toda vuelta a `PENDIENTE` (`HASH_CAMBIO`, `REAPERTURA`, `VERIFICACION`).
 3. **Doble control**: quien valida (`POR_VALIDAR → VALIDADO`) no puede ser el mismo usuario que envió el artículo a `POR_VALIDAR`.
-4. **Para enviar a `POR_VALIDAR`** el artículo debe tener: tipo de parte (PCdb), al menos una aplicación vehicular **o** un emparejamiento
-   con el catálogo maestro, y los atributos del tipo de parte marcados `habilitado` y `obligatorio` en `meta.atributo_config` (ADR 0019), todo **confirmado** por el
+4. **Para enviar a `POR_VALIDAR`** el artículo debe tener: tipo de parte (PCdb), el **vehículo principal** confirmado
+   (ADR 0025; antes bastaba una aplicación vehicular o un emparejamiento), y los atributos del tipo de parte marcados `habilitado` y `obligatorio` en `meta.atributo_config` (ADR 0019), todo **confirmado** por el
    operador. La equivalencia **no** es requisito: el código equivalente de los fabricados se captura en la revisión de fabricados y
    se valida con foto propia, sin afectar el estado (ADR 0018).
    Al confirmar la equivalencia, el Fabricado hereda la parte emparejada y recibe las aplicaciones del Importado como sugerencias.
