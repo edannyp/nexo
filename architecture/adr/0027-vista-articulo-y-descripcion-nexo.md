@@ -16,9 +16,9 @@ SAP, escrita a mano y sin formato fijo (`RAD. TOYOTA HILUX 2.4 M/03 A-RLT`, `RAD
   Emparejamiento y, en fabricados, Equivalencia) con un encabezado compacto (reserva, Soltar, Enviar a revisión, lo que falta). Si
   el artículo ya está reservado por quien lo abre, se entra directo a Trabajar. Validar y Rechazar siguen en el encabezado del
   Resumen.
-- **Lo necesario a la vista mientras se trabaja:** en Ficha, Aplicaciones y Equivalencia, un panel de contexto (a la derecha; arriba
-  en celular) con la **descripción sugerida** (con «Ajustar»), el **★ vehículo principal** y el carrusel de fotos (solo en pantalla
-  grande). Emparejamiento usa todo el ancho para comparar.
+- **Lo necesario a la vista mientras se trabaja:** una franja encima de las pestañas, en todas: la foto (carrusel; se oculta en
+  celular) y, a su lado, la **descripción sugerida** (con «Ajustar»), la de SAP y el **★ vehículo principal**. Las pestañas usan
+  todo el ancho.
 - **Sin pestaña Fotos:** el carrusel las muestra; quien tiene el rol Fotos las sube y ordena desde el carrusel («Subir u ordenar»).
 - **Descripción de Nexo**, además de la de SAP (que no se toca): Nexo la propone sola con el **patrón de SAP sin abreviar**
   `TIPO MARCA MODELO M AA/AA MOTOR TRANSMISIÓN` y, en fabricados, el material (`RADIADOR TOYOTA HILUX M 05/15 2.5L MT`,
