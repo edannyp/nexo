@@ -376,7 +376,7 @@ export function Articulo() {
       <header
         className={cn(
           'space-y-2 border-b border-borde pb-3',
-          trabajando && 'sticky top-14 z-[5] -mx-4 bg-fondo/95 px-4 backdrop-blur lg:-mx-6 lg:px-6',
+          trabajando && 'sticky top-[6.5rem] z-[5] md:top-14 -mx-4 bg-fondo/95 px-4 backdrop-blur lg:-mx-6 lg:px-6',
         )}
       >
         <div className="flex flex-wrap items-start justify-between gap-3 pt-1">
@@ -511,6 +511,12 @@ export function Articulo() {
         {acciones.find((x) => !x.habilitada && x.razon && x.destino !== 'POR_VALIDAR') && (
           <p className="text-xs text-suave">{acciones.find((x) => !x.habilitada)?.razon}</p>
         )}
+        {/* Lo que define al artículo, fijo con el código mientras se trabaja: foto, descripción sugerida, SAP y principal */}
+        {trabajando && (
+          <div className="hidden pt-1 lg:block">
+            <FranjaTrabajo a={a} alGuardar={fijar} compacta />
+          </div>
+        )}
       </header>
 
       {aviso && (
@@ -521,8 +527,10 @@ export function Articulo() {
 
       {trabajando ? (
         <>
-          {/* Lo que define al artículo, a la vista en todas las pestañas: foto, descripción sugerida, SAP y vehículo principal */}
-          <FranjaTrabajo a={a} alGuardar={fijar} />
+          {/* En celular, la franja va aquí (sin fijar); en pantalla grande vive en el encabezado fijo */}
+          <div className="lg:hidden">
+            <FranjaTrabajo a={a} alGuardar={fijar} />
+          </div>
           {/* Pestañas: en celular se desplazan de lado */}
           <div
             role="tablist"

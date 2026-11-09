@@ -7,7 +7,7 @@ import {
   type ValorAtributo,
 } from '@nexo/api-client';
 import { useBlocker } from '@tanstack/react-router';
-import { Check, CircleCheck, Undo2 } from 'lucide-react';
+import { Check, CircleCheck, Lock, Pencil, Undo2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/shared/cn';
@@ -107,27 +107,39 @@ function Campo({
 }) {
   const base = cn(
     'h-9 w-full rounded-md border bg-superficie px-2 text-base disabled:bg-superficie-2 disabled:text-suave sm:text-sm',
+    'hover:border-primario/60 focus:border-primario disabled:hover:border-borde',
     error ? 'border-rechazado' : 'border-borde',
+  );
+  // El lápiz marca lo que se edita en Nexo (ADR 0027); sin edición, el campo queda gris y sin lápiz
+  const conLapiz = cn(base, editable && 'pl-7');
+  const lapiz = editable && (
+    <Pencil
+      className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-primario/70"
+      aria-hidden
+    />
   );
   const etiqueta = `${a.etiqueta} (valor en Nexo)`;
   if (a.tipo === 'lista') {
     return (
-      <select
-        aria-label={etiqueta}
-        disabled={!editable}
-        value={b.quitar ? '' : (b.valid_value_id ?? '')}
-        onChange={(e) =>
-          alCambiar({ ...b, quitar: false, valid_value_id: e.target.value ? Number(e.target.value) : undefined })
-        }
-        className={base}
-      >
-        <option value="">—</option>
-        {a.opciones.map((o) => (
-          <option key={o.valid_value_id} value={o.valid_value_id}>
-            {opcionTexto(o)}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        {lapiz}
+        <select
+          aria-label={etiqueta}
+          disabled={!editable}
+          value={b.quitar ? '' : (b.valid_value_id ?? '')}
+          onChange={(e) =>
+            alCambiar({ ...b, quitar: false, valid_value_id: e.target.value ? Number(e.target.value) : undefined })
+          }
+          className={conLapiz}
+        >
+          <option value="">—</option>
+          {a.opciones.map((o) => (
+            <option key={o.valid_value_id} value={o.valid_value_id}>
+              {opcionTexto(o)}
+            </option>
+          ))}
+        </select>
+      </div>
     );
   }
   if (a.tipo === 'numero' && a.requiere_uom) {
@@ -135,14 +147,17 @@ function Campo({
     return (
       <div className="space-y-0.5">
         <div className="flex gap-1">
-          <input
-            aria-label={etiqueta}
-            inputMode="decimal"
-            disabled={!editable}
-            value={b.quitar ? '' : b.texto}
-            onChange={(e) => alCambiar({ ...b, quitar: false, texto: e.target.value })}
-            className={cn(base, 'tabular-nums')}
-          />
+          <div className="relative min-w-0 flex-1">
+            {lapiz}
+            <input
+              aria-label={etiqueta}
+              inputMode="decimal"
+              disabled={!editable}
+              value={b.quitar ? '' : b.texto}
+              onChange={(e) => alCambiar({ ...b, quitar: false, texto: e.target.value })}
+              className={cn(conLapiz, 'tabular-nums')}
+            />
+          </div>
           <select
             aria-label={`Unidad de ${a.etiqueta}`}
             disabled={!editable}
@@ -164,7 +179,8 @@ function Campo({
     );
   }
   return (
-    <>
+    <div className="relative">
+      {lapiz}
       <input
         aria-label={etiqueta}
         inputMode={a.tipo === 'numero' ? 'decimal' : undefined}
@@ -172,7 +188,7 @@ function Campo({
         disabled={!editable}
         value={b.quitar ? '' : b.texto}
         onChange={(e) => alCambiar({ ...b, quitar: false, texto: e.target.value })}
-        className={cn(base, a.tipo === 'numero' && 'tabular-nums')}
+        className={cn(conLapiz, a.tipo === 'numero' && 'tabular-nums')}
       />
       {a.sugerencias.length > 0 && (
         <datalist id={`sug-${a.paid}`}>
@@ -181,7 +197,7 @@ function Campo({
           ))}
         </datalist>
       )}
-    </>
+    </div>
   );
 }
 
@@ -272,6 +288,18 @@ export function Ficha({
         </Aviso>
       )}
 
+      {f.editable && (
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-suave">
+          <span className="flex items-center gap-1">
+            <Pencil className="size-3.5 text-primario/70" aria-hidden /> Lo que editas en Nexo
+          </span>
+          <span className="flex items-center gap-1">
+            <Lock className="size-3.5" aria-hidden /> SAP es solo lectura (se corrige en SAP)
+          </span>
+          <span>Guarda con el botón de abajo o Ctrl+S</span>
+        </p>
+      )}
+
       {f.editable && sugeridos.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-borde bg-superficie p-3 text-sm">
           <span className="text-suave">{sugeridos.length} valores sugeridos desde SAP sin confirmar.</span>
@@ -288,8 +316,12 @@ export function Ficha({
           </h2>
           <div className="hidden grid-cols-[minmax(9rem,1.2fr)_minmax(6rem,0.8fr)_minmax(12rem,1.6fr)_minmax(8rem,1fr)_auto] gap-3 px-4 pt-2 text-xs text-suave md:grid">
             <span>Atributo</span>
-            <span>SAP</span>
-            <span>En Nexo</span>
+            <span className="flex items-center gap-1">
+              <Lock className="size-3" aria-hidden /> SAP
+            </span>
+            <span className="flex items-center gap-1">
+              {f.editable && <Pencil className="size-3 text-primario/70" aria-hidden />} En Nexo
+            </span>
             <span>Estado</span>
             <span className="w-20" />
           </div>
@@ -320,7 +352,9 @@ export function Ficha({
                       <span className="block text-xs text-suave">{a.nombre_pies}</span>
                     </div>
                     <div className="text-sm text-suave">
-                      <span className="md:hidden">SAP: </span>
+                      <span className="inline-flex items-center gap-1 md:hidden">
+                        <Lock className="size-3" aria-hidden /> SAP:{' '}
+                      </span>
                       {a.valor_sap ?? '—'}
                     </div>
                     <div>

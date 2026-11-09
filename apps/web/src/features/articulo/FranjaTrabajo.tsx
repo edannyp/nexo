@@ -2,6 +2,7 @@ import { ProblemaError, useAjustarDescripcion, useListarAplicaciones, type Artic
 import { Pencil, RotateCcw, Star } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
+import { cn } from '@/shared/cn';
 import { Aviso, Boton, Insignia } from '@/shared/ui';
 
 import { Carrusel } from './Resumen';
@@ -33,7 +34,15 @@ function PrincipalEnLinea({ itemCode }: { itemCode: string }) {
  * trabaja: la descripción sugerida por Nexo (se ajusta aquí o vuelve a la automática), la de SAP y el vehículo principal.
  * `alGuardar` recibe el artículo actualizado.
  */
-export function FranjaTrabajo({ a, alGuardar }: { a: ArticuloDetalle; alGuardar: (d: ArticuloDetalle) => void }) {
+export function FranjaTrabajo({
+  a,
+  alGuardar,
+  compacta = false,
+}: {
+  a: ArticuloDetalle;
+  alGuardar: (d: ArticuloDetalle) => void;
+  compacta?: boolean; // dentro del encabezado fijo: foto más chica y menos espacio
+}) {
   const ajustar = useAjustarDescripcion();
   const [editando, setEditando] = useState(false);
   const problema = ajustar.error instanceof ProblemaError ? ajustar.error.problema : null;
@@ -49,11 +58,19 @@ export function FranjaTrabajo({ a, alGuardar }: { a: ArticuloDetalle; alGuardar:
   };
 
   return (
-    <section aria-label="Lo que define al artículo" className="grid gap-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
-      <div className="hidden sm:block">
-        <Carrusel itemCode={a.item_code} />
+    <section
+      aria-label="Lo que define al artículo"
+      className={cn('grid gap-3', compacta ? 'grid-cols-[9rem_minmax(0,1fr)]' : 'sm:grid-cols-[13rem_minmax(0,1fr)]')}
+    >
+      <div className={compacta ? '' : 'hidden sm:block'}>
+        <Carrusel itemCode={a.item_code} compacto={compacta} />
       </div>
-      <div className="space-y-3 rounded-lg border border-borde bg-superficie p-4">
+      <div
+        className={cn(
+          'rounded-lg border border-borde bg-superficie',
+          compacta ? 'space-y-1 px-4 py-2.5' : 'space-y-3 p-4',
+        )}
+      >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-xs font-medium tracking-wide text-suave uppercase">
             Descripción sugerida
@@ -98,7 +115,7 @@ export function FranjaTrabajo({ a, alGuardar }: { a: ArticuloDetalle; alGuardar:
             </Boton>
           </form>
         ) : a.descripcion_nexo ? (
-          <p className="text-lg font-semibold">{a.descripcion_nexo}</p>
+          <p className={cn('font-semibold', compacta ? 'text-base' : 'text-lg')}>{a.descripcion_nexo}</p>
         ) : (
           <p className="text-sm text-suave">Se arma al elegir el vehículo principal.</p>
         )}
