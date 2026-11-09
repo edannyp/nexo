@@ -3,6 +3,7 @@ import { Download, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { cn } from '@/shared/cn';
 import { momento, numero } from '@/shared/formato';
 import { Aviso } from '@/shared/ui';
@@ -12,6 +13,7 @@ import { Aviso } from '@/shared/ui';
  * Se cierran solos cuando el siguiente lote del ETL trae el dato corregido.
  */
 export function CalidadSap() {
+  useRecorrido('calidad-sap');
   const { filtro } = useFiltro();
   const q = useListarHallazgosSap(filtro, { query: { placeholderData: (previo) => previo } });
   const [grupo, setGrupo] = useState<string | null>(null);

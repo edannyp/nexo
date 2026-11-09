@@ -2,6 +2,7 @@ import { useAnalizarVentas } from '@nexo/api-client';
 import { useState } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { cn } from '@/shared/cn';
 import { EtiquetaEstado } from '@/shared/estados';
 import { mes, momento, numero, porcentaje } from '@/shared/formato';
@@ -12,6 +13,7 @@ const CLASES = ['Todas', 'A', 'B', 'C'] as const;
 
 /** Análisis de ventas del tipo elegido (ADR 0022): unidades, nunca montos. Requiere el permiso VER_ANALISIS_VENTAS. */
 export function Ventas() {
+  useRecorrido('ventas');
   const { filtro } = useFiltro();
   const q = useAnalizarVentas(filtro, { query: { placeholderData: (previo) => previo } });
   const [clase, setClase] = useState<(typeof CLASES)[number]>('Todas');

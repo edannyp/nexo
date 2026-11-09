@@ -32,4 +32,8 @@ Tareas: `uv run python -m nexo_api.cli actualizar-ventas` (ClickHouse) · `impor
 Primer administrador local: `cd apps/api && uv run python -m nexo_api.cli crear-admin <usuario> "<Nombre>"`.
 Despliegue: [deploy/README.md](../deploy/README.md).
 
+**Recorridos guiados (botón «?» de la barra superior):** el texto de todos está en `apps/web/src/app/recorridos.ts`. Cada pantalla
+avisa el suyo con `useRecorrido('<clave>')`; cada paso resalta un elemento por selector CSS (de preferencia `data-recorrido="…"`) y,
+si no está visible, la tarjeta sale al centro. Una pantalla o pestaña nueva necesita su recorrido (lo exige `recorridos.test.ts`).
+
 > TypeScript queda en 6.x: `typescript-eslint` aún no soporta TypeScript 7.

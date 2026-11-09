@@ -4,6 +4,7 @@ import { CheckCheck, Lock, Play } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { EtiquetaEstado } from '@/shared/estados';
 import { numero } from '@/shared/formato';
 import { atajoSimple } from '@/shared/teclado';
@@ -28,6 +29,7 @@ const TEXTOS: Record<
 
 /** Bandeja con "Siguiente" (propuesta UX §6.3 y §6.5). La tecla N toma el siguiente. */
 export function Bandeja({ bandeja }: { bandeja: TipoBandeja }) {
+  useRecorrido(bandeja === 'supervisor' ? 'validar' : 'trabajar');
   const { filtro } = useFiltro();
   const navegar = useNavigate();
   const t = TEXTOS[bandeja];
@@ -70,7 +72,10 @@ export function Bandeja({ bandeja }: { bandeja: TipoBandeja }) {
         <p className="text-sm text-suave">{t.descripcion}</p>
       </header>
 
-      <section className="rounded-lg border border-borde bg-superficie p-6 text-center">
+      <section
+        data-recorrido="bandeja-disponibles"
+        className="rounded-lg border border-borde bg-superficie p-6 text-center"
+      >
         <p className="text-sm text-suave">Disponibles en esta bandeja</p>
         <p className="mt-1 text-5xl font-semibold">{pendientes.data ? numero(pendientes.data.total) : '—'}</p>
         <div className="mt-2 flex justify-center gap-3 text-sm text-suave">
@@ -79,6 +84,7 @@ export function Bandeja({ bandeja }: { bandeja: TipoBandeja }) {
           ))}
         </div>
         <Boton
+          data-recorrido="bandeja-siguiente"
           className="mt-5 h-12 px-8 text-base"
           onClick={tomar}
           cargando={siguiente.isPending}
@@ -102,7 +108,7 @@ export function Bandeja({ bandeja }: { bandeja: TipoBandeja }) {
       </section>
 
       {!!mias.data?.items.length && (
-        <section className="rounded-lg border border-borde bg-superficie p-4">
+        <section data-recorrido="bandeja-mias" className="rounded-lg border border-borde bg-superficie p-4">
           <h2 className="mb-2 flex items-center gap-2 text-sm font-medium text-suave">
             <Lock className="size-4" aria-hidden /> Reservados por ti
           </h2>

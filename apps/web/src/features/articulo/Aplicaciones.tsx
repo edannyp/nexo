@@ -43,7 +43,10 @@ const ORIGEN: Record<string, string> = {
 function TarjetaSap({ s, alBuscar }: { s: SugerenciaSap; alBuscar?: () => void }) {
   const anios = s.desde ? (s.hasta && s.hasta !== s.desde ? `${s.desde}–${s.hasta}` : String(s.desde)) : 'sin años';
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-borde bg-superficie p-3 text-sm">
+    <div
+      data-recorrido="aplicaciones-sap"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-borde bg-superficie p-3 text-sm"
+    >
       <div>
         <span className="text-suave">SAP dice: </span>
         <span className="font-medium">{[s.marca, s.modelo].filter(Boolean).join(' ') || 'sin vehículo'}</span>
@@ -658,7 +661,7 @@ export function Aplicaciones({ itemCode }: { itemCode: string }) {
         </div>
       )}
 
-      <section className="rounded-lg border border-borde bg-superficie">
+      <section data-recorrido="aplicaciones-lista" className="rounded-lg border border-borde bg-superficie">
         <h2 className="flex items-center justify-between border-b border-borde px-4 py-2 text-xs font-medium tracking-wide text-suave uppercase">
           <span>Aplicaciones ({total})</span>
           {r.editable && r.catalogo_disponible && !selector && (

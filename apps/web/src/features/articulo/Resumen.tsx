@@ -104,7 +104,7 @@ export function Carrusel({ itemCode, compacto = false }: { itemCode: string; com
 
 function Descripciones({ a }: { a: ArticuloDetalle }) {
   return (
-    <section className={tarjeta}>
+    <section data-recorrido="resumen-descripcion" className={tarjeta}>
       <h2 className={titulo}>Descripción</h2>
       {a.descripcion_nexo ? (
         <p className="text-base font-semibold">
@@ -130,7 +130,7 @@ export function VehiculoPrincipal({ itemCode, alIr }: { itemCode: string; alIr?:
   const principal = grupos.find((g) => g.principal);
   const otras = grupos.filter((g) => !g.principal);
   return (
-    <section className={tarjeta}>
+    <section data-recorrido="resumen-principal" className={tarjeta}>
       <h2 className={cn(titulo, 'flex items-center gap-1')}>
         <Star className="size-3.5" aria-hidden /> Vehículo principal (ACES)
       </h2>
@@ -174,7 +174,7 @@ function Atributos({ itemCode, alIr }: { itemCode: string; alIr?: (p: PestanaTra
   const valor = (x?: AtributoFicha) => (x?.valor ? mostrar(x, x.valor) : x?.valor_sap ? `${x.valor_sap} (SAP)` : '—');
 
   return (
-    <section className={tarjeta}>
+    <section data-recorrido="resumen-atributos" className={tarjeta}>
       <h2 className={titulo}>Medidas del panal</h2>
       <dl className="grid grid-cols-3 gap-2 text-sm">
         {MEDIDAS.map((paid) => {
@@ -224,7 +224,7 @@ export function Resumen({ a, alIr }: { a: ArticuloDetalle; alIr?: (p: PestanaTra
       <div className="space-y-4">
         <Carrusel itemCode={a.item_code} />
         {a.requisitos.length > 0 && (
-          <section className={tarjeta}>
+          <section data-recorrido="resumen-falta" className={tarjeta}>
             <h2 className={titulo}>Para enviar a revisión falta</h2>
             <ul className="flex flex-wrap gap-1.5 text-xs">
               {a.requisitos.map((r) => (

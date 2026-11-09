@@ -32,6 +32,7 @@ export function MenuUsuario() {
   return (
     <>
       <button
+        data-recorrido="menu-usuario"
         type="button"
         popoverTarget="menu-usuario"
         className="grid size-9 place-items-center rounded-full bg-primario text-xs font-semibold text-primario-texto"

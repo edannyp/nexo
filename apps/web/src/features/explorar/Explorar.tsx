@@ -21,6 +21,7 @@ import { Bookmark, Camera, Columns3, Link2, ListFilter, Lock, Search, TriangleAl
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useRecorrido } from '@/shared/recorrido';
 import { guardar, leer } from '@/shared/almacen';
 import { cn } from '@/shared/cn';
 import { EtiquetaEstado, ORDEN_ESTADOS } from '@/shared/estados';
@@ -350,6 +351,7 @@ function MenuVistas({ f, aplicar }: { f: FiltrosExplorar; aplicar: (f: FiltrosEx
 
 /** Explorar: tabla de artículos del tipo elegido (propuesta UX §6.2). Filtros y orden en la URL; columnas por usuario. */
 export function Explorar() {
+  useRecorrido('explorar');
   const { filtro } = useFiltro();
   const navegar = useNavigate();
   const f = validarExplorar(useSearch({ strict: false }) as Record<string, unknown>);
@@ -476,6 +478,7 @@ export function Explorar() {
           <span className="sr-only">Buscar en la tabla</span>
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-suave" aria-hidden />
           <input
+            data-recorrido="explorar-busqueda"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Código, número de parte, código anterior o descripción"
@@ -483,6 +486,7 @@ export function Explorar() {
           />
         </label>
         <Boton
+          data-recorrido="explorar-filtros-boton"
           variante="secundario"
           className="lg:hidden"
           onClick={() => setVerFiltros((v) => !v)}

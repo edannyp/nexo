@@ -289,7 +289,7 @@ export function Ficha({
       )}
 
       {f.editable && (
-        <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-suave">
+        <p data-recorrido="ficha-leyenda" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-suave">
           <span className="flex items-center gap-1">
             <Pencil className="size-3.5 text-primario/70" aria-hidden /> Lo que editas en Nexo
           </span>
@@ -301,7 +301,10 @@ export function Ficha({
       )}
 
       {f.editable && sugeridos.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-borde bg-superficie p-3 text-sm">
+        <div
+          data-recorrido="ficha-sugeridos"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-borde bg-superficie p-3 text-sm"
+        >
           <span className="text-suave">{sugeridos.length} valores sugeridos desde SAP sin confirmar.</span>
           <Boton variante="secundario" onClick={() => sugeridos.forEach(aceptar)}>
             <Check className="size-4" aria-hidden /> Aceptar todo lo sugerido
