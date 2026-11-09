@@ -14,7 +14,7 @@ import {
 } from '@nexo/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { ArrowLeft, Lock, LockOpen, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Lock, LockOpen, TriangleAlert } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
@@ -26,22 +26,24 @@ import { Tendencia } from '@/shared/graficos';
 import { Aviso, Boton, Dialogo } from '@/shared/ui';
 
 import { Aplicaciones } from './Aplicaciones';
+import { DescripcionNexo } from './DescripcionNexo';
 import { Emparejamiento } from './Emparejamiento';
 import { Equivalencia } from './Equivalencia';
 import { Ficha } from './Ficha';
+import { Resumen, type PestanaTrabajo } from './Resumen';
 import { FotosDelArticulo } from '@/features/fotos/FotosDelArticulo';
 
 const LATIDO_MS = 5 * 60_000;
-const PESTANAS = [
+// Modo Trabajar (ADR 0027): las pestañas de edición. Datos SAP e Historial viven en el resumen.
+const PESTANAS: readonly { id: PestanaTrabajo; etiqueta: string; soloFabricado?: true }[] = [
   { id: 'ficha', etiqueta: 'Ficha' },
   { id: 'aplicaciones', etiqueta: 'Aplicaciones' },
   { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas' },
   { id: 'equivalencia', etiqueta: 'Equivalencia', soloFabricado: true },
   { id: 'fotos', etiqueta: 'Fotos' },
-  { id: 'sap', etiqueta: 'Datos SAP' },
-  { id: 'historial', etiqueta: 'Historial' },
-] as const;
-type Pestana = (typeof PESTANAS)[number]['id'];
+];
+type Vista = 'resumen' | PestanaTrabajo;
+const EDITABLES = ['PENDIENTE', 'RECHAZADO'];
 
 const PLANTILLAS: Record<string, string[]> = {
   RECHAZADO: [
@@ -183,8 +185,8 @@ function DatosSap({ a }: { a: ArticuloDetalle }) {
 function Historial({ itemCode }: { itemCode: string }) {
   const q = useHistorialArticulo(itemCode);
   return (
-    <section className="rounded-lg border border-borde bg-superficie p-4">
-      <h2 className="mb-3 text-sm font-medium text-suave">Historial</h2>
+    <section aria-label="Historial">
+      {q.isLoading && <p className="text-sm text-suave">Cargando…</p>}
       <ol className="space-y-3">
         {q.data?.map((e) => (
           <li key={e.id} className="border-l-2 border-borde pl-3 text-sm">
@@ -209,7 +211,10 @@ function Historial({ itemCode }: { itemCode: string }) {
   );
 }
 
-/** Espacio de trabajo del artículo (propuesta UX §6.4). En este paso: encabezado, flujo, datos SAP e historial. */
+/**
+ * Artículo (ADR 0027): al abrir, un resumen de solo lectura; «Trabajar» lo reserva y abre las pestañas de edición
+ * (propuesta UX §6.4). Si ya es tuyo, abre directo en Trabajar.
+ */
 export function Articulo() {
   const { itemCode } = useParams({ strict: false }) as { itemCode: string };
   const {
@@ -229,12 +234,14 @@ export function Articulo() {
   const clave = getObtenerArticuloQueryKey(itemCode);
   const fijar = (d: ArticuloDetalle) => consultas.setQueryData(clave, d);
 
-  const [pestana, setPestanaDirecta] = useState<Pestana>(
-    PESTANAS.some((p) => p.id === pestanaUrl) ? (pestanaUrl as Pestana) : 'ficha',
+  const [elegida, setElegida] = useState<Vista | null>(
+    pestanaUrl === 'resumen' || PESTANAS.some((p) => p.id === pestanaUrl) ? (pestanaUrl as Vista) : null,
   );
+  // Sin elección: si ya lo tienes reservado, a trabajar; si no, el resumen
+  const pestana: Vista = elegida ?? (a?.reserva?.mia ? 'ficha' : 'resumen');
   const [pendientesFicha, setPendientesFicha] = useState(0);
   // Cambiar de pestaña desmonta la ficha: si hay cambios sin guardar, se pregunta antes
-  const setPestana = (p: Pestana) => {
+  const setPestana = (p: Vista) => {
     if (
       p !== pestana &&
       pestana === 'ficha' &&
@@ -242,7 +249,7 @@ export function Articulo() {
       !confirm('Tienes cambios sin guardar en la ficha. ¿Cambiar de pestaña sin guardar?')
     )
       return;
-    setPestanaDirecta(p);
+    setElegida(p);
   };
   const [motivoPara, setMotivoPara] = useState<AccionEstado | null>(null);
   const [aviso, setAviso] = useState<{ tono: 'error' | 'exito' | 'info'; titulo: string; detalle?: string } | null>(
@@ -326,7 +333,7 @@ export function Articulo() {
   // Ctrl+Enter: enviar a revisión (si se puede)
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && pestana !== 'resumen') {
         const enviar = a?.acciones.find((x) => x.destino === 'POR_VALIDAR' && x.habilitada);
         if (enviar) {
           e.preventDefault();
@@ -337,7 +344,7 @@ export function Articulo() {
     window.addEventListener('keydown', tecla);
     return () => window.removeEventListener('keydown', tecla);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [a]);
+  }, [a, pestana]);
 
   if (q.isError) {
     return (
@@ -350,38 +357,67 @@ export function Articulo() {
 
   const mia = a.reserva?.mia;
   const ajena = a.reserva && !a.reserva.mia;
+  const trabajando = pestana !== 'resumen';
+  // Se puede trabajar (editar) si está en Pendiente o Rechazado, activo, no lo tiene otro y el rol lo permite
+  const puedeTrabajar =
+    a.activo &&
+    !ajena &&
+    EDITABLES.includes(a.estado) &&
+    (!!mia || a.acciones.some((x) => x.destino === 'POR_VALIDAR'));
+  const mensajeError = (e: unknown) =>
+    e instanceof ProblemaError && setAviso({ tono: 'error', titulo: e.problema.title, detalle: e.problema.detail });
+  const trabajar = (p: PestanaTrabajo = 'ficha') =>
+    mia
+      ? setPestana(p)
+      : reservar.mutate({ itemCode }, { onSuccess: () => (setPestana(p), void q.refetch()), onError: mensajeError });
+  // En el resumen, enviar a revisión no aparece: eso se hace trabajando
+  const acciones = trabajando ? a.acciones : a.acciones.filter((x) => x.destino !== 'POR_VALIDAR');
 
   return (
     <div className="space-y-4">
-      {/* Encabezado fijo */}
-      <header className="sticky top-14 z-[5] -mx-4 space-y-2 border-b border-borde bg-fondo/95 px-4 pb-3 backdrop-blur lg:-mx-6 lg:px-6">
+      <header
+        className={cn(
+          'space-y-2 border-b border-borde pb-3',
+          trabajando && 'sticky top-14 z-[5] -mx-4 bg-fondo/95 px-4 backdrop-blur lg:-mx-6 lg:px-6',
+        )}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3 pt-1">
           <div className="min-w-0">
-            <Link
-              to={
-                bandeja ? rutaSeccion(bandeja === 'supervisor' ? '/validar' : '/trabajar') : rutaSeccion('/articulos')
-              }
-              className="inline-flex items-center gap-1 text-xs text-suave hover:text-texto"
-            >
-              <ArrowLeft className="size-3.5" aria-hidden /> {bandeja ? 'Bandeja' : 'Explorar'}
-            </Link>
+            {trabajando ? (
+              <button
+                type="button"
+                onClick={() => setPestana('resumen')}
+                className="inline-flex items-center gap-1 text-xs text-suave hover:text-texto"
+              >
+                <ArrowLeft className="size-3.5" aria-hidden /> Resumen
+              </button>
+            ) : (
+              <Link
+                to={
+                  bandeja ? rutaSeccion(bandeja === 'supervisor' ? '/validar' : '/trabajar') : rutaSeccion('/articulos')
+                }
+                className="inline-flex items-center gap-1 text-xs text-suave hover:text-texto"
+              >
+                <ArrowLeft className="size-3.5" aria-hidden /> {bandeja ? 'Bandeja' : 'Explorar'}
+              </Link>
+            )}
             <h1 className="flex flex-wrap items-center gap-x-3 gap-y-1 text-lg font-semibold">
               {a.item_code}
               <EtiquetaEstado estado={a.estado} />
               {!a.activo && <span className="text-sm font-normal text-rechazado">Inactivo</span>}
             </h1>
-            <p className="truncate text-sm text-suave">{a.descripcion}</p>
-            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-suave">
-              <span>{a.linea === 'IMPORTADO' ? 'Importado' : 'Fabricado'}</span>
-              <span>v{a.version}</span>
-              {a.clase ? (
-                <span className="flex items-center gap-1">
-                  Venta: clase {a.clase} · {porcentaje(a.participacion)} · <Tendencia valor={a.tendencia} />
-                </span>
-              ) : (
-                <span>Sin venta en el periodo</span>
-              )}
-            </p>
+            {!trabajando && (
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-suave">
+                <span>{a.linea === 'IMPORTADO' ? 'Importado' : 'Fabricado'}</span>
+                {a.clase ? (
+                  <span className="flex items-center gap-1">
+                    Venta: clase {a.clase} · {porcentaje(a.participacion)} · <Tendencia valor={a.tendencia} />
+                  </span>
+                ) : (
+                  <span>Sin venta en el periodo</span>
+                )}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -401,27 +437,25 @@ export function Articulo() {
                 <Lock className="size-4" aria-hidden /> {a.reserva?.nombre} lo está trabajando
               </span>
             )}
-            {!a.reserva && a.activo && a.acciones.length > 0 && (
+            {!trabajando && puedeTrabajar && (
+              <Boton cargando={reservar.isPending} onClick={() => trabajar()}>
+                Trabajar <ChevronRight className="size-4" aria-hidden />
+              </Boton>
+            )}
+            {/* Fuera de Pendiente/Rechazado (p. ej. Por validar), tomarlo sigue siendo posible para quien tiene acciones */}
+            {!a.reserva && a.activo && !EDITABLES.includes(a.estado) && a.acciones.length > 0 && (
               <Boton
                 variante="secundario"
                 cargando={reservar.isPending}
                 onClick={() =>
-                  reservar.mutate(
-                    { itemCode },
-                    {
-                      onSuccess: () => void q.refetch(),
-                      onError: (e) =>
-                        e instanceof ProblemaError &&
-                        setAviso({ tono: 'error', titulo: e.problema.title, detalle: e.problema.detail }),
-                    },
-                  )
+                  reservar.mutate({ itemCode }, { onSuccess: () => void q.refetch(), onError: mensajeError })
                 }
               >
                 <Lock className="size-4" aria-hidden /> Tomar
               </Boton>
             )}
-            {!a.reserva && a.activo && a.acciones.length === 0 && ['PENDIENTE', 'RECHAZADO'].includes(a.estado) && (
-              <span className="text-sm text-suave">Para tomarlo necesitas el rol Operador o Supervisor.</span>
+            {!a.reserva && a.activo && a.acciones.length === 0 && EDITABLES.includes(a.estado) && (
+              <span className="text-sm text-suave">Para trabajarlo necesitas el rol Operador o Supervisor.</span>
             )}
             {mia && (
               <Boton
@@ -433,7 +467,7 @@ export function Articulo() {
                       onSuccess: () =>
                         bandeja
                           ? void navegar({ to: rutaSeccion(bandeja === 'supervisor' ? '/validar' : '/trabajar') })
-                          : void q.refetch(),
+                          : (setPestana('resumen'), void q.refetch()),
                     },
                   )
                 }
@@ -441,7 +475,7 @@ export function Articulo() {
                 <LockOpen className="size-4" aria-hidden /> Soltar
               </Boton>
             )}
-            {a.acciones.map((x) => (
+            {acciones.map((x) => (
               <Boton
                 key={x.destino}
                 variante={x.destino === 'RECHAZADO' ? 'peligro' : x.destino === 'PENDIENTE' ? 'secundario' : 'primario'}
@@ -461,14 +495,14 @@ export function Articulo() {
             <span className="font-medium">Motivo:</span> {a.ultimo_motivo}
           </p>
         )}
-        {a.requisitos.length > 0 && (
+        {trabajando && a.requisitos.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="text-suave">Para enviar a revisión falta:</span>
             {a.requisitos.map((r) => (
               <button
                 key={r.codigo}
                 type="button"
-                onClick={() => setPestana(r.pestana as Pestana)}
+                onClick={() => setPestana(r.pestana as PestanaTrabajo)}
                 className="rounded-full border border-borde px-2 py-0.5 hover:bg-superficie-2"
               >
                 {r.etiqueta}
@@ -476,8 +510,8 @@ export function Articulo() {
             ))}
           </div>
         )}
-        {a.acciones.find((x) => !x.habilitada && x.razon && x.destino !== 'POR_VALIDAR') && (
-          <p className="text-xs text-suave">{a.acciones.find((x) => !x.habilitada)?.razon}</p>
+        {acciones.find((x) => !x.habilitada && x.razon && x.destino !== 'POR_VALIDAR') && (
+          <p className="text-xs text-suave">{acciones.find((x) => !x.habilitada)?.razon}</p>
         )}
       </header>
 
@@ -487,35 +521,53 @@ export function Articulo() {
         </Aviso>
       )}
 
-      {/* Pestañas: en celular se desplazan de lado */}
-      <div
-        role="tablist"
-        aria-label="Secciones del artículo"
-        className="-mx-4 flex gap-1 overflow-x-auto border-b border-borde px-4 lg:mx-0 lg:px-0"
-      >
-        {PESTANAS.filter((p) => !('soloFabricado' in p) || a.linea === 'FABRICADO').map((p) => (
-          <button
-            key={p.id}
-            role="tab"
-            type="button"
-            aria-selected={pestana === p.id}
-            onClick={() => setPestana(p.id)}
-            className="border-b-2 border-transparent px-3 py-2 text-sm whitespace-nowrap text-suave aria-selected:border-primario aria-selected:font-medium aria-selected:text-texto"
+      {trabajando ? (
+        <>
+          <DescripcionNexo a={a} alGuardar={fijar} />
+          {/* Pestañas: en celular se desplazan de lado */}
+          <div
+            role="tablist"
+            aria-label="Secciones de trabajo"
+            className="-mx-4 flex gap-1 overflow-x-auto border-b border-borde px-4 lg:mx-0 lg:px-0"
           >
-            {p.etiqueta}
-          </button>
-        ))}
-      </div>
-
-      <div role="tabpanel">
-        {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
-        {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
-        {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} parteInicial={parteUrl} />}
-        {pestana === 'equivalencia' && <Equivalencia itemCode={itemCode} />}
-        {pestana === 'fotos' && <FotosDelArticulo itemCode={itemCode} />}
-        {pestana === 'sap' && <DatosSap a={a} />}
-        {pestana === 'historial' && <Historial itemCode={itemCode} />}
-      </div>
+            {PESTANAS.filter((p) => !p.soloFabricado || a.linea === 'FABRICADO').map((p) => (
+              <button
+                key={p.id}
+                role="tab"
+                type="button"
+                aria-selected={pestana === p.id}
+                onClick={() => setPestana(p.id)}
+                className="border-b-2 border-transparent px-3 py-2 text-sm whitespace-nowrap text-suave aria-selected:border-primario aria-selected:font-medium aria-selected:text-texto"
+              >
+                {p.etiqueta}
+              </button>
+            ))}
+          </div>
+          <div role="tabpanel">
+            {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
+            {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
+            {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} parteInicial={parteUrl} />}
+            {pestana === 'equivalencia' && <Equivalencia itemCode={itemCode} />}
+            {pestana === 'fotos' && <FotosDelArticulo itemCode={itemCode} />}
+          </div>
+        </>
+      ) : (
+        <>
+          <Resumen a={a} alIr={puedeTrabajar ? trabajar : undefined} />
+          <details className="group rounded-lg border border-borde bg-superficie">
+            <summary className="cursor-pointer px-4 py-3 text-sm font-medium">Datos de SAP e identificación</summary>
+            <div className="border-t border-borde p-4">
+              <DatosSap a={a} />
+            </div>
+          </details>
+          <details className="group rounded-lg border border-borde bg-superficie">
+            <summary className="cursor-pointer px-4 py-3 text-sm font-medium">Historial</summary>
+            <div className="border-t border-borde p-4">
+              <Historial itemCode={itemCode} />
+            </div>
+          </details>
+        </>
+      )}
 
       {/* La key reinicia el motivo escrito cada vez que se abre para otra acción */}
       <DialogoMotivo

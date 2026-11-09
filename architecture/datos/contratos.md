@@ -89,6 +89,8 @@ Nexo crea una verificación `CAMBIO_CATALOGO` por artículo afectado; un supervi
   `model_id`/`modelo`, `sub_model_id`, `engine_config_id` o `equipment_base_id`, `anio_desde`, `anio_hasta`, y los códigos de SAP
   `marca_codigo_sap` (`U_Marca`) y `modelo_codigo_sap` (`U_Linea`) según las homologaciones confirmadas (`null` si falta). Con eso
   actualiza `U_Marca`, `U_Linea`, `U_anio1` y `U_anio2`; un código `null` no se escribe.
+- **Descripción de Nexo (ADR 0027):** `app.articulo.descripcion_nexo` (patrón de SAP sin abreviar). Si se escribe en `ItemName` se
+  decide con este proyecto.
 - **Transición:** `VALIDADO → SINCRONIZADO` = el artículo **ya se actualizó en SAP** (2026-10-19).
 - **Otro proyecto (pregunta 25):** define qué campos escribe en SAP y debe evitar que el siguiente lote del ETL reabra el artículo por
   `HASH_CAMBIO`, por ejemplo registrando el hash esperado al marcar `SINCRONIZADO`.

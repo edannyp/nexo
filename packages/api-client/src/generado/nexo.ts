@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Nexo API
  * Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.
- * OpenAPI spec version: 0.6.0
+ * OpenAPI spec version: 0.7.0
  */
 import {
   useMutation,
@@ -189,6 +189,8 @@ export interface ArticuloDetalle {
   id: number;
   item_code: string;
   descripcion: string | null;
+  descripcion_nexo: string | null;
+  descripcion_nexo_manual: boolean;
   estado: Estado;
   version: number;
   activo: boolean;
@@ -532,6 +534,11 @@ export interface Credenciales {
      * @maxLength 200
      */
   password: string;
+}
+
+export interface DescripcionNexo {
+  version: number;
+  texto?: string | null;
 }
 
 export interface ParteVinculada {
@@ -3411,6 +3418,95 @@ export function useObtenerArticulo<TData = Awaited<ReturnType<typeof obtenerArti
 
 
 
+
+export const getAjustarDescripcionUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/descripcion`
+}
+
+/**
+ * @summary Ajustar la descripción de Nexo a mano, o volver a la automática (texto null)
+ */
+export const ajustarDescripcion = async (itemCode: string,
+    descripcionNexo: DescripcionNexo, options?: Parameters<typeof nexoFetch>[1]): Promise<ArticuloDetalle> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<ArticuloDetalle>(getAjustarDescripcionUrl(itemCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(descripcionNexo)
+  }
+);}
+
+
+
+
+
+export const getAjustarDescripcionMutationKey = () => ['ajustarDescripcion'] as const;
+
+export const getAjustarDescripcionMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ajustarDescripcion>>, TError,AjustarDescripcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ajustarDescripcion>>, TError,AjustarDescripcionMutationVariables, TContext> => {
+
+const mutationKey = getAjustarDescripcionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ajustarDescripcion>>, AjustarDescripcionMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  ajustarDescripcion(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AjustarDescripcionMutationResult = NonNullable<Awaited<ReturnType<typeof ajustarDescripcion>>>
+    export type AjustarDescripcionMutationBody = DescripcionNexo
+    export type AjustarDescripcionMutationError = ErrorType<void | HTTPValidationError>
+    export type AjustarDescripcionMutationVariables = {itemCode: string;data: DescripcionNexo}
+
+    /**
+ * @summary Ajustar la descripción de Nexo a mano, o volver a la automática (texto null)
+ */
+export const useAjustarDescripcion = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ajustarDescripcion>>, TError,AjustarDescripcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof ajustarDescripcion>>,
+        TError,
+        AjustarDescripcionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAjustarDescripcionMutationOptions(options), queryClient);
+    }
 
 export const getHistorialArticuloUrl = (itemCode: string,) => {
 

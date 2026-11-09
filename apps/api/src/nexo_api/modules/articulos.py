@@ -7,12 +7,14 @@ from enum import StrEnum
 from typing import Annotated
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import Connection, text
 
 from ..auth.dependencias import Rol, Usuario, UsuarioActual
+from ..auth.registro import fijar_actor
 from ..core.bd import Conexion
 from ..core.errores import Problema
+from .edicion import bloquear_para_editar, subir_version
 from .panorama import Estado
 from .tipo import TipoArticulo
 
@@ -215,7 +217,9 @@ class HallazgoArticulo(BaseModel):
 class ArticuloDetalle(BaseModel):
     id: int
     item_code: str
-    descripcion: str | None
+    descripcion: str | None                # la de SAP
+    descripcion_nexo: str | None           # la estandarizada de Nexo (ADR 0027); null si aún no hay vehículo principal
+    descripcion_nexo_manual: bool          # la ajustó una persona: ya no se recalcula sola
     estado: Estado
     version: int
     activo: bool
@@ -325,7 +329,8 @@ def cargar_detalle(c: Connection, item_code: str, usuario: Usuario) -> ArticuloD
     fotos = c.execute(text("select count(*) from app.articulo_imagen where articulo_id = :id and origen = 'PROPIA'"),
                       {"id": a["id"]}).scalar_one()
     return ArticuloDetalle(
-        id=a["id"], item_code=a["item_code"], descripcion=a["descripcion"], estado=Estado(a["estado_txt"]), version=a["version"],
+        id=a["id"], item_code=a["item_code"], descripcion=a["descripcion"], descripcion_nexo=a["descripcion_nexo"],
+        descripcion_nexo_manual=a["descripcion_nexo_manual"], estado=Estado(a["estado_txt"]), version=a["version"],
         activo=a["activo"], linea=a["linea_txt"], categoria_codigo=a["categoria_codigo"],
         numero_parte_proveedor=a["numero_parte_proveedor"], codigo_anterior=a["codigo_anterior"],
         codigo_equivalente=a["codigo_equivalente"],
@@ -351,6 +356,28 @@ class EventoHistorial(BaseModel):
     motivo: str | None
     detalle: dict | None
     creado_en: datetime
+
+
+class DescripcionNexo(BaseModel):
+    version: int
+    texto: str | None = Field(None, min_length=1, max_length=100)   # null = volver a la automática
+
+
+@router.put("/{item_code}/descripcion", response_model=ArticuloDetalle,
+            summary="Ajustar la descripción de Nexo a mano, o volver a la automática (texto null)",
+            responses={409: {"description": "No editable o versión distinta"}})
+def ajustar_descripcion(item_code: str, datos: DescripcionNexo, usuario: UsuarioActual, c: Conexion) -> ArticuloDetalle:
+    with c.begin():
+        fijar_actor(c, usuario.id)
+        a = bloquear_para_editar(c, item_code, usuario, datos.version)
+        if datos.texto is None:
+            c.execute(text("update app.articulo set descripcion_nexo_manual = false where id = :a"), {"a": a.id})
+        else:
+            c.execute(text("""update app.articulo set descripcion_nexo_manual = true,
+                              descripcion_nexo = upper(regexp_replace(btrim(:t), '\\s+', ' ', 'g')) where id = :a"""),
+                      {"a": a.id, "t": datos.texto})
+        subir_version(c, a.id)
+    return cargar_detalle(c, item_code, usuario)
 
 
 @router.get("/{item_code}/historial", response_model=list[EventoHistorial], summary="Bitácora del artículo (más reciente primero)")
