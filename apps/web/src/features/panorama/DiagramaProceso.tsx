@@ -1,5 +1,5 @@
 import type { Estado } from '@nexo/api-client';
-import { Maximize2 } from 'lucide-react';
+import { ChevronDown, Maximize2, Workflow } from 'lucide-react';
 import { useState } from 'react';
 
 import { numero } from '@/shared/formato';
@@ -382,29 +382,73 @@ function Diagrama({ porEstado }: { porEstado: Partial<Record<Estado, number>> })
 }
 
 /** Tarjeta de Panorama con el proceso (plegable) y la vista en grande. */
+const CLAVE_ABIERTO = 'nexo.panorama.diagrama-abierto';
+
+/** Recuerda (solo en este navegador) si el usuario dejó el diagrama abierto; si el almacenamiento falla, arranca cerrado. */
+function leerAbierto() {
+  try {
+    return localStorage.getItem(CLAVE_ABIERTO) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Tarjeta plegable: cerrada al entrar (no empuja los gráficos hacia abajo) y recuerda la última elección.
+ * «Ver en grande» abre el diagrama en un diálogo sin necesidad de desplegarlo.
+ */
 export function DiagramaProceso({ porEstado }: { porEstado: Partial<Record<Estado, number>> }) {
+  const [abierto, setAbierto] = useState(leerAbierto);
   const [grande, setGrande] = useState(false);
+  const alternar = () =>
+    setAbierto((a) => {
+      try {
+        localStorage.setItem(CLAVE_ABIERTO, a ? '0' : '1');
+      } catch {
+        /* sin almacenamiento: solo dura esta visita */
+      }
+      return !a;
+    });
   return (
-    <details open data-recorrido="panorama-proceso" className="group rounded-lg border border-borde bg-superficie">
-      <summary className="flex cursor-pointer items-center justify-between gap-2 px-4 py-3">
-        <span>
-          <span className="text-sm font-medium">Proceso del artículo</span>
-          <span className="block text-xs text-suave">
-            De SAP a SAP, con doble control. Las cifras son los artículos que hay hoy en cada etapa.
+    <section data-recorrido="panorama-proceso" className="rounded-lg border border-borde bg-superficie">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <button
+          type="button"
+          onClick={alternar}
+          aria-expanded={abierto}
+          aria-controls="panorama-diagrama"
+          className="-m-1 flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 text-left hover:bg-superficie-2"
+        >
+          <span className="grid size-9 shrink-0 place-items-center rounded-md bg-primario/10 text-primario">
+            <Workflow className="size-5" aria-hidden />
           </span>
-        </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-medium">Proceso del artículo</span>
+            <span className="block text-xs text-suave">
+              De SAP a SAP, con doble control.{' '}
+              {abierto ? 'Las cifras son los artículos que hay hoy en cada etapa.' : 'Despliega para ver el diagrama.'}
+            </span>
+          </span>
+          <ChevronDown
+            className={`ml-auto size-4 shrink-0 text-suave transition-transform ${abierto ? 'rotate-180' : ''}`}
+            aria-hidden
+          />
+          <span className="sr-only">{abierto ? 'Ocultar diagrama' : 'Mostrar diagrama'}</span>
+        </button>
         <Boton
           variante="fantasma"
-          className="h-8 px-2 text-xs"
-          onClick={(e) => (e.preventDefault(), setGrande(true))}
+          className="h-8 shrink-0 px-2 text-xs"
+          onClick={() => setGrande(true)}
           title="Ver el diagrama en grande"
         >
-          <Maximize2 className="size-4" aria-hidden /> Ver en grande
+          <Maximize2 className="size-4" aria-hidden /> <span className="hidden sm:inline">Ver en grande</span>
         </Boton>
-      </summary>
-      <div className="overflow-x-auto border-t border-borde p-3">
-        <Diagrama porEstado={porEstado} />
       </div>
+      {abierto && (
+        <div id="panorama-diagrama" className="overflow-x-auto border-t border-borde p-3">
+          <Diagrama porEstado={porEstado} />
+        </div>
+      )}
       <Dialogo abierto={grande} alCerrar={() => setGrande(false)} titulo="Proceso del artículo (BPMN)" amplio>
         <div className="overflow-x-auto">
           <Diagrama porEstado={porEstado} />
@@ -414,6 +458,6 @@ export function DiagramaProceso({ porEstado }: { porEstado: Partial<Record<Estad
           revisión hacen falta el tipo de parte, el vehículo principal confirmado y los atributos obligatorios.
         </p>
       </Dialogo>
-    </details>
+    </section>
   );
 }
