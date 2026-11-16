@@ -32,7 +32,7 @@ export function textoHerencia(h?: { partes: number; aplicaciones_sugeridas: numb
       : '',
   ].filter(Boolean);
   return partes.length
-    ? `Equivalencia confirmada. Heredado como sugerencias: ${partes.join(' y ')} (revísalas en Aplicaciones y Emparejamiento).`
+    ? `Equivalencia confirmada. Heredado como sugerencias: ${partes.join(' y ')} (revísalas en Aplicaciones y Diagramas).`
     : 'Equivalencia confirmada. El importado aún no tiene parte ni aplicaciones confirmadas: no se heredó nada.';
 }
 

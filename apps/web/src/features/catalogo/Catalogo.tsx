@@ -4,6 +4,8 @@ import { ArrowLeftRight, Link2, Search, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
+import { useUsuario } from '@/app/contexto-usuario';
+import { tienePermiso } from '@/app/sesion';
 import { useRecorrido } from '@/shared/recorrido';
 import { cn } from '@/shared/cn';
 import { EtiquetaEstado } from '@/shared/estados';
@@ -15,6 +17,7 @@ const n = (x?: string | null) => (x == null ? '—' : String(Number(x)));
 function ArticulosDeParte({ parteId, tolerancia }: { parteId: number; tolerancia: number }) {
   const { filtro } = useFiltro();
   const q = useArticulosDeParte(parteId, { cat: filtro.cat, linea: filtro.linea, tolerancia });
+  const puedeEmparejar = tienePermiso(useUsuario(), 'EMPAREJAR_CATALOGO');
   const d = q.data;
   if (q.isError) return <Aviso tono="error" titulo={q.error.problema.title} />;
   if (!d) return <p className="p-4 text-sm text-suave">Buscando artículos…</p>;
@@ -73,14 +76,16 @@ function ArticulosDeParte({ parteId, tolerancia }: { parteId: number; tolerancia
                     ))}
                   </p>
                 </div>
-                <Link
-                  to="/articulos/$itemCode"
-                  params={{ itemCode: a.item_code }}
-                  search={{ pestana: 'emparejamiento', parte: parteId }}
-                  className="flex items-center gap-1 self-center rounded-md border border-borde px-2 py-1 text-xs hover:bg-superficie-2"
-                >
-                  <Link2 className="size-3.5" aria-hidden /> Abrir para vincular
-                </Link>
+                {puedeEmparejar && (
+                  <Link
+                    to="/emparejamiento/$itemCode"
+                    params={{ itemCode: a.item_code }}
+                    search={{ parte: parteId }}
+                    className="flex items-center gap-1 self-center rounded-md border border-borde px-2 py-1 text-xs hover:bg-superficie-2"
+                  >
+                    <Link2 className="size-3.5" aria-hidden /> Emparejar
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

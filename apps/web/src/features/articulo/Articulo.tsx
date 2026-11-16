@@ -27,8 +27,8 @@ import { useRecorrido } from '@/shared/recorrido';
 import { Aviso, Boton, Dialogo } from '@/shared/ui';
 
 import { Aplicaciones } from './Aplicaciones';
+import { Diagramas } from './Diagramas';
 import { FranjaTrabajo } from './FranjaTrabajo';
-import { Emparejamiento } from './Emparejamiento';
 import { Equivalencia } from './Equivalencia';
 import { Ficha } from './Ficha';
 import { Resumen, type PestanaTrabajo } from './Resumen';
@@ -38,20 +38,14 @@ const LATIDO_MS = 5 * 60_000;
 const PESTANAS: readonly { id: PestanaTrabajo; etiqueta: string; soloFabricado?: true }[] = [
   { id: 'ficha', etiqueta: 'Ficha' },
   { id: 'aplicaciones', etiqueta: 'Aplicaciones' },
-  { id: 'emparejamiento', etiqueta: 'Emparejamiento y diagramas' },
+  { id: 'diagramas', etiqueta: 'Diagramas' },
   { id: 'equivalencia', etiqueta: 'Equivalencia', soloFabricado: true },
 ];
 type Vista = 'resumen' | PestanaTrabajo;
 const EDITABLES = ['PENDIENTE', 'RECHAZADO'];
 
 const PLANTILLAS: Record<string, string[]> = {
-  RECHAZADO: [
-    'Años no coinciden',
-    'Falta o sobra una aplicación',
-    'Medidas incorrectas',
-    'Emparejamiento incorrecto',
-    'Atributo mal confirmado',
-  ],
+  RECHAZADO: ['Años no coinciden', 'Falta o sobra una aplicación', 'Medidas incorrectas', 'Atributo mal confirmado'],
   PENDIENTE: ['Corrección solicitada', 'Verificación con hallazgo', 'Cambio en el catálogo'],
 };
 
@@ -216,14 +210,9 @@ function Historial({ itemCode }: { itemCode: string }) {
  */
 export function Articulo() {
   const { itemCode } = useParams({ strict: false }) as { itemCode: string };
-  const {
-    bandeja,
-    pestana: pestanaUrl,
-    parte: parteUrl,
-  } = useSearch({ strict: false }) as {
+  const { bandeja, pestana: pestanaUrl } = useSearch({ strict: false }) as {
     bandeja?: Bandeja;
     pestana?: string;
-    parte?: number;
   };
   const { filtro } = useFiltro();
   const navegar = useNavigate();
@@ -562,7 +551,7 @@ export function Articulo() {
           <div role="tabpanel">
             {pestana === 'ficha' && <Ficha itemCode={itemCode} alCambiarPendientes={setPendientesFicha} />}
             {pestana === 'aplicaciones' && <Aplicaciones itemCode={itemCode} />}
-            {pestana === 'emparejamiento' && <Emparejamiento itemCode={itemCode} parteInicial={parteUrl} />}
+            {pestana === 'diagramas' && <Diagramas itemCode={itemCode} />}
             {pestana === 'equivalencia' && <Equivalencia itemCode={itemCode} />}
           </div>
         </>

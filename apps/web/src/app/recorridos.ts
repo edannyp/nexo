@@ -87,7 +87,7 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
       {
         titulo: 'El ciclo de un artículo',
         texto:
-          'Pendiente → completas ficha, vehículo principal y emparejamiento → Enviar a revisión → un supervisor lo valida o lo rechaza con un motivo → Validado → se actualiza en SAP.',
+          'Pendiente → completas ficha, aplicaciones y vehículo principal → Enviar a revisión → un supervisor lo valida o lo rechaza con un motivo → Validado → se actualiza en SAP.',
       },
     ],
   },
@@ -194,7 +194,7 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
       {
         donde: '[data-recorrido="articulo-trabajar"]',
         titulo: 'Trabajar',
-        texto: 'Lo reserva para ti y abre las pestañas de trabajo: Ficha, Aplicaciones y Emparejamiento.',
+        texto: 'Lo reserva para ti y abre las pestañas de trabajo: Ficha, Aplicaciones y Diagramas.',
       },
     ],
   },
@@ -212,7 +212,7 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
         donde: '[aria-label="Secciones de trabajo"]',
         titulo: 'Pestañas',
         texto:
-          'Ficha (atributos), Aplicaciones (vehículos) y Emparejamiento (catálogo maestro). Quedan fijas al bajar.',
+          'Ficha (atributos), Aplicaciones (vehículos) y Diagramas (a qué pieza del catálogo está enlazado, solo lectura). Quedan fijas al bajar.',
       },
       {
         donde: '[data-recorrido="ficha-leyenda"]',
@@ -279,45 +279,19 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
     ],
   },
 
-  'articulo-emparejamiento': {
-    titulo: 'Artículo · Emparejamiento',
+  'articulo-diagramas': {
+    titulo: 'Artículo · Diagramas',
     pasos: [
       {
-        titulo: 'Emparejar con el catálogo maestro',
+        donde: '[data-recorrido="diagramas"]',
+        titulo: 'A qué diagrama está enlazado',
         texto:
-          'El catálogo maestro une los diagramas propios y los proveedores (JJ Radiator…). Emparejar es decir a qué pieza del catálogo corresponde este artículo.',
+          'Las piezas del catálogo maestro (diagramas propios y proveedores) enlazadas con este artículo; ★ marca la principal. Si no tiene ninguna, dice «Artículo sin enlace a diagramas».',
       },
       {
-        donde: 'section[aria-label="Candidatos"]',
-        titulo: 'Candidatos',
+        titulo: 'Solo lectura',
         texto:
-          'Nexo propone piezas por medidas del panal (alto y largo en cualquier orden), números y vehículos en común, con un puntaje y el porqué.',
-      },
-      {
-        donde: 'select[aria-label="Tolerancia de medidas"]',
-        titulo: 'Tolerancia',
-        texto: 'Cuántos mm de diferencia se aceptan en las medidas. Súbela si no aparecen candidatos.',
-      },
-      {
-        donde: 'input[aria-label="Buscar manualmente en el catálogo"]',
-        titulo: 'Búsqueda manual',
-        texto: 'Por medidas (400x518x26), por número (OEM, DPI, proveedor) o por palabras de la descripción.',
-      },
-      {
-        donde: 'section[aria-label="Comparación"]',
-        titulo: 'Comparación',
-        texto: 'El candidato elegido frente al artículo, atributo por atributo, con las diferencias marcadas.',
-      },
-      {
-        donde: 'button[title^="Fotos del artículo"]',
-        titulo: 'Comparar fotos',
-        texto:
-          'Abre las fotos del artículo y las del candidato lado a lado, en grande. Pasa de candidato con las flechas y vincula desde ahí.',
-      },
-      {
-        titulo: 'Vincular',
-        texto:
-          '«Vincular como principal» para la pieza que corresponde; «Vincular» para otras equivalentes. Puedes traer sus atributos y aplicaciones como sugerencias para revisar.',
+          'Enlazar no es parte del trabajo del artículo: lo hace quien tiene el permiso de Emparejamiento, en su propia sección. Si lo tienes, «Emparejar» te lleva ahí.',
       },
     ],
   },
@@ -412,6 +386,60 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
         donde: 'section[aria-label="Detalle de la parte"]',
         titulo: 'Detalle',
         texto: 'Números, atributos, aplicaciones, imágenes y los artículos de Nexo vinculados a la pieza elegida.',
+      },
+    ],
+  },
+
+  emparejamiento: {
+    titulo: 'Emparejamiento',
+    pasos: [
+      {
+        titulo: 'Enlazar con el catálogo maestro',
+        texto:
+          'Aquí se dice a qué pieza del catálogo maestro (diagramas propios y proveedores como JJ Radiator) corresponde cada artículo. Requiere un permiso especial y no es parte del proceso del artículo: no se reserva y su estado no cambia.',
+      },
+      {
+        donde: '[aria-label="Qué artículos ver"]',
+        titulo: 'Qué ver',
+        texto: 'Primero los que no tienen enlace; también puedes ver los ya emparejados o todos. Se ordenan por venta.',
+      },
+      {
+        donde: 'input[aria-label="Buscar artículo"]',
+        titulo: 'Buscar',
+        texto: 'Por código, número de parte o descripción, dentro del tipo de artículo elegido.',
+      },
+      {
+        donde: 'section[aria-label="Artículos"]',
+        titulo: 'Abrir',
+        texto: 'Elige un artículo para ver sus candidatos y enlazarlo.',
+      },
+    ],
+  },
+
+  emparejar: {
+    titulo: 'Emparejar un artículo',
+    pasos: [
+      {
+        titulo: 'Emparejar con el catálogo maestro',
+        texto:
+          'Emparejar es decir a qué pieza del catálogo corresponde este artículo. No hace falta reservarlo: se puede hacer en cualquier estado.',
+      },
+      {
+        donde: 'section[aria-label="Candidatos"]',
+        titulo: 'Candidatos',
+        texto:
+          'Nexo propone piezas por medidas del panal (alto y largo en cualquier orden), números y vehículos en común, con un puntaje y el porqué.',
+      },
+      {
+        donde: 'select[aria-label="Tolerancia de medidas"]',
+        titulo: 'Tolerancia',
+        texto: 'Cuántos mm de diferencia se aceptan en las medidas. Súbela si no aparecen candidatos.',
+      },
+      {
+        donde: 'section[aria-label="Comparación"]',
+        titulo: 'Comparar y vincular',
+        texto:
+          'Compara lado a lado y vincula. Si el artículo está en Pendiente o Rechazado, puedes traer los datos de la pieza como sugerencias para quien trabaje su ficha; en los demás estados solo se vincula.',
       },
     ],
   },

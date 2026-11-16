@@ -12,6 +12,8 @@ import { Explorar } from '@/features/explorar/Explorar';
 import { Fabricados } from '@/features/fabricados/Fabricados';
 import { PantallaFotos } from '@/features/fotos/PantallaFotos';
 import { busquedaExplorar } from '@/features/explorar/filtros';
+import { Emparejamiento } from '@/features/emparejamiento/Emparejamiento';
+import { PantallaEmparejar } from '@/features/emparejamiento/PantallaEmparejar';
 import { EnConstruccion } from '@/features/pendiente/EnConstruccion';
 import { Panorama } from '@/features/panorama/Panorama';
 import { Bandeja } from '@/features/trabajo/Bandeja';
@@ -62,7 +64,10 @@ function Protegida({ seccion, children }: { seccion: Seccion; children: ReactNod
     <section className="mx-auto max-w-md py-10 text-center">
       <ShieldX className="mx-auto size-10 text-suave" aria-hidden />
       <h1 className="mt-4 text-xl font-semibold">Sin acceso a {seccion.etiqueta}</h1>
-      <p className="mt-2 text-suave">Tu rol no incluye esta sección. Si la necesitas, pídela a un administrador.</p>
+      <p className="mt-2 text-suave">
+        {seccion.permiso ? 'Esta sección requiere un permiso especial.' : 'Tu rol no incluye esta sección.'} Si la
+        necesitas, pídela a un administrador.
+      </p>
     </section>
   );
 }
@@ -79,6 +84,7 @@ const PANTALLAS: Record<string, () => ReactNode> = {
   '/fotos': () => <PantallaFotos />,
   '/fabricados': () => <Fabricados />,
   '/catalogo': () => <Catalogo />,
+  '/emparejamiento': () => <Emparejamiento />,
 };
 
 // Parámetros de búsqueda propios de algunas pantallas (además del filtro global de la raíz)
@@ -99,14 +105,25 @@ const secciones = SECCIONES.map((s) =>
 const articulo = createRoute({
   getParentRoute: () => app,
   path: '/articulos/$itemCode',
-  validateSearch: (
-    s: Record<string, unknown>,
-  ): { bandeja?: 'operador' | 'supervisor'; pestana?: string; parte?: number } => ({
+  validateSearch: (s: Record<string, unknown>): { bandeja?: 'operador' | 'supervisor'; pestana?: string } => ({
     ...(s.bandeja === 'operador' || s.bandeja === 'supervisor' ? { bandeja: s.bandeja } : {}),
     ...(typeof s.pestana === 'string' ? { pestana: s.pestana } : {}),
-    ...(Number(s.parte) > 0 ? { parte: Number(s.parte) } : {}),
   }),
   component: Articulo,
+});
+
+// Emparejar un artículo (ADR 0028): misma protección que la sección Emparejamiento
+const SECCION_EMPAREJAMIENTO = SECCIONES.find((s) => s.ruta === '/emparejamiento')!;
+const emparejar = createRoute({
+  getParentRoute: () => app,
+  path: '/emparejamiento/$itemCode',
+  validateSearch: (s: Record<string, unknown>): { parte?: number } =>
+    Number(s.parte) > 0 ? { parte: Number(s.parte) } : {},
+  component: () => (
+    <Protegida seccion={SECCION_EMPAREJAMIENTO}>
+      <PantallaEmparejar />
+    </Protegida>
+  ),
 });
 
 /**
@@ -125,7 +142,7 @@ export function escribirBusqueda(busqueda: Record<string, unknown>): string {
 }
 
 export const router = createRouter({
-  routeTree: raiz.addChildren([entrar, cambiarContrasena, app.addChildren([...secciones, articulo])]),
+  routeTree: raiz.addChildren([entrar, cambiarContrasena, app.addChildren([...secciones, articulo, emparejar])]),
   defaultPreload: 'intent',
   parseSearch: leerBusqueda,
   stringifySearch: escribirBusqueda,

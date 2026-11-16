@@ -171,7 +171,7 @@ export function ComparadorFotos({
             </Boton>
           </div>
           {c && !e.editable && !c.vinculada && (
-            <span className="text-sm text-suave">{e.razon_no_editable ?? 'Toma el artículo para vincular.'}</span>
+            <span className="text-sm text-suave">{e.razon_no_editable ?? 'No se puede vincular.'}</span>
           )}
           {c?.vinculada ? (
             <span className="flex items-center gap-1 text-sm text-validado">
@@ -180,19 +180,25 @@ export function ComparadorFotos({
           ) : (
             puedeVincular && (
               <div className="flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="size-4"
-                    checked={traer}
-                    onChange={(x) => setTraer(x.target.checked)}
-                  />
-                  Traer atributos y aplicaciones como sugerencias
-                </label>
-                <Boton variante="secundario" disabled={ocupado} onClick={() => alVincular(actual, false, traer)}>
+                {e.trae_sugerencias && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="size-4"
+                      checked={traer}
+                      onChange={(x) => setTraer(x.target.checked)}
+                    />
+                    Traer atributos y aplicaciones como sugerencias
+                  </label>
+                )}
+                <Boton
+                  variante="secundario"
+                  disabled={ocupado}
+                  onClick={() => alVincular(actual, false, traer && e.trae_sugerencias)}
+                >
                   <Link2 className="size-4" aria-hidden /> Vincular
                 </Boton>
-                <Boton cargando={ocupado} onClick={() => alVincular(actual, true, traer)}>
+                <Boton cargando={ocupado} onClick={() => alVincular(actual, true, traer && e.trae_sugerencias)}>
                   <Star className="size-4" aria-hidden /> Vincular como principal
                 </Boton>
               </div>

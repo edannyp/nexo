@@ -4,6 +4,7 @@ import {
   CheckCheck,
   Factory,
   LayoutDashboard,
+  Link2,
   Play,
   Settings,
   ShieldCheck,
@@ -85,6 +86,15 @@ export const SECCIONES: Seccion[] = [
     icono: BookOpen,
     paso: 7,
     descripcion: 'Catálogo maestro y diagramas: qué partes tienen artículo y cuáles no.',
+  },
+  {
+    ruta: '/emparejamiento',
+    permiso: 'EMPAREJAR_CATALOGO',
+    etiqueta: 'Emparejamiento',
+    icono: Link2,
+    paso: 7,
+    restringida: true,
+    descripcion: 'Enlazar artículos con su diagrama del catálogo maestro (requiere permiso).',
   },
   {
     ruta: '/fotos',
