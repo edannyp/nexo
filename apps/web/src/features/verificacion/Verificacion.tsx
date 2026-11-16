@@ -36,7 +36,7 @@ export function queRevisar(t: Pick<TareaVerificacion, 'origen' | 'detalle'>): st
     case 'NUEVA_FOTO':
       return 'Revisa que la foto sea de este artículo y coincida con la ficha validada.';
     case 'MUESTREO':
-      return 'Control de calidad al azar: revisa ficha, aplicaciones y emparejamiento.';
+      return 'Control de calidad al azar: revisa ficha, aplicaciones y diagramas.';
     case 'CAMBIO_CATALOGO':
       if (d.estado === 'DATOS_CAMBIARON')
         return `Cambiaron los datos de la parte ${d.parte_id} en el catálogo maestro: ${d.nota ?? ''}`;

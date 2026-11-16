@@ -56,7 +56,7 @@ navegador ──► web (Caddy :80/:443) ──/api/*──► api (FastAPI :800
    El resto de los usuarios los da de alta ese administrador desde **Administración** en la consola (no hay autorregistro).
    **Fotos existentes** (una vez, repetible): `docker compose exec api python -m nexo_api.cli importar-fotos`.
 7. **Comprobar**: `http://<servidor>/` muestra la pantalla de entrada; `http://<servidor>/api/v1/salud/lista` responde
-   `{"estado":"ok","migracion":"0017"}`. La documentación de la API está en `http://<servidor>/api/docs`.
+   `{"estado":"ok","migracion":"0018"}`. La documentación de la API está en `http://<servidor>/api/docs`.
 
 ## Usuarios de los procesos externos
 Una vez cada uno, como superusuario, después de que la API migró a `0011` (permisos mínimos, ADR 0017). La contraseña se pasa al
@@ -97,9 +97,10 @@ La API lee AutoCare (solo lectura) y registra en MercadoExterno: `AUTOCARE_*` y 
 `mercado_externo`, usuario con los permisos de `grp_mercado_registro`). MercadoExterno debe tener aplicada la migración `V003__configuraciones.sql`
 (`uv run db/aplicar.py mercado_externo --servidor`). Sin estas variables, la pestaña muestra las aplicaciones pero no permite buscar.
 
-## Catálogo maestro (pestaña Emparejamiento y diagramas)
+## Catálogo maestro (sección Emparejamiento y pestaña Diagramas, ADR 0028)
 La API lee Consolidación con `CONSOLIDACION_*` (10.10.60.6, base `consolidacion_articulos`, usuario `app_lectura` miembro de `grp_app_lectura`). Los diagramas guardados en MinIO se muestran con URLs
-firmadas (requiere `MINIO_*`). Sin Consolidación, la pestaña muestra lo ya vinculado pero no busca candidatos.
+firmadas (requiere `MINIO_*`). Sin Consolidación, Diagramas muestra lo ya vinculado (por su número) y el emparejador no busca
+candidatos. Emparejar requiere el permiso `EMPAREJAR_CATALOGO`, que asigna un administrador en Administración → Usuarios.
 
 ## Actualizar
 ```bash

@@ -62,6 +62,7 @@
 | `/catalogo` | Catálogo maestro y diagramas (vista inversa) | Todos |
 | `/fotos` | Subida y estado de fotos | Fotos, Administrador |
 | `/calidad-sap` | Hallazgos para corregir en SAP | Supervisor, Administrador |
+| `/emparejamiento` | Enlazar artículos con su diagrama del catálogo maestro, fuera del workflow | Con permiso `EMPAREJAR_CATALOGO` (ADR 0028) |
 | `/ventas` | Análisis de ventas por artículo y tipo | Con permiso `VER_ANALISIS_VENTAS` (ADR 0022) |
 | `/admin/*` | Usuarios, ficha de atributos, homologación | Administrador |
 
@@ -187,7 +188,8 @@ Material tanque   *           Plastic  [✓]         [ Plastic (Plástico) ▾]
 - Tabla de aplicaciones agrupada por marca/modelo con años colapsados ("Toyota Pickup 1986–1994 · 22R 2.4L"), región opcional como etiqueta.
 - Las aplicaciones heredadas de un equivalente aparecen como sugeridas hasta confirmarlas.
 
-#### Pestaña Emparejamiento y diagramas
+#### Emparejador (sección Emparejamiento, ADR 0028; antes pestaña «Emparejamiento y diagramas»)
+En el artículo queda solo la pestaña **Diagramas**, de solo lectura: a qué partes está enlazado o «Artículo sin enlace a diagramas».
 ```
 ┌ Candidatos del catálogo maestro ─────────────────────────┐ ┌ Comparación ─────────────────────────────┐
 │ Criterios: medidas ±10 mm ▾  OEM ✓  DPI ✓  marca ✓       │ │            RAD00188     Parte 7001       │
@@ -312,7 +314,7 @@ Datos de apoyo de ClickHouse (volumen de venta), leídos por adaptador. Dos nive
 | Espacio de trabajo | `GET /articulos/{id}` · `GET /articulos/{id}/requisitos` · `POST /articulos/{id}/transiciones` |
 | Ficha | `GET /articulos/{id}/ficha` · `PUT /articulos/{id}/ficha` (cambios de la pestaña juntos, con `version`) |
 | Aplicaciones | `GET/POST /articulos/{id}/aplicaciones` (+ `/confirmar`, `/quitar`) · `GET /vehiculos/marcas|modelos|configuraciones` · `POST /vehiculos/externos` |
-| Emparejamiento | `GET /articulos/{id}/emparejamiento` (vinculadas + candidatos) · `GET /articulos/{id}/emparejamiento/{parte}` (comparación) · `GET /catalogo/partes` · `POST /articulos/{id}/partes` (+ `/principal`, `/quitar`) |
+| Emparejamiento | `GET /articulos/{id}/diagramas` (solo lectura, todos) · con permiso `EMPAREJAR_CATALOGO`: `GET /articulos/{id}/emparejamiento` (vinculadas + candidatos) · `GET /articulos/{id}/emparejamiento/{parte}` (comparación) · `GET /catalogo/partes` · `POST /articulos/{id}/partes` (+ `/principal`, `/quitar`) |
 | Equivalencia | `GET/PUT /articulos/{id}/equivalencia` · `POST /articulos/{id}/equivalencia/validar` · `POST /articulos/{id}/equivalencia/confirmar` |
 | Fabricados | `GET /fabricados?cat=&estado_codigo=&q=` |
 | Catálogo | `GET /catalogo?cat=&q=&sin_articulo=` · `GET /catalogo/{parte}/articulos` |

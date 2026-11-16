@@ -280,7 +280,7 @@ function Diagrama({ porEstado }: { porEstado: Partial<Record<Estado, number>> })
           [548, y(1)],
         ]}
       />
-      <Tarea x={640} cy={y(1)} lineas={['Ficha, ★ vehículo principal', 'y emparejamiento']} ancho={184} />
+      <Tarea x={640} cy={y(1)} lineas={['Ficha, aplicaciones', 'y ★ vehículo principal']} ancho={184} />
       <Flujo
         puntos={[
           [732, y(1)],

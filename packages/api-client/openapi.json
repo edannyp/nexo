@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexo API",
     "description": "Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.",
-    "version": "0.7.0"
+    "version": "0.9.2"
   },
   "paths": {
     "/api/v1/salud": {
@@ -2131,12 +2131,54 @@
         }
       }
     },
+    "/api/v1/articulos/{item_code}/diagramas": {
+      "get": {
+        "tags": [
+          "emparejamiento"
+        ],
+        "summary": "A qué partes (diagramas) del catálogo maestro está enlazado el artículo; solo lectura",
+        "operationId": "obtener_diagramas",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Diagramas"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/articulos/{item_code}/emparejamiento": {
       "get": {
         "tags": [
           "emparejamiento"
         ],
-        "summary": "Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué",
+        "summary": "Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué (permiso EMPAREJAR_CATALOGO)",
         "operationId": "obtener_emparejamiento",
         "parameters": [
           {
@@ -5142,11 +5184,37 @@
         ],
         "title": "DescripcionNexo"
       },
+      "Diagramas": {
+        "properties": {
+          "catalogo_disponible": {
+            "type": "boolean",
+            "title": "Catalogo Disponible"
+          },
+          "vinculadas": {
+            "items": {
+              "$ref": "#/components/schemas/ParteVinculada"
+            },
+            "type": "array",
+            "title": "Vinculadas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "catalogo_disponible",
+          "vinculadas"
+        ],
+        "title": "Diagramas",
+        "description": "Solo lectura, para todos: a qué partes (diagramas) del catálogo maestro está enlazado el artículo."
+      },
       "Emparejamiento": {
         "properties": {
           "version": {
             "type": "integer",
             "title": "Version"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
           },
           "part_terminology_id": {
             "anyOf": [
@@ -5173,6 +5241,10 @@
               }
             ],
             "title": "Razon No Editable"
+          },
+          "trae_sugerencias": {
+            "type": "boolean",
+            "title": "Trae Sugerencias"
           },
           "catalogo_disponible": {
             "type": "boolean",
@@ -5213,9 +5285,11 @@
         "type": "object",
         "required": [
           "version",
+          "estado",
           "part_terminology_id",
           "editable",
           "razon_no_editable",
+          "trae_sugerencias",
           "catalogo_disponible",
           "medidas",
           "tolerancia",
@@ -6701,7 +6775,8 @@
       "Permiso": {
         "type": "string",
         "enum": [
-          "VER_ANALISIS_VENTAS"
+          "VER_ANALISIS_VENTAS",
+          "EMPAREJAR_CATALOGO"
         ],
         "title": "Permiso"
       },

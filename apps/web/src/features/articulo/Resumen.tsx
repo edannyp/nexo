@@ -12,10 +12,11 @@ import { cn } from '@/shared/cn';
 import { FotosDelArticulo } from '@/features/fotos/FotosDelArticulo';
 import { Dialogo, Insignia } from '@/shared/ui';
 
+import { Diagramas } from './Diagramas';
 import { mostrar } from './Ficha';
 
 /** Pestañas del modo Trabajar a las que se puede saltar desde el resumen. */
-export type PestanaTrabajo = 'ficha' | 'aplicaciones' | 'emparejamiento' | 'equivalencia';
+export type PestanaTrabajo = 'ficha' | 'aplicaciones' | 'diagramas' | 'equivalencia';
 
 const MEDIDAS = [267, 269, 268]; // alto, largo, ancho del panal (PAdb)
 
@@ -256,6 +257,7 @@ export function Resumen({ a, alIr }: { a: ArticuloDetalle; alIr?: (p: PestanaTra
         <Descripciones a={a} />
         <VehiculoPrincipal itemCode={a.item_code} alIr={alIr} />
         <Atributos itemCode={a.item_code} alIr={alIr} />
+        <Diagramas itemCode={a.item_code} />
       </div>
     </div>
   );

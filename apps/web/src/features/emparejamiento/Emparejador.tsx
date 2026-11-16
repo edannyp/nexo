@@ -20,6 +20,9 @@ import { Aviso, Boton, Dialogo, Insignia } from '@/shared/ui';
 import { ComparadorFotos } from './ComparadorFotos';
 
 const TOLERANCIAS = [5, 10, 15, 20];
+/** Fuera de Pendiente/Rechazado no se traen sugerencias: no se ensucia la ficha de un artículo ya revisado (ADR 0028). */
+export const SIN_SUGERENCIAS =
+  'Solo se vincula: como el artículo no está en Pendiente ni Rechazado, no se traen sus datos como sugerencias.';
 
 const n = (x?: string | null) => (x == null ? '—' : String(Number(x)));
 const textoMedidas = (m: MedidasPanal) =>
@@ -229,15 +232,23 @@ function Comparar({
 
       {e.editable && !c.vinculada && c.parte.estado === 'ACTIVA' && (
         <div className="space-y-2 border-t border-borde pt-3">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" className="size-4" checked={traer} onChange={(x) => setTraer(x.target.checked)} />
-            Traer sus atributos y aplicaciones como sugerencias
-          </label>
+          {e.trae_sugerencias ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="size-4" checked={traer} onChange={(x) => setTraer(x.target.checked)} />
+              Traer sus atributos y aplicaciones como sugerencias
+            </label>
+          ) : (
+            <p className="text-xs text-suave">{SIN_SUGERENCIAS}</p>
+          )}
           <div className="flex flex-wrap gap-2">
-            <Boton cargando={ocupado} onClick={() => alVincular(true, traer)}>
+            <Boton cargando={ocupado} onClick={() => alVincular(true, traer && e.trae_sugerencias)}>
               <Star className="size-4" aria-hidden /> Vincular como principal
             </Boton>
-            <Boton variante="secundario" disabled={ocupado} onClick={() => alVincular(false, traer)}>
+            <Boton
+              variante="secundario"
+              disabled={ocupado}
+              onClick={() => alVincular(false, traer && e.trae_sugerencias)}
+            >
               <Link2 className="size-4" aria-hidden /> Vincular
             </Boton>
           </div>
@@ -259,8 +270,8 @@ function Comparar({
   );
 }
 
-/** Pestaña Emparejamiento y diagramas (propuesta UX §6.4, ADR 0011). */
-export function Emparejamiento({ itemCode, parteInicial }: { itemCode: string; parteInicial?: number }) {
+/** Emparejador con el catálogo maestro (ADR 0011). Vive en la sección Emparejamiento, con el permiso EMPAREJAR_CATALOGO (ADR 0028). */
+export function Emparejador({ itemCode, parteInicial }: { itemCode: string; parteInicial?: number }) {
   const [tolerancia, setTolerancia] = useState(10);
   const [texto, setTexto] = useState('');
   const [buscado, setBuscado] = useState('');
@@ -307,8 +318,10 @@ export function Emparejamiento({ itemCode, parteInicial }: { itemCode: string; p
           ].filter(Boolean);
           setHecho(
             partes.length
-              ? `Vinculada. Se trajeron ${partes.join(' y ')} como sugerencias: revísalas en Ficha y Aplicaciones.`
-              : 'Vinculada. El artículo ya tenía todos sus datos: no se trajo nada.',
+              ? `Vinculada. Se trajeron ${partes.join(' y ')} como sugerencias para quien trabaje la ficha y las aplicaciones.`
+              : t
+                ? 'Vinculada. El artículo ya tenía todos sus datos: no se trajo nada.'
+                : 'Vinculada.',
           );
         },
       },

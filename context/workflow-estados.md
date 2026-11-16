@@ -1,11 +1,12 @@
 # Workflow del artículo
 
-Flujo con **doble control** (ADR 0012): el operador empareja y completa, y un supervisor valida.
+Flujo con **doble control** (ADR 0012): el operador completa y un supervisor valida. Emparejar con el catálogo maestro **no** es
+parte de este flujo: se hace aparte, con el permiso `EMPAREJAR_CATALOGO`, en cualquier estado y sin cambiarlo (ADR 0028).
 
 ```mermaid
 stateDiagram-v2
     [*] --> PENDIENTE : ETL inserta desde SAP (fn_procesar_staging)
-    PENDIENTE --> POR_VALIDAR : Operador empareja y completa
+    PENDIENTE --> POR_VALIDAR : Operador completa
     POR_VALIDAR --> VALIDADO : Supervisor aprueba
     POR_VALIDAR --> RECHAZADO : Supervisor rechaza (motivo obligatorio)
     RECHAZADO --> POR_VALIDAR : Operador corrige y reenvía
@@ -17,8 +18,8 @@ stateDiagram-v2
 ## Estados
 | Estado | Quién lo asigna | Significado | Bandeja |
 |---|---|---|---|
-| `PENDIENTE` | ETL (alta), regla de checksum, administrador o supervisor (reapertura) | Por trabajar: sin emparejar, o reabierto conservando lo hecho | Operador |
-| `POR_VALIDAR` | Operador | Emparejado y completo; espera revisión | Supervisor |
+| `PENDIENTE` | ETL (alta), regla de checksum, administrador o supervisor (reapertura) | Por trabajar: recién llegado, o reabierto conservando lo hecho | Operador |
+| `POR_VALIDAR` | Operador | Completo; espera revisión | Supervisor |
 | `RECHAZADO` | Supervisor | El supervisor encontró errores; vuelve al operador con motivo | Operador |
 | `VALIDADO` | Supervisor | Aplicaciones, tipo de parte, atributos, equivalencias e imágenes confirmados | — |
 | `SINCRONIZADO` | Proceso de salida (externo) | Actualizado en SAP con los datos validados | — |

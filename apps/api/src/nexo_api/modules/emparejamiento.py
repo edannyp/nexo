@@ -1,8 +1,12 @@
-"""Emparejamiento con el catálogo maestro (propuesta UX §6.4 "Pestaña Emparejamiento y diagramas", ADR 0011).
+"""Emparejamiento con el catálogo maestro (ADR 0011, ADR 0028).
 
 Candidatos de Consolidación con puntaje y el porqué (medidas como par sin orden ±tolerancia, números, vehículos en común),
 comparación lado a lado y vínculo en `app.articulo_parte` (una principal). Al vincular se pueden traer los atributos y aplicaciones
-de la parte como sugerencias (origen CONSOLIDACION, sin confirmar). Misma regla de edición que la ficha.
+de la parte como sugerencias (origen CONSOLIDACION, sin confirmar).
+
+Desde ADR 0028 emparejar no es parte del workflow del artículo: se hace en la sección Emparejamiento, solo con el permiso
+EMPAREJAR_CATALOGO, sobre cualquier artículo activo y sin reservarlo (no cambia su estado). Las sugerencias solo se traen si el
+artículo está en Pendiente o Rechazado, para no ensuciar uno ya validado. Todos ven, de solo lectura, a qué diagramas está enlazado.
 """
 
 from decimal import Decimal
@@ -16,13 +20,13 @@ from sqlalchemy.exc import DBAPIError
 
 from ..adapters.consolidacion import Candidato, CatalogoMaestro, Consolidacion, DetalleParte, Medidas, ResumenParte
 from ..adapters.vehiculos import Vehiculos
-from ..auth.dependencias import Usuario, UsuarioActual
+from ..auth.dependencias import Permiso, Usuario, UsuarioActual, requiere_permiso
 from ..auth.registro import fijar_actor
 from ..core.bd import Conexion
 from ..core.config import config
 from ..core.errores import Problema
 from .aplicaciones import rangos
-from .edicion import articulo, bloquear_para_editar, razon_no_editable, subir_version
+from .edicion import ESTADOS_EDITABLES, articulo, subir_version
 from .imagenes import FirmadorOpcional
 from .vehiculos import CatalogoOpcional
 
@@ -44,6 +48,7 @@ def obtener_catalogo_maestro() -> CatalogoMaestro | None:
 
 
 Maestro = Annotated[CatalogoMaestro | None, Depends(obtener_catalogo_maestro)]
+Emparejador = Annotated[Usuario, Depends(requiere_permiso(Permiso.EMPAREJAR_CATALOGO))]
 
 
 def requerir(m: CatalogoMaestro | None) -> CatalogoMaestro:
@@ -95,11 +100,19 @@ class Traidos(BaseModel):
     aplicaciones: int
 
 
+class Diagramas(BaseModel):
+    """Solo lectura, para todos: a qué partes (diagramas) del catálogo maestro está enlazado el artículo."""
+    catalogo_disponible: bool
+    vinculadas: list[ParteVinculada]
+
+
 class Emparejamiento(BaseModel):
     version: int
+    estado: str
     part_terminology_id: int | None
     editable: bool
     razon_no_editable: str | None
+    trae_sugerencias: bool                 # al vincular se traen sus datos como sugerencias (solo en Pendiente o Rechazado)
     catalogo_disponible: bool
     medidas: MedidasPanal
     tolerancia: int
@@ -219,16 +232,41 @@ def _vehiculos_articulo(c: Connection, articulo_id: int) -> set[int]:
                                             where articulo_id = :a and base_vehicle_id is not null"""), {"a": articulo_id})}
 
 
-def cargar(c: Connection, item_code: str, usuario: Usuario, m: CatalogoMaestro | None, tolerancia: int,
+def _razon_no_emparejable(a) -> str | None:
+    return "El artículo está inactivo." if not a.activo else None
+
+
+def _bloquear(c: Connection, item_code: str, version: int):
+    """Dentro de una transacción: bloquea el artículo y verifica que esté activo y en la versión vista. No pide reserva (ADR 0028)."""
+    a = articulo(c, item_code, bloquear=True)
+    razon = _razon_no_emparejable(a)
+    if razon:
+        raise Problema(409, "No puedes emparejar el artículo", razon)
+    if a.version != version:
+        raise Problema(409, "Otro usuario cambió este artículo", "Recarga para ver los cambios antes de guardar.")
+    return a
+
+
+def _vinculadas(c: Connection, articulo_id: int):
+    return c.execute(text("""
+        select ap.parte_id, ap.es_principal, ap.origen::text as origen, u.nombre as confirmado_por, ap.confirmado_en
+        from app.articulo_parte ap left join app.usuario u on u.id = ap.confirmado_por
+        where ap.articulo_id = :a order by ap.es_principal desc, ap.confirmado_en
+    """), {"a": articulo_id}).all()
+
+
+def _parte_vinculada(v, resumenes: dict) -> ParteVinculada:
+    return ParteVinculada(parte_id=v.parte_id, es_principal=v.es_principal, origen=v.origen, confirmado_por=v.confirmado_por,
+                          confirmado_en=v.confirmado_en.isoformat(),
+                          parte=parte_catalogo(resumenes[v.parte_id]) if v.parte_id in resumenes else None)
+
+
+def cargar(c: Connection, item_code: str, m: CatalogoMaestro | None, tolerancia: int,
            traidos: Traidos | None = None) -> Emparejamiento:
     a = articulo(c, item_code)
     medidas = medidas_articulo(c, a)
     bvs = _vehiculos_articulo(c, a.id)
-    vinculadas = c.execute(text("""
-        select ap.parte_id, ap.es_principal, ap.origen::text as origen, u.nombre as confirmado_por, ap.confirmado_en
-        from app.articulo_parte ap left join app.usuario u on u.id = ap.confirmado_por
-        where ap.articulo_id = :a order by ap.es_principal desc, ap.confirmado_en
-    """), {"a": a.id}).all()
+    vinculadas = _vinculadas(c, a.id)
     c.rollback()
 
     resumenes, candidatos = {}, []
@@ -247,27 +285,39 @@ def cargar(c: Connection, item_code: str, usuario: Usuario, m: CatalogoMaestro |
         except Problema:
             m = None
     candidatos.sort(key=lambda x: (-x.puntaje, -x.parte.n_fuentes, x.parte.parte_id))
-    razon = razon_no_editable(a, usuario)
+    razon = _razon_no_emparejable(a)
     return Emparejamiento(
-        version=a.version, part_terminology_id=a.part_terminology_id, editable=razon is None, razon_no_editable=razon,
-        catalogo_disponible=m is not None,
+        version=a.version, estado=a.estado, part_terminology_id=a.part_terminology_id, editable=razon is None,
+        razon_no_editable=razon, trae_sugerencias=a.estado in ESTADOS_EDITABLES, catalogo_disponible=m is not None,
         medidas=MedidasPanal(alto=medidas.alto, largo=medidas.largo, ancho=medidas.ancho), tolerancia=tolerancia,
-        vinculadas=[ParteVinculada(parte_id=v.parte_id, es_principal=v.es_principal, origen=v.origen, confirmado_por=v.confirmado_por,
-                                   confirmado_en=v.confirmado_en.isoformat(),
-                                   parte=parte_catalogo(resumenes[v.parte_id]) if v.parte_id in resumenes else None) for v in vinculadas],
-        candidatos=candidatos[:20], traidos=traidos)
+        vinculadas=[_parte_vinculada(v, resumenes) for v in vinculadas], candidatos=candidatos[:20], traidos=traidos)
+
+
+@router.get("/articulos/{item_code}/diagramas", response_model=Diagramas,
+            summary="A qué partes (diagramas) del catálogo maestro está enlazado el artículo; solo lectura")
+def obtener_diagramas(item_code: str, _: UsuarioActual, c: Conexion, m: Maestro) -> Diagramas:
+    a = articulo(c, item_code)
+    vinculadas = _vinculadas(c, a.id)
+    c.rollback()
+    resumenes = {}
+    if m is not None and vinculadas:
+        try:
+            resumenes = m.resumenes(v.parte_id for v in vinculadas)
+        except Problema:
+            m = None
+    return Diagramas(catalogo_disponible=m is not None, vinculadas=[_parte_vinculada(v, resumenes) for v in vinculadas])
 
 
 @router.get("/articulos/{item_code}/emparejamiento", response_model=Emparejamiento,
-            summary="Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué")
-def obtener_emparejamiento(item_code: str, usuario: UsuarioActual, c: Conexion, m: Maestro, tolerancia: Tolerancia = 10
+            summary="Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué (permiso EMPAREJAR_CATALOGO)")
+def obtener_emparejamiento(item_code: str, _: Emparejador, c: Conexion, m: Maestro, tolerancia: Tolerancia = 10
                            ) -> Emparejamiento:
-    return cargar(c, item_code, usuario, m, tolerancia)
+    return cargar(c, item_code, m, tolerancia)
 
 
 @router.get("/catalogo/partes", response_model=list[ParteCatalogo],
             summary="Búsqueda manual en el catálogo maestro: medidas (400x518x26), número o descripción")
-def buscar_partes(_: UsuarioActual, m: Maestro, q: Annotated[str, Query(min_length=2, max_length=80)],
+def buscar_partes(_: Emparejador, m: Maestro, q: Annotated[str, Query(min_length=2, max_length=80)],
                   part_terminology_id: int | None = None, tolerancia: Tolerancia = 10) -> list[ParteCatalogo]:
     return [parte_catalogo(r) for r in requerir(m).buscar(part_terminology_id, q.strip(), tolerancia)]
 
@@ -322,7 +372,7 @@ def _vehiculos_texto(v: Vehiculos | None, d: DetalleParte) -> list[str]:
 
 @router.get("/articulos/{item_code}/emparejamiento/{parte_id}", response_model=Comparacion,
             summary="Comparación lado a lado del artículo con una parte del catálogo maestro")
-def comparar_parte(item_code: str, parte_id: int, _: UsuarioActual, c: Conexion, m: Maestro, v: CatalogoOpcional,
+def comparar_parte(item_code: str, parte_id: int, _: Emparejador, c: Conexion, m: Maestro, v: CatalogoOpcional,
                    firmador: FirmadorOpcional, tolerancia: Tolerancia = 10) -> Comparacion:
     d = requerir(m).detalle(parte_id)
     if d is None:
@@ -408,7 +458,7 @@ def _traer(c: Connection, a, d: DetalleParte) -> Traidos:
 @router.post("/articulos/{item_code}/partes", response_model=Emparejamiento,
              summary="Vincular una parte del catálogo maestro (opcionalmente como principal y trayendo sus datos como sugerencias)",
              responses={409: {"description": "No editable o versión distinta"}, 422: {"description": "Parte no válida"}})
-def vincular_parte(item_code: str, datos: Vincular, usuario: UsuarioActual, c: Conexion, m: Maestro,
+def vincular_parte(item_code: str, datos: Vincular, usuario: Emparejador, c: Conexion, m: Maestro,
                    tolerancia: Tolerancia = 10) -> Emparejamiento:
     d = requerir(m).detalle(datos.parte_id)
     if d is None or d.parte.estado != "ACTIVA":
@@ -418,7 +468,7 @@ def vincular_parte(item_code: str, datos: Vincular, usuario: UsuarioActual, c: C
     traidos = None
     with c.begin():
         fijar_actor(c, usuario.id)
-        a = bloquear_para_editar(c, item_code, usuario, datos.version)
+        a = _bloquear(c, item_code, datos.version)
         if a.part_terminology_id and d.parte.part_terminology_id != a.part_terminology_id:
             raise Problema(422, "La parte es de otro tipo", f"El artículo es {a.part_terminology_id} y la parte "
                                                             f"{d.parte.part_terminology_id} ({d.parte.tipo_parte}).")
@@ -431,18 +481,18 @@ def vincular_parte(item_code: str, datos: Vincular, usuario: UsuarioActual, c: C
             values (:a, :p, :pr, 'CONSOLIDACION', :u)
             on conflict (articulo_id, parte_id) do update set es_principal = excluded.es_principal or app.articulo_parte.es_principal
         """), {"a": a.id, "p": datos.parte_id, "pr": principal, "u": usuario.id})
-        if datos.traer_sugerencias:
+        if datos.traer_sugerencias and a.estado in ESTADOS_EDITABLES:     # en un validado no se ensucia la ficha (ADR 0028)
             traidos = _traer(c, a, d)
         subir_version(c, a.id)
-    return cargar(c, item_code, usuario, m, tolerancia, traidos)
+    return cargar(c, item_code, m, tolerancia, traidos)
 
 
 @router.post("/articulos/{item_code}/partes/principal", response_model=Emparejamiento, summary="Marcar una parte vinculada como principal")
-def marcar_parte_principal(item_code: str, datos: PorParte, usuario: UsuarioActual, c: Conexion, m: Maestro,
+def marcar_parte_principal(item_code: str, datos: PorParte, usuario: Emparejador, c: Conexion, m: Maestro,
                            tolerancia: Tolerancia = 10) -> Emparejamiento:
     with c.begin():
         fijar_actor(c, usuario.id)
-        a = bloquear_para_editar(c, item_code, usuario, datos.version)
+        a = _bloquear(c, item_code, datos.version)
         if not c.execute(text("select 1 from app.articulo_parte where articulo_id = :a and parte_id = :p"),
                          {"a": a.id, "p": datos.parte_id}).first():
             raise Problema(404, "Esa parte no está vinculada")
@@ -450,16 +500,16 @@ def marcar_parte_principal(item_code: str, datos: PorParte, usuario: UsuarioActu
         c.execute(text("update app.articulo_parte set es_principal = true where articulo_id = :a and parte_id = :p"),
                   {"a": a.id, "p": datos.parte_id})
         subir_version(c, a.id)
-    return cargar(c, item_code, usuario, m, tolerancia)
+    return cargar(c, item_code, m, tolerancia)
 
 
 @router.post("/articulos/{item_code}/partes/quitar", response_model=Emparejamiento,
              summary="Desvincular una parte (y quitar sus sugerencias aún sin confirmar)")
-def desvincular_parte(item_code: str, datos: PorParte, usuario: UsuarioActual, c: Conexion, m: Maestro,
+def desvincular_parte(item_code: str, datos: PorParte, usuario: Emparejador, c: Conexion, m: Maestro,
                       tolerancia: Tolerancia = 10) -> Emparejamiento:
     with c.begin():
         fijar_actor(c, usuario.id)
-        a = bloquear_para_editar(c, item_code, usuario, datos.version)
+        a = _bloquear(c, item_code, datos.version)
         quitada = c.execute(text("delete from app.articulo_parte where articulo_id = :a and parte_id = :p returning es_principal"),
                             {"a": a.id, "p": datos.parte_id}).first()
         if quitada is None:
@@ -474,4 +524,4 @@ def desvincular_parte(item_code: str, datos: PorParte, usuario: UsuarioActual, c
                                 select id from app.articulo_parte where articulo_id = :a order by confirmado_en, id limit 1)"""),
                       {"a": a.id})
         subir_version(c, a.id)
-    return cargar(c, item_code, usuario, m, tolerancia)
+    return cargar(c, item_code, m, tolerancia)
