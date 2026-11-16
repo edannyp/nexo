@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Nexo API
  * Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.
- * OpenAPI spec version: 0.7.0
+ * OpenAPI spec version: 0.9.2
  */
 import {
   useMutation,
@@ -362,6 +362,7 @@ export type Permiso = typeof Permiso[keyof typeof Permiso];
 
 export const Permiso = {
   VER_ANALISIS_VENTAS: 'VER_ANALISIS_VENTAS',
+  EMPAREJAR_CATALOGO: 'EMPAREJAR_CATALOGO',
 } as const;
 
 export interface CambiosUsuario {
@@ -550,6 +551,14 @@ export interface ParteVinculada {
   parte: ParteCatalogo | null;
 }
 
+/**
+ * Solo lectura, para todos: a qué partes (diagramas) del catálogo maestro está enlazado el artículo.
+ */
+export interface Diagramas {
+  catalogo_disponible: boolean;
+  vinculadas: ParteVinculada[];
+}
+
 export interface Traidos {
   atributos: number;
   aplicaciones: number;
@@ -557,9 +566,11 @@ export interface Traidos {
 
 export interface Emparejamiento {
   version: number;
+  estado: string;
   part_terminology_id: number | null;
   editable: boolean;
   razon_no_editable: string | null;
+  trae_sugerencias: boolean;
   catalogo_disponible: boolean;
   medidas: MedidasPanal;
   tolerancia: number;
@@ -5440,6 +5451,107 @@ export const useQuitarAplicaciones = <TError = ErrorType<HTTPValidationError>,
       return useMutation(getQuitarAplicacionesMutationOptions(options), queryClient);
     }
 
+export const getObtenerDiagramasUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/diagramas`
+}
+
+/**
+ * @summary A qué partes (diagramas) del catálogo maestro está enlazado el artículo; solo lectura
+ */
+export const obtenerDiagramas = async (itemCode: string, options?: Parameters<typeof nexoFetch>[1]): Promise<Diagramas> => {
+
+  return nexoFetch<Diagramas>(getObtenerDiagramasUrl(itemCode),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerDiagramasQueryKey = (itemCode: string,) => {
+    return [
+    `/api/v1/articulos/${itemCode}/diagramas`
+    ] as const;
+    }
+
+
+export const getObtenerDiagramasQueryOptions = <TData = Awaited<ReturnType<typeof obtenerDiagramas>>, TError = ErrorType<HTTPValidationError>>(itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerDiagramas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerDiagramasQueryKey(itemCode);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerDiagramas>>> = ({ signal }) => obtenerDiagramas(itemCode, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemCode !== null && itemCode !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerDiagramas>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerDiagramasQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerDiagramas>>>
+export type ObtenerDiagramasQueryError = ErrorType<HTTPValidationError>
+
+
+export function useObtenerDiagramas<TData = Awaited<ReturnType<typeof obtenerDiagramas>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerDiagramas>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerDiagramas>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerDiagramas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerDiagramas<TData = Awaited<ReturnType<typeof obtenerDiagramas>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerDiagramas>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerDiagramas>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerDiagramas>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerDiagramas<TData = Awaited<ReturnType<typeof obtenerDiagramas>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerDiagramas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary A qué partes (diagramas) del catálogo maestro está enlazado el artículo; solo lectura
+ */
+
+export function useObtenerDiagramas<TData = Awaited<ReturnType<typeof obtenerDiagramas>>, TError = ErrorType<HTTPValidationError>>(
+ itemCode: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerDiagramas>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerDiagramasQueryOptions(itemCode,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getObtenerEmparejamientoUrl = (itemCode: string,
     params?: ObtenerEmparejamientoParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -5457,7 +5569,7 @@ export const getObtenerEmparejamientoUrl = (itemCode: string,
 }
 
 /**
- * @summary Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué
+ * @summary Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué (permiso EMPAREJAR_CATALOGO)
  */
 export const obtenerEmparejamiento = async (itemCode: string,
     params?: ObtenerEmparejamientoParams, options?: Parameters<typeof nexoFetch>[1]): Promise<Emparejamiento> => {
@@ -5534,7 +5646,7 @@ export function useObtenerEmparejamiento<TData = Awaited<ReturnType<typeof obten
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué
+ * @summary Partes vinculadas y candidatos del catálogo maestro con puntaje y el porqué (permiso EMPAREJAR_CATALOGO)
  */
 
 export function useObtenerEmparejamiento<TData = Awaited<ReturnType<typeof obtenerEmparejamiento>>, TError = ErrorType<HTTPValidationError>>(
