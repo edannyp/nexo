@@ -1,5 +1,6 @@
 """Emparejamiento: candidatos con puntaje y razones, comparación lado a lado, vincular (principal, traer sugerencias), cambiar la
-principal y desvincular, con la regla de edición de la ficha (propuesta UX §6.4). El catálogo maestro es un doble."""
+principal y desvincular. Fuera del workflow (ADR 0028): solo con el permiso EMPAREJAR_CATALOGO, sin reservar y en cualquier estado;
+todos ven de solo lectura a qué diagramas está enlazado. El catálogo maestro es un doble."""
 
 from decimal import Decimal as D
 
@@ -27,7 +28,7 @@ from nexo_api.modules.emparejamiento import obtener_catalogo_maestro
 from nexo_api.modules.imagenes import obtener_firmador
 from nexo_api.modules.vehiculos import obtener_vehiculos
 
-from .apoyo import articulo, cargar, crear_usuario
+from .apoyo import articulo, cargar, crear_usuario, validar
 
 URL = "/api/v1/articulos/RAD00188"
 
@@ -83,9 +84,13 @@ MAESTRO = MaestroFalso()
 @pytest.fixture(scope="module")
 def entorno(bd):
     with psycopg.connect(bd, autocommit=True) as c:
-        cargar(c, [articulo("RAD00188", panal_alto=40, panal_alto_unidad=2, panal_largo=518, panal_largo_unidad=1, panal_ancho=26,
-                            panal_ancho_unidad=1, numero_parte_proveedor="JJ-945")])
-        ids = {u: crear_usuario(c, u, "OPERADOR") for u in ("op1", "op2")}
+        cargar(c, [articulo(item, panal_alto=40, panal_alto_unidad=2, panal_largo=518, panal_largo_unidad=1, panal_ancho=26,
+                            panal_ancho_unidad=1, numero_parte_proveedor="JJ-945") for item in ("RAD00188", "RAD00189")])
+        ids = {u: crear_usuario(c, u, r) for u, r in (("op1", "OPERADOR"), ("sup1", "SUPERVISOR"), ("emp1", "OPERADOR"),
+                                                       ("emp2", "FOTOS"))}
+        for u in ("emp1", "emp2"):                                    # el permiso no depende del rol
+            c.execute("insert into app.usuario_permiso values (%s, 'EMPAREJAR_CATALOGO')", (ids[u],))
+        validar(c, "RAD00189", ids["op1"], ids["sup1"], parte_id=7002)
     partes = dict(p.split("=") for p in bd.split())
     motor = create_engine(f"postgresql+psycopg://postgres:postgres@{partes['host']}:5432/{partes['dbname']}")
     return motor, ids, bd
@@ -109,18 +114,19 @@ def vincular(cli, version, parte_id, **kw):
 
 
 def test_01_candidatos_con_puntaje_y_razones(entorno):
-    e = como(entorno, "op1").get(f"{URL}/emparejamiento").json()
-    assert not e["editable"] and e["catalogo_disponible"] and e["vinculadas"] == [] and e["part_terminology_id"] == 2172
+    e = como(entorno, "emp1").get(f"{URL}/emparejamiento").json()
+    assert e["editable"] and e["trae_sugerencias"] and e["estado"] == "PENDIENTE"                 # sin reservarlo
+    assert e["catalogo_disponible"] and e["vinculadas"] == [] and e["part_terminology_id"] == 2172
     assert e["medidas"] == {"alto": "400.00", "largo": "518.00", "ancho": "26.00"}
     assert [(c["parte"]["parte_id"], c["puntaje"], c["invertida"]) for c in e["candidatos"]] == [(7001, 55, False), (7002, 50, True)]
     assert e["candidatos"][0]["razones"] == ["Alto y largo 400×518 iguales", "Ancho 32"]
-    estrecho = como(entorno, "op1").get(f"{URL}/emparejamiento?tolerancia=5").json()
+    estrecho = como(entorno, "emp1").get(f"{URL}/emparejamiento?tolerancia=5").json()
     assert [(c["parte"]["parte_id"], c["puntaje"]) for c in estrecho["candidatos"]] == [(7002, 50), (7001, 40)]
     assert estrecho["candidatos"][1]["razones"][-1] == "Ancho distinto (+6 mm)"
 
 
 def test_02_comparacion_lado_a_lado(entorno):
-    c = como(entorno, "op1").get(f"{URL}/emparejamiento/7001").json()
+    c = como(entorno, "emp1").get(f"{URL}/emparejamiento/7001").json()
     filas = {f["etiqueta"]: f for f in c["filas"]}
     assert (filas["Alto"]["articulo"], filas["Alto"]["parte"], filas["Alto"]["coincide"]) == ("400 mm", "400 mm", True)
     assert (filas["Ancho"]["coincide"], filas["Ancho"]["diferencia"]) == (True, "+6 mm")
@@ -129,83 +135,121 @@ def test_02_comparacion_lado_a_lado(entorno):
     assert [i["url"] for i in c["imagenes"]] == ["https://diagramas.test/7001.png", "https://minio.test/rlt-diagramas/fotos/7001.webp?firma=1"]
     assert [n["numero"] for n in c["numeros"]] == ["945", "16400-35090"] and c["fuentes"][0]["url"] == "https://jj.test/945"
     assert c["vehiculos"] == ["2 vehículos (catálogo de vehículos no disponible)"] and not c["vinculada"] and not c["invertida"]
-    assert como(entorno, "op1").get(f"{URL}/emparejamiento/7002").json()["invertida"]
-    assert como(entorno, "op1").get(f"{URL}/emparejamiento/9999").status_code == 404
+    assert como(entorno, "emp1").get(f"{URL}/emparejamiento/7002").json()["invertida"]
+    assert como(entorno, "emp1").get(f"{URL}/emparejamiento/9999").status_code == 404
 
 
-def test_03_solo_quien_lo_tiene_reservado(entorno):
-    op1, op2 = como(entorno, "op1"), como(entorno, "op2")
-    assert op1.post(f"{URL}/asignacion").status_code == 200
-    v = op1.get(f"{URL}/emparejamiento").json()["version"]
-    r = vincular(op2, v, 7002)
-    assert r.status_code == 409 and r.json()["detail"] == "op1 lo está trabajando."
-
-
-def test_04_la_primera_queda_principal_y_cumple_el_requisito(entorno):
+def test_03_sin_el_permiso_no_se_empareja(entorno):
     op1 = como(entorno, "op1")
-    e = op1.get(f"{URL}/emparejamiento").json()
-    r = vincular(op1, e["version"], 7002, traer_sugerencias=False).json()
-    assert [(p["parte_id"], p["es_principal"], p["confirmado_por"]) for p in r["vinculadas"]] == [(7002, True, "op1")]
+    assert op1.post(f"{URL}/asignacion").status_code == 200                  # aunque lo tenga reservado
+    for r in (op1.get(f"{URL}/emparejamiento"), op1.get(f"{URL}/emparejamiento/7001"), op1.get("/api/v1/catalogo/partes?q=Radiador"),
+              vincular(op1, 1, 7002), op1.post(f"{URL}/partes/principal", json={"version": 1, "parte_id": 7002}),
+              op1.post(f"{URL}/partes/quitar", json={"version": 1, "parte_id": 7002})):
+        assert r.status_code == 403
+
+
+def test_04_sin_reservar_aunque_otro_lo_trabaje(entorno):
+    emp2 = como(entorno, "emp2")                                              # op1 lo tiene reservado (test_03)
+    e = emp2.get(f"{URL}/emparejamiento").json()
+    r = vincular(emp2, e["version"], 7002, traer_sugerencias=False).json()
+    assert [(p["parte_id"], p["es_principal"], p["confirmado_por"]) for p in r["vinculadas"]] == [(7002, True, "emp2")]
     assert r["traidos"] is None and [c["parte"]["parte_id"] for c in r["candidatos"]] == [7001]   # ya no aparece como candidata
-    requisitos = [x["codigo"] for x in op1.get(URL).json()["requisitos"]]
-    assert "VEHICULO_PRINCIPAL" in requisitos                 # emparejar ya no basta: falta el vehículo principal (ADR 0025)
+    d = como(entorno, "op1").get(URL).json()
+    assert d["estado"] == "PENDIENTE" and d["reserva"]["nombre"] == "op1"    # ni el estado ni la reserva cambian
+    assert "VEHICULO_PRINCIPAL" in [x["codigo"] for x in d["requisitos"]]
 
 
 def test_05_vincular_principal_trae_sugerencias_sin_pisar(entorno):
-    op1 = como(entorno, "op1")
+    emp1 = como(entorno, "emp1")
     _, _, bd = entorno
-    v = op1.get(f"{URL}/emparejamiento").json()["version"]
-    r = vincular(op1, v, 7001, principal=True).json()
+    v = emp1.get(f"{URL}/emparejamiento").json()["version"]
+    r = vincular(emp1, v, 7001, principal=True).json()
     assert [(p["parte_id"], p["es_principal"]) for p in r["vinculadas"]] == [(7001, True), (7002, False)]
     assert r["traidos"] == {"atributos": 5, "aplicaciones": 2}                  # 305 con un valor fuera de PIES se omite
     with psycopg.connect(bd) as c:
         filas = c.execute("""select paid, origen::text, parte_id, confirmado_por from app.articulo_atributo
                              where articulo_id = (select id from app.articulo where item_code = 'RAD00188') order by paid""").fetchall()
         assert {f[0] for f in filas} == {267, 268, 269, 302, 5061} and {(f[1], f[2], f[3]) for f in filas} == {("CONSOLIDACION", 7001, None)}
-    again = vincular(op1, r["version"], 7001).json()                            # volver a vincular no duplica ni pisa
+    again = vincular(emp1, r["version"], 7001).json()                           # volver a vincular no duplica ni pisa
     assert again["traidos"] == {"atributos": 0, "aplicaciones": 0} and again["vinculadas"][0]["es_principal"]
 
 
-def test_06_cambiar_principal_y_desvincular(entorno):
-    op1 = como(entorno, "op1")
+def test_06_diagramas_de_solo_lectura_para_todos(entorno):
+    d = como(entorno, "op1").get(f"{URL}/diagramas").json()
+    assert d["catalogo_disponible"] and [(p["parte_id"], p["es_principal"], p["parte"]["descripcion"]) for p in d["vinculadas"]] == [
+        (7001, True, "Radiador 7001"), (7002, False, "Radiador 7002")]
+    sin = como(entorno, "op1", maestro=None).get(f"{URL}/diagramas").json()
+    assert not sin["catalogo_disponible"] and [p["parte"] for p in sin["vinculadas"]] == [None, None]   # se ven por su número
+    assert como(entorno, "op1").get("/api/v1/articulos/RAD00190/diagramas").status_code == 404
+
+
+def test_07_validado_sin_ensuciar_su_ficha(entorno):
     _, _, bd = entorno
-    v = op1.get(f"{URL}/emparejamiento").json()["version"]
-    r = op1.post(f"{URL}/partes/principal", json={"version": v, "parte_id": 7002}).json()
+    emp1, url = como(entorno, "emp1"), "/api/v1/articulos/RAD00189"
+    e = emp1.get(f"{url}/emparejamiento").json()
+    assert e["estado"] == "VALIDADO" and e["editable"] and not e["trae_sugerencias"]
+    r = emp1.post(f"{url}/partes", json={"version": e["version"], "parte_id": 7001, "principal": True}).json()
+    assert r["traidos"] is None and [(p["parte_id"], p["es_principal"]) for p in r["vinculadas"]] == [(7001, True), (7002, False)]
+    assert r["estado"] == "VALIDADO"
+    with psycopg.connect(bd) as c:
+        assert c.execute("""select count(*) from app.articulo_atributo where parte_id = 7001
+                            and articulo_id = (select id from app.articulo where item_code = 'RAD00189')""").fetchone()[0] == 0
+
+
+def test_08_cambiar_principal_y_desvincular(entorno):
+    emp1 = como(entorno, "emp1")
+    _, _, bd = entorno
+    v = emp1.get(f"{URL}/emparejamiento").json()["version"]
+    r = emp1.post(f"{URL}/partes/principal", json={"version": v, "parte_id": 7002}).json()
     assert [(p["parte_id"], p["es_principal"]) for p in r["vinculadas"]] == [(7002, True), (7001, False)]
-    r = op1.post(f"{URL}/partes/quitar", json={"version": r["version"], "parte_id": 7002}).json()
+    r = emp1.post(f"{URL}/partes/quitar", json={"version": r["version"], "parte_id": 7002}).json()
     assert [(p["parte_id"], p["es_principal"]) for p in r["vinculadas"]] == [(7001, True)]      # la otra pasa a principal
-    r = op1.post(f"{URL}/partes/quitar", json={"version": r["version"], "parte_id": 7001}).json()
+    r = emp1.post(f"{URL}/partes/quitar", json={"version": r["version"], "parte_id": 7001}).json()
     assert r["vinculadas"] == []
     with psycopg.connect(bd) as c:                                              # sus sugerencias sin confirmar se van con ella
-        assert c.execute("select count(*) from app.articulo_atributo where parte_id = 7001").fetchone()[0] == 0
-        assert c.execute("select count(*) from app.articulo_aplicacion where parte_id = 7001").fetchone()[0] == 0
+        assert c.execute("""select count(*) from app.articulo_atributo where parte_id = 7001
+                            and articulo_id = (select id from app.articulo where item_code = 'RAD00188')""").fetchone()[0] == 0
+        assert c.execute("""select count(*) from app.articulo_aplicacion where parte_id = 7001
+                            and articulo_id = (select id from app.articulo where item_code = 'RAD00188')""").fetchone()[0] == 0
+    assert como(entorno, "op1").get(f"{URL}/diagramas").json()["vinculadas"] == []
 
 
-def test_07_validaciones(entorno):
-    op1 = como(entorno, "op1")
-    v = op1.get(f"{URL}/emparejamiento").json()["version"]
-    fusionada = vincular(op1, v, 7003)
+def test_09_validaciones(entorno):
+    emp1 = como(entorno, "emp1")
+    v = emp1.get(f"{URL}/emparejamiento").json()["version"]
+    fusionada = vincular(emp1, v, 7003)
     assert fusionada.status_code == 422 and "se fusionó en la parte 7001" in fusionada.json()["detail"]
-    otro = vincular(op1, v, 7004)
+    otro = vincular(emp1, v, 7004)
     assert otro.status_code == 422 and otro.json()["title"] == "La parte es de otro tipo"
-    vieja = vincular(op1, v - 1, 7001)
+    vieja = vincular(emp1, v - 1, 7001)
     assert vieja.status_code == 409 and vieja.json()["title"] == "Otro usuario cambió este artículo"
-    no_vinculada = op1.post(f"{URL}/partes/quitar", json={"version": v, "parte_id": 7001})
+    no_vinculada = emp1.post(f"{URL}/partes/quitar", json={"version": v, "parte_id": 7001})
     assert no_vinculada.status_code == 404
-    assert op1.get(f"{URL}/emparejamiento").json()["version"] == v
+    assert emp1.get(f"{URL}/emparejamiento").json()["version"] == v
 
 
-def test_08_sin_catalogo_maestro(entorno):
-    sin = como(entorno, "op1", maestro=None)
+def test_10_inactivo_no_se_empareja(entorno):
+    _, _, bd = entorno
+    with psycopg.connect(bd, autocommit=True) as c:
+        c.execute("update app.articulo set activo = false, motivo_inactivo = 'SAP_CONGELADO' where item_code = 'RAD00189'")
+    emp1, url = como(entorno, "emp1"), "/api/v1/articulos/RAD00189"
+    e = emp1.get(f"{url}/emparejamiento").json()
+    assert not e["editable"] and e["razon_no_editable"] == "El artículo está inactivo."
+    r = emp1.post(f"{url}/partes/quitar", json={"version": e["version"], "parte_id": 7001})
+    assert r.status_code == 409 and r.json()["detail"] == "El artículo está inactivo."
+
+
+def test_11_sin_catalogo_maestro(entorno):
+    sin = como(entorno, "emp1", maestro=None)
     e = sin.get(f"{URL}/emparejamiento").json()
     assert not e["catalogo_disponible"] and e["candidatos"] == []
     assert sin.get("/api/v1/catalogo/partes?q=radiador").status_code == 503
     assert vincular(sin, e["version"], 7001).status_code == 503
-    assert [p["parte_id"] for p in como(entorno, "op1").get("/api/v1/catalogo/partes?q=Radiador 700").json()] == [7001, 7002, 7003, 7004]
+    assert [p["parte_id"] for p in como(entorno, "emp1").get("/api/v1/catalogo/partes?q=Radiador 700").json()] == [7001, 7002, 7003, 7004]
 
 
-def test_09_auditado_con_el_usuario(entorno):
+def test_12_auditado_con_el_usuario(entorno):
     _, ids, bd = entorno
     with psycopg.connect(bd) as c:
         actores = {r[0] for r in c.execute("select actor from audit.auditoria_evento where entidad = 'app.articulo_parte'")}
-    assert str(ids["op1"]) in actores
+    assert {str(ids["emp1"]), str(ids["emp2"])} <= actores

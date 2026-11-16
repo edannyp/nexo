@@ -28,6 +28,7 @@ class Rol(StrEnum):
 
 class Permiso(StrEnum):
     VER_ANALISIS_VENTAS = "VER_ANALISIS_VENTAS"
+    EMPAREJAR_CATALOGO = "EMPAREJAR_CATALOGO"
 
 
 @dataclass(frozen=True)
@@ -118,7 +119,7 @@ def requiere_rol(*roles: Rol) -> Callable[[Usuario], Usuario]:
 def requiere_permiso(permiso: Permiso) -> Callable[[Usuario], Usuario]:
     def verificar(usuario: UsuarioActual) -> Usuario:
         if permiso not in usuario.permisos:
-            raise HTTPException(403, "No tienes permiso para ver esta información")
+            raise HTTPException(403, "No tienes el permiso necesario para esta acción")
         return usuario
 
     return verificar
