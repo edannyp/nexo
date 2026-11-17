@@ -49,6 +49,7 @@ class Atencion(BaseModel):
     hallazgos_sap: int
     reservados: int
     reservas_por_vencer: int   # vencen en los próximos 5 minutos
+    campos_propuestos: int     # campos solicitados para la ficha de este tipo de parte, aún sin revisar (ADR 0030)
 
 
 class Productividad(BaseModel):
@@ -141,7 +142,9 @@ def obtener_panorama(_: UsuarioActual, tipo: TipoArticulo, c: Conexion) -> Panor
                (select count(*) from app.hallazgo_calidad_sap h join app.articulo a on a.id = h.articulo_id
                 where a.categoria_id = :cat and a.linea = cast(:linea as app.linea) and h.corregido_en is null) as hallazgos_sap,
                count(*) filter (where a.asignado_hasta > now()) as reservados,
-               count(*) filter (where a.asignado_hasta > now() and a.asignado_hasta < now() + interval '5 minutes') as reservas_por_vencer
+               count(*) filter (where a.asignado_hasta > now() and a.asignado_hasta < now() + interval '5 minutes') as reservas_por_vencer,
+               (select count(*) from meta.atributo_config r join app.categoria k on k.part_terminology_id_defecto = r.part_terminology_id
+                where k.id = :cat and r.estado = 'PROPUESTO') as campos_propuestos
         from app.articulo a where {del_tipo}
     """), p).one()
 
