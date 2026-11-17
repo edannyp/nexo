@@ -193,7 +193,15 @@ function Atributos({ itemCode, alIr }: { itemCode: string; alIr?: (p: PestanaTra
         <dl className="grid grid-cols-[minmax(7rem,auto)_1fr] gap-x-3 gap-y-1 text-sm">
           {otros.map((x) => (
             <div key={x.paid} className="contents">
-              <dt className="text-suave">{x.etiqueta}</dt>
+              <dt className="text-suave">
+                {x.etiqueta}
+                {x.estado === 'PROPUESTO' && (
+                  <span className="text-xs text-por-validar" title="Campo propuesto, aún no es oficial">
+                    {' '}
+                    (propuesto)
+                  </span>
+                )}
+              </dt>
               <dd>{mostrar(x, x.valor)}</dd>
             </div>
           ))}

@@ -1,4 +1,5 @@
 import {
+  getObtenerFichaQueryKey,
   ProblemaError,
   useGuardarFicha,
   useObtenerFicha,
@@ -6,13 +7,15 @@ import {
   type Cambio,
   type ValorAtributo,
 } from '@nexo/api-client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useBlocker } from '@tanstack/react-router';
-import { Check, CircleCheck, Lock, Pencil, Undo2 } from 'lucide-react';
+import { Check, CircleCheck, Lock, Pencil, Plus, Undo2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/shared/cn';
 import { momento, numero } from '@/shared/formato';
-import { Aviso, Boton } from '@/shared/ui';
+import { DialogoNuevoCampo } from '@/features/configuracion/DialogoNuevoCampo';
+import { Aviso, Boton, Insignia } from '@/shared/ui';
 
 import { aMilimetros, aNumero, UNIDADES, type Unidad } from './unidades';
 
@@ -232,6 +235,9 @@ export function Ficha({
 }) {
   const q = useObtenerFicha(itemCode);
   const guardar = useGuardarFicha();
+  const consultas = useQueryClient();
+  const [solicitando, setSolicitando] = useState(false);
+  const [solicitado, setSolicitado] = useState<string>();
   const [borradores, setBorradores] = useState<Record<number, Borrador>>({});
   const f = q.data;
   const pendientes = Object.keys(borradores).length;
@@ -374,6 +380,14 @@ export function Ficha({
                         )}
                       </span>
                       <span className="block text-xs text-suave">{a.nombre_pies}</span>
+                      {a.estado === 'PROPUESTO' && (
+                        <Insignia
+                          className="mt-0.5 border-por-validar/50 text-por-validar"
+                          title={`Lo solicitó ${a.solicitado_por ?? 'alguien'}; aún no es oficial`}
+                        >
+                          Propuesto
+                        </Insignia>
+                      )}
                     </div>
                     <div className="text-sm text-suave">
                       <span className="inline-flex items-center gap-1 md:hidden">
@@ -437,6 +451,35 @@ export function Ficha({
           </ul>
         </section>
       ))}
+
+      {f.puede_solicitar && (
+        <div
+          data-recorrido="ficha-solicitar"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-dashed border-borde p-3 text-sm"
+        >
+          <span className="text-suave">¿Falta un dato que no está en la ficha?</span>
+          <Boton variante="secundario" onClick={() => (setSolicitado(undefined), setSolicitando(true))}>
+            <Plus className="size-4" aria-hidden /> Solicitar un campo
+          </Boton>
+        </div>
+      )}
+      {solicitado && (
+        <Aviso tono="exito" titulo={`«${solicitado}» quedó propuesto`}>
+          Ya aparece en la ficha y se puede llenar. Será oficial cuando lo apruebe quien configura la ficha.
+        </Aviso>
+      )}
+      <DialogoNuevoCampo
+        key={solicitando ? 'abierto' : 'cerrado'}
+        itemCode={itemCode}
+        abierto={solicitando}
+        alCerrar={() => setSolicitando(false)}
+        alSolicitar={(nueva) => {
+          const antes = new Set(f.atributos.map((x) => x.paid));
+          consultas.setQueryData(getObtenerFichaQueryKey(itemCode), nueva);
+          setSolicitado(nueva.atributos.find((x) => !antes.has(x.paid))?.etiqueta);
+          setSolicitando(false);
+        }}
+      />
 
       {/* Barra de guardado: fija abajo mientras haya cambios */}
       {f.editable && pendientes > 0 && (

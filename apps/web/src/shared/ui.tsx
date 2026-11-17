@@ -104,9 +104,12 @@ export function Aviso({
   );
 }
 
-export function Insignia({ children, className }: { children: ReactNode; className?: string }) {
+export function Insignia({ children, className, title }: { children: ReactNode; className?: string; title?: string }) {
   return (
-    <span className={cn('inline-flex items-center rounded-full border border-borde px-2 py-0.5 text-xs', className)}>
+    <span
+      title={title}
+      className={cn('inline-flex items-center rounded-full border border-borde px-2 py-0.5 text-xs', className)}
+    >
       {children}
     </span>
   );
