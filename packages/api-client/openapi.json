@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexo API",
     "description": "Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.",
-    "version": "0.10.0"
+    "version": "0.11.0"
   },
   "paths": {
     "/api/v1/salud": {
@@ -1641,6 +1641,64 @@
           },
           "422": {
             "description": "Valor no válido para PIES"
+          }
+        }
+      }
+    },
+    "/api/v1/articulos/{item_code}/ficha/campos": {
+      "post": {
+        "tags": [
+          "ficha"
+        ],
+        "summary": "Solicitar un campo que falta: queda propuesto en la ficha de todo el tipo de parte hasta que se apruebe",
+        "operationId": "solicitar_campo",
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCampo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ficha"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Solo Operador o Supervisor"
+          },
+          "409": {
+            "description": "Ya existe o ya se rechazó"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -3672,7 +3730,7 @@
         "tags": [
           "configuracion"
         ],
-        "summary": "Crear un campo propio de Nexo (que no existe en AutoCare)",
+        "summary": "Crear un campo propio de Nexo (que no existe en AutoCare); queda oficial",
         "operationId": "crear_campo_propio",
         "parameters": [
           {
@@ -3711,6 +3769,118 @@
           },
           "422": {
             "description": "Datos no válidos"
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/{paid}/aprobar": {
+      "post": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Aprobar un campo propuesto (o reconsiderar uno rechazado): queda oficial y en la ficha",
+        "operationId": "aprobar_campo",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/{paid}/rechazar": {
+      "post": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Rechazar un campo propuesto con motivo: sale de la ficha y lo capturado se conserva oculto",
+        "operationId": "rechazar_campo",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rechazo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -5168,6 +5338,77 @@
             },
             "type": "array",
             "title": "Opciones"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoCampo"
+          },
+          "motivo_solicitud": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Solicitud"
+          },
+          "solicitado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solicitado Por"
+          },
+          "solicitado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solicitado En"
+          },
+          "revisado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisado Por"
+          },
+          "revisado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisado En"
+          },
+          "motivo_rechazo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Rechazo"
           }
         },
         "type": "object",
@@ -5187,7 +5428,14 @@
           "parte",
           "obsoleto",
           "en_uso",
-          "opciones"
+          "opciones",
+          "estado",
+          "motivo_solicitud",
+          "solicitado_por",
+          "solicitado_en",
+          "revisado_por",
+          "revisado_en",
+          "motivo_rechazo"
         ],
         "title": "AtributoConfig"
       },
@@ -5208,6 +5456,20 @@
           "propio": {
             "type": "boolean",
             "title": "Propio"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoCampo"
+          },
+          "solicitado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solicitado Por"
           },
           "grupo": {
             "type": "string",
@@ -5315,6 +5577,8 @@
           "etiqueta",
           "nombre_pies",
           "propio",
+          "estado",
+          "solicitado_por",
           "grupo",
           "obligatorio",
           "tipo",
@@ -6323,6 +6587,15 @@
         ],
         "title": "Estado"
       },
+      "EstadoCampo": {
+        "type": "string",
+        "enum": [
+          "OFICIAL",
+          "PROPUESTO",
+          "RECHAZADO"
+        ],
+        "title": "EstadoCampo"
+      },
       "EventoHistorial": {
         "properties": {
           "id": {
@@ -6492,6 +6765,10 @@
             ],
             "title": "Razon No Editable"
           },
+          "puede_solicitar": {
+            "type": "boolean",
+            "title": "Puede Solicitar"
+          },
           "atributos": {
             "items": {
               "$ref": "#/components/schemas/AtributoFicha"
@@ -6505,6 +6782,7 @@
           "version",
           "editable",
           "razon_no_editable",
+          "puede_solicitar",
           "atributos"
         ],
         "title": "Ficha"
@@ -7961,6 +8239,22 @@
         ],
         "title": "PuntoSerie"
       },
+      "Rechazo": {
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Motivo",
+            "description": "Lo verá quien lo solicitó"
+          }
+        },
+        "type": "object",
+        "required": [
+          "motivo"
+        ],
+        "title": "Rechazo"
+      },
       "Requisito": {
         "properties": {
           "codigo": {
@@ -8362,6 +8656,57 @@
           "clase"
         ],
         "title": "SinFoto"
+      },
+      "SolicitudCampo": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 2,
+            "title": "Nombre"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoPropio"
+          },
+          "grupo": {
+            "$ref": "#/components/schemas/GrupoAtributo",
+            "default": "OTROS"
+          },
+          "medida": {
+            "type": "boolean",
+            "title": "Medida",
+            "description": "Solo NUMERO: es una medida (se captura en mm, cm o pulgadas y se guarda en mm)",
+            "default": false
+          },
+          "opciones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Opciones",
+            "description": "Solo LISTA: las opciones, en el orden en que se muestran",
+            "default": []
+          },
+          "obligatorio": {
+            "type": "boolean",
+            "title": "Obligatorio",
+            "default": false
+          },
+          "motivo": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Motivo",
+            "description": "Para qué se necesita: lo lee quien lo aprueba"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre",
+          "tipo",
+          "motivo"
+        ],
+        "title": "SolicitudCampo"
       },
       "SugerenciaSap": {
         "properties": {
