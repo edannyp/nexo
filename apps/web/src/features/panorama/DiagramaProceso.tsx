@@ -1,414 +1,72 @@
-import type { Estado } from '@nexo/api-client';
+import type { Panorama } from '@nexo/api-client';
 import { ChevronDown, Maximize2, Workflow } from 'lucide-react';
 import { useState } from 'react';
 
-import { numero } from '@/shared/formato';
 import { Boton, Dialogo } from '@/shared/ui';
 
-/*
- * Proceso del artículo en notación BPMN (context/workflow-estados.md, ADR 0012 y 0025): carriles por participante, eventos de inicio
- * y fin, tareas, decisiones y las vueltas a Pendiente en punteado. Cada etapa muestra cuántos artículos están hoy en ese estado.
- * SVG propio: colores del tema (claro y oscuro) y sin librería.
- */
+import { DibujoProceso, PROCESOS, type Proceso } from './procesos';
 
-const ANCHO = 1180;
-const CARRIL = 130;
-const ROTULO = 44; // columna con el nombre del carril
-const CARRILES = ['SAP · ETL', 'Operador', 'Supervisor', 'Salida a SAP'];
-const y = (carril: number) => carril * CARRIL + CARRIL / 2;
-
-const COLOR: Record<Estado, string> = {
-  PENDIENTE: 'var(--color-pendiente)',
-  POR_VALIDAR: 'var(--color-por-validar)',
-  RECHAZADO: 'var(--color-rechazado)',
-  VALIDADO: 'var(--color-validado)',
-  SINCRONIZADO: 'var(--color-sincronizado)',
-};
-const NOMBRE: Record<Estado, string> = {
-  PENDIENTE: 'Pendiente',
-  POR_VALIDAR: 'Por validar',
-  RECHAZADO: 'Rechazado',
-  VALIDADO: 'Validado',
-  SINCRONIZADO: 'Sincronizado',
-};
-
-/** Tarea BPMN: rectángulo redondeado con texto en una o dos líneas y, si corresponde, el estado y su cantidad. */
-function Tarea({
-  x,
-  cy,
-  lineas,
-  estado,
-  cantidad,
-  ancho = 150,
-}: {
-  x: number;
-  cy: number;
-  lineas: string[];
-  estado?: Estado;
-  cantidad?: number;
-  ancho?: number;
-}) {
-  const alto = 58;
-  return (
-    <g>
-      <rect
-        x={x - ancho / 2}
-        y={cy - alto / 2}
-        width={ancho}
-        height={alto}
-        rx={10}
-        className="fill-superficie stroke-texto/60"
-        strokeWidth={1.5}
-      />
-      {lineas.map((l, k) => (
-        <text
-          key={l}
-          x={x}
-          y={cy + (k - (lineas.length - 1) / 2) * 15 + 4}
-          textAnchor="middle"
-          className="fill-texto text-[12px]"
-        >
-          {l}
-        </text>
-      ))}
-      {estado && (
-        <g transform={`translate(${x - ancho / 2 + 6}, ${cy + alto / 2 + 4})`}>
-          <rect width={ancho - 12} height={18} rx={9} fill={COLOR[estado]} opacity={0.15} />
-          <text
-            x={(ancho - 12) / 2}
-            y={13}
-            textAnchor="middle"
-            className="text-[11px] font-semibold"
-            fill={COLOR[estado]}
-          >
-            {NOMBRE[estado]}
-            {cantidad !== undefined ? ` · ${numero(cantidad)}` : ''}
-          </text>
-        </g>
-      )}
-    </g>
-  );
-}
-
-/** Compuerta exclusiva (rombo con X) con su pregunta encima. */
-function Decision({ x, cy, pregunta }: { x: number; cy: number; pregunta: string }) {
-  const r = 22;
-  return (
-    <g>
-      <polygon
-        points={`${x},${cy - r} ${x + r},${cy} ${x},${cy + r} ${x - r},${cy}`}
-        className="fill-superficie stroke-texto/60"
-        strokeWidth={1.5}
-      />
-      <path
-        d={`M${x - 7} ${cy - 7} L${x + 7} ${cy + 7} M${x + 7} ${cy - 7} L${x - 7} ${cy + 7}`}
-        className="stroke-texto/60"
-        strokeWidth={2}
-      />
-      <text x={x} y={cy - r - 8} textAnchor="middle" className="fill-suave text-[11px]">
-        {pregunta}
-      </text>
-    </g>
-  );
-}
-
-/** Evento de inicio (círculo fino) o de fin (círculo grueso), con su texto debajo. */
-function Evento({ x, cy, fin, lineas }: { x: number; cy: number; fin?: boolean; lineas: string[] }) {
-  return (
-    <g>
-      <circle cx={x} cy={cy} r={16} className="fill-superficie stroke-texto/70" strokeWidth={fin ? 4 : 1.5} />
-      {lineas.map((l, k) => (
-        <text key={l} x={x} y={cy + 32 + k * 13} textAnchor="middle" className="fill-suave text-[11px]">
-          {l}
-        </text>
-      ))}
-    </g>
-  );
-}
-
-/** Flujo de secuencia; `etiqueta` va junto al primer tramo. Punteado = vuelve a Pendiente. */
-function Flujo({
-  puntos,
-  etiqueta,
-  dx = 6,
-  dy = -6,
-  punteado,
-}: {
-  puntos: [number, number][];
-  etiqueta?: string;
-  dx?: number;
-  dy?: number;
-  punteado?: boolean;
-}) {
-  const d = puntos.map(([px, py], k) => `${k ? 'L' : 'M'}${px} ${py}`).join(' ');
-  const [x0, y0] = puntos[0] ?? [0, 0];
-  return (
-    <g>
-      <path
-        d={d}
-        fill="none"
-        className={punteado ? 'stroke-por-validar' : 'stroke-texto/60'}
-        strokeWidth={1.5}
-        strokeDasharray={punteado ? '6 4' : undefined}
-        markerEnd={punteado ? 'url(#flecha-punteada)' : 'url(#flecha)'}
-      />
-      {etiqueta && (
-        <text x={x0 + dx} y={y0 + dy} className={punteado ? 'fill-por-validar text-[11px]' : 'fill-suave text-[11px]'}>
-          {etiqueta}
-        </text>
-      )}
-    </g>
-  );
-}
-
-function Diagrama({ porEstado }: { porEstado: Partial<Record<Estado, number>> }) {
-  const n = (e: Estado) => porEstado[e] ?? 0;
-  return (
-    <svg
-      viewBox={`0 0 ${ANCHO} ${CARRILES.length * CARRIL}`}
-      className="h-auto w-full min-w-[56rem]"
-      role="img"
-      aria-label="Proceso del artículo en BPMN: SAP, operador, supervisor y salida a SAP"
-    >
-      <defs>
-        <marker
-          id="flecha"
-          viewBox="0 0 10 10"
-          refX="9"
-          refY="5"
-          markerWidth="7"
-          markerHeight="7"
-          orient="auto-start-reverse"
-        >
-          <path d="M0 0 L10 5 L0 10 z" className="fill-texto/60" />
-        </marker>
-        <marker
-          id="flecha-punteada"
-          viewBox="0 0 10 10"
-          refX="9"
-          refY="5"
-          markerWidth="7"
-          markerHeight="7"
-          orient="auto-start-reverse"
-        >
-          <path d="M0 0 L10 5 L0 10 z" className="fill-por-validar" />
-        </marker>
-      </defs>
-
-      {/* Carriles */}
-      {CARRILES.map((c, k) => (
-        <g key={c}>
-          <rect
-            x={0.5}
-            y={k * CARRIL + 0.5}
-            width={ANCHO - 1}
-            height={CARRIL}
-            className={k % 2 ? 'fill-superficie-2/50 stroke-borde' : 'fill-superficie stroke-borde'}
-          />
-          <rect
-            x={0.5}
-            y={k * CARRIL + 0.5}
-            width={ROTULO}
-            height={CARRIL}
-            className="fill-superficie-2 stroke-borde"
-          />
-          <text
-            transform={`translate(${ROTULO / 2 + 5}, ${y(k)}) rotate(-90)`}
-            textAnchor="middle"
-            className="fill-texto text-[12px] font-semibold"
-          >
-            {c}
-          </text>
-        </g>
-      ))}
-
-      {/* SAP · ETL */}
-      <Evento x={95} cy={y(0)} lineas={['Artículo nuevo o', 'cambia en SAP']} />
-      <Flujo
-        puntos={[
-          [111, y(0)],
-          [180, y(0)],
-        ]}
-      />
-      <Tarea x={260} cy={y(0)} lineas={['ETL diario:', 'foto completa de SAP']} />
-      <Flujo
-        puntos={[
-          [335, y(0)],
-          [393, y(0)],
-        ]}
-      />
-      <Decision x={415} cy={y(0)} pregunta="¿Nuevo o cambió?" />
-      <Flujo
-        puntos={[
-          [437, y(0)],
-          [520, y(0)],
-        ]}
-        etiqueta="sin cambios"
-        dx={8}
-      />
-      <text x={528} y={y(0) + 4} className="fill-suave text-[11px]">
-        nada que hacer
-      </text>
-
-      {/* Operador */}
-      <Flujo
-        puntos={[
-          [415, y(0) + 22],
-          [415, y(1) - 29],
-        ]}
-        etiqueta="sí"
-        dx={-18}
-        dy={14}
-      />
-      <text x={425} y={y(0) + 40} className="fill-por-validar text-[11px]">
-        nuevo, o cambió algo que importa:
-      </text>
-      <text x={425} y={y(0) + 53} className="fill-por-validar text-[11px]">
-        va a Pendiente (lo hecho se conserva)
-      </text>
-      <Tarea
-        x={415}
-        cy={y(1)}
-        lineas={['Tomar con «Siguiente»', '(se reserva 30 min)']}
-        estado="PENDIENTE"
-        cantidad={n('PENDIENTE')}
-        ancho={168}
-      />
-      <Flujo
-        puntos={[
-          [499, y(1)],
-          [548, y(1)],
-        ]}
-      />
-      <Tarea x={640} cy={y(1)} lineas={['Ficha, aplicaciones', 'y ★ vehículo principal']} ancho={184} />
-      <Flujo
-        puntos={[
-          [732, y(1)],
-          [783, y(1)],
-        ]}
-      />
-      <Tarea x={850} cy={y(1)} lineas={['Enviar a revisión']} ancho={134} />
-
-      {/* Supervisor */}
-      <Flujo
-        puntos={[
-          [850, y(1) + 29],
-          [850, y(2) - 29],
-        ]}
-      />
-      <Tarea
-        x={850}
-        cy={y(2)}
-        lineas={['Revisar', '(otro supervisor)']}
-        estado="POR_VALIDAR"
-        cantidad={n('POR_VALIDAR')}
-        ancho={134}
-      />
-      <Flujo
-        puntos={[
-          [917, y(2)],
-          [968, y(2)],
-        ]}
-      />
-      <Decision x={990} cy={y(2)} pregunta="¿Correcto?" />
-      <Flujo
-        puntos={[
-          [990, y(2) - 22],
-          [990, y(1) + 4],
-          [917, y(1) + 4],
-        ]}
-      />
-      <text x={998} y={y(1) + 34} className="fill-suave text-[11px]">
-        no: rechazar con motivo;
-      </text>
-      <text x={998} y={y(1) + 47} className="fill-suave text-[11px]">
-        el operador corrige y reenvía
-      </text>
-      <text x={998} y={y(1) - 4} className="fill-rechazado text-[11px] font-semibold">
-        Rechazado · {numero(n('RECHAZADO'))}
-      </text>
-      <Flujo
-        puntos={[
-          [1012, y(2)],
-          [1062, y(2)],
-        ]}
-        etiqueta="sí"
-        dx={8}
-      />
-      <Tarea x={1110} cy={y(2)} lineas={['Validar']} estado="VALIDADO" cantidad={n('VALIDADO')} ancho={128} />
-
-      {/* Salida a SAP */}
-      <Flujo
-        puntos={[
-          [1110, y(2) + 29],
-          [1110, y(3) - 29],
-        ]}
-      />
-      <Tarea x={1110} cy={y(3)} lineas={['Actualizar SAP', '(proceso externo)']} ancho={128} />
-      <Flujo
-        puntos={[
-          [1046, y(3)],
-          [960, y(3)],
-        ]}
-      />
-      <Evento x={942} cy={y(3)} fin lineas={['Sincronizado', numero(n('SINCRONIZADO'))]} />
-
-      {/* Verificación (la resuelve un supervisor): lo validado se vuelve a mirar; con hallazgo, vuelve a Pendiente */}
-      <Tarea x={560} cy={y(2)} lineas={['Verificación: foto nueva,', 'muestreo o cambio de catálogo']} ancho={210} />
-      <Flujo
-        puntos={[
-          [924, y(3)],
-          [560, y(3)],
-          [560, y(2) + 31],
-        ]}
-        punteado
-      />
-      <Flujo
-        puntos={[
-          [455, y(2)],
-          [415, y(2)],
-          [415, y(1) + 52],
-        ]}
-        punteado
-      />
-      <text x={405} y={y(2) + 16} textAnchor="end" className="fill-por-validar text-[11px]">
-        con hallazgo
-      </text>
-      <text x={405} y={y(2) + 29} textAnchor="end" className="fill-por-validar text-[11px]">
-        → Pendiente
-      </text>
-    </svg>
-  );
-}
-
-/** Tarjeta de Panorama con el proceso (plegable) y la vista en grande. */
 const CLAVE_ABIERTO = 'nexo.panorama.diagrama-abierto';
+const CLAVE_PROCESO = 'nexo.panorama.proceso';
 
-/** Recuerda (solo en este navegador) si el usuario dejó el diagrama abierto; si el almacenamiento falla, arranca cerrado. */
-function leerAbierto() {
+/** Lee una preferencia de este navegador; si el almacenamiento falla, usa el valor por defecto. */
+function leer(clave: string): string | null {
   try {
-    return localStorage.getItem(CLAVE_ABIERTO) === '1';
+    return localStorage.getItem(clave);
   } catch {
-    return false;
+    return null;
+  }
+}
+function guardar(clave: string, valor: string) {
+  try {
+    localStorage.setItem(clave, valor);
+  } catch {
+    /* sin almacenamiento: solo dura esta visita */
   }
 }
 
+/** Pestañas para elegir el proceso (en la tarjeta y en la vista en grande). */
+function Pestanas({ proceso, alElegir }: { proceso: Proceso; alElegir: (p: Proceso) => void }) {
+  return (
+    <div role="tablist" aria-label="Proceso" className="flex flex-wrap gap-1">
+      {PROCESOS.map((p) => (
+        <button
+          key={p.id}
+          role="tab"
+          type="button"
+          aria-selected={proceso === p.id}
+          onClick={() => alElegir(p.id)}
+          className="rounded-md px-3 py-1 text-sm text-suave hover:bg-superficie-2 aria-selected:bg-superficie-2 aria-selected:font-medium aria-selected:text-texto"
+        >
+          {p.nombre}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
- * Tarjeta plegable: cerrada al entrar (no empuja los gráficos hacia abajo) y recuerda la última elección.
- * «Ver en grande» abre el diagrama en un diálogo sin necesidad de desplegarlo.
+ * Tarjeta «Procesos» de Panorama: el del artículo, el de la ficha de atributos y el de emparejamiento, en BPMN con cifras del tipo
+ * elegido. Plegable (cerrada al entrar, recuerda la última elección y el último proceso visto); «Ver en grande» abre un diálogo.
  */
-export function DiagramaProceso({ porEstado }: { porEstado: Partial<Record<Estado, number>> }) {
-  const [abierto, setAbierto] = useState(leerAbierto);
+export function DiagramaProceso({ d }: { d: Panorama }) {
+  const [abierto, setAbierto] = useState(() => leer(CLAVE_ABIERTO) === '1');
+  const [proceso, setProceso] = useState<Proceso>(() => {
+    const p = leer(CLAVE_PROCESO);
+    return PROCESOS.some((x) => x.id === p) ? (p as Proceso) : 'articulo';
+  });
   const [grande, setGrande] = useState(false);
   const alternar = () =>
     setAbierto((a) => {
-      try {
-        localStorage.setItem(CLAVE_ABIERTO, a ? '0' : '1');
-      } catch {
-        /* sin almacenamiento: solo dura esta visita */
-      }
+      guardar(CLAVE_ABIERTO, a ? '0' : '1');
       return !a;
     });
+  const elegir = (p: Proceso) => {
+    guardar(CLAVE_PROCESO, p);
+    setProceso(p);
+  };
+  const actual = PROCESOS.find((p) => p.id === proceso) ?? PROCESOS[0]!;
+
   return (
     <section data-recorrido="panorama-proceso" className="rounded-lg border border-borde bg-superficie">
       <div className="flex items-center gap-3 px-4 py-3">
@@ -423,17 +81,17 @@ export function DiagramaProceso({ porEstado }: { porEstado: Partial<Record<Estad
             <Workflow className="size-5" aria-hidden />
           </span>
           <span className="min-w-0">
-            <span className="block text-sm font-medium">Proceso del artículo</span>
+            <span className="block text-sm font-medium">Procesos</span>
             <span className="block text-xs text-suave">
-              De SAP a SAP, con doble control.{' '}
-              {abierto ? 'Las cifras son los artículos que hay hoy en cada etapa.' : 'Despliega para ver el diagrama.'}
+              Artículo, ficha de atributos y emparejamiento.{' '}
+              {abierto ? 'Las cifras son las de hoy en el tipo elegido.' : 'Despliega para ver los diagramas.'}
             </span>
           </span>
           <ChevronDown
             className={`ml-auto size-4 shrink-0 text-suave transition-transform ${abierto ? 'rotate-180' : ''}`}
             aria-hidden
           />
-          <span className="sr-only">{abierto ? 'Ocultar diagrama' : 'Mostrar diagrama'}</span>
+          <span className="sr-only">{abierto ? 'Ocultar diagramas' : 'Mostrar diagramas'}</span>
         </button>
         <Boton
           variante="fantasma"
@@ -445,18 +103,27 @@ export function DiagramaProceso({ porEstado }: { porEstado: Partial<Record<Estad
         </Boton>
       </div>
       {abierto && (
-        <div id="panorama-diagrama" className="overflow-x-auto border-t border-borde p-3">
-          <Diagrama porEstado={porEstado} />
+        <div id="panorama-diagrama" className="space-y-2 border-t border-borde p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Pestanas proceso={proceso} alElegir={elegir} />
+            <p className="text-xs text-suave">{actual.resumen}</p>
+          </div>
+          <div className="overflow-x-auto">
+            <DibujoProceso proceso={proceso} d={d} />
+          </div>
         </div>
       )}
-      <Dialogo abierto={grande} alCerrar={() => setGrande(false)} titulo="Proceso del artículo (BPMN)" amplio>
-        <div className="overflow-x-auto">
-          <Diagrama porEstado={porEstado} />
+      <Dialogo abierto={grande} alCerrar={() => setGrande(false)} titulo={`Proceso: ${actual.nombre} (BPMN)`} amplio>
+        <div className="space-y-3">
+          <Pestanas proceso={proceso} alElegir={elegir} />
+          <div className="overflow-x-auto">
+            <DibujoProceso proceso={proceso} d={d} />
+          </div>
+          <p className="text-xs text-suave">
+            ○ inicio · ◉ fin · rectángulo: tarea · rombo: decisión · línea punteada: vuelta o camino alterno.{' '}
+            {actual.nota}
+          </p>
         </div>
-        <p className="mt-3 text-xs text-suave">
-          ○ inicio · ◉ fin · rectángulo: tarea · rombo: decisión · línea punteada: vuelve a Pendiente. Para enviar a
-          revisión hacen falta el tipo de parte, el vehículo principal confirmado y los atributos obligatorios.
-        </p>
       </Dialogo>
     </section>
   );
