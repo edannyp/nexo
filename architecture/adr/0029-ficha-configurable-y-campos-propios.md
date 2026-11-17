@@ -1,6 +1,7 @@
 # 0029. Ficha de atributos configurable desde la consola y campos propios de Nexo
 
-- **Estado:** Aceptada. Implementada en la migración 0019 y la consola (2026-11-17).
+- **Estado:** Aceptada. Implementada en la migración 0019 y la consola (2026-11-17). Los operadores pueden solicitar campos
+  desde la ficha: ADR 0030.
 - **Fecha:** 2026-11-17
 
 ## Contexto
