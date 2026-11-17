@@ -62,6 +62,18 @@ def test_carga_a_nexo_marca_obsoleto_y_dice_que_articulos_lo_usan(bd, origen):
     assert "⚠ impacto: 1 artículos de Nexo con ese valor" in salida
 
 
+def test_la_carga_no_toca_los_campos_propios(bd, origen):
+    with psycopg.connect(bd, autocommit=True) as c:                               # un campo propio con una opción (ADR 0029)
+        c.execute("""insert into meta.atributo_config (part_terminology_id, paid, nombre, tipo, habilitado)
+                     values (2172, 1000500, 'Espesor de aleta', 'LISTA', true)""")
+        c.execute("insert into meta.atributo_valor_permitido (part_terminology_id, paid, valid_value_id, valor) values (2172, 1000500, 1000501, 'Fina')")
+    salida = correr("nexo", bd, origen)
+    with psycopg.connect(bd) as c:
+        assert c.execute("select obsoleto_en, habilitado from meta.atributo_config where paid = 1000500").fetchone() == (None, True)
+        assert c.execute("select obsoleto_en from meta.atributo_valor_permitido where valid_value_id = 1000501").fetchone() == (None,)
+    assert "[alto]" not in salida
+
+
 def test_carga_de_consolidacion_mide_el_impacto_en_las_aplicaciones_de_nexo(bd, origen):
     with psycopg.connect(bd, autocommit=True) as c:
         cargar(c, [articulo("RAD00702")])

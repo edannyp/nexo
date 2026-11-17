@@ -71,6 +71,8 @@ ATRIBUTOS_NEXO = [
         join padb_base.valid_value vv on vv.valid_value_id = v.valid_value_id
         where a.part_terminology_id in ({pts})"""),
 ]
+# Los campos propios de Nexo y sus opciones (códigos desde 1 000 000, ADR 0029) no son de AutoCare: la carga nunca los toca
+PROPIOS_FUERA = {"meta.atributo_config": "d.paid < 1000000", "meta.atributo_valor_permitido": "d.valid_value_id < 1000000"}
 TABLAS = {
     "consolidacion": [
         VERSIONES,
@@ -238,6 +240,8 @@ def cargar(base: str, destino_dsn: str, origen_dsn: str, todo: bool = False, for
             if filtrada:
                 consulta = consulta.format(pts=pts) if not todo else consulta.replace("in ({pts})", "is not null")
             ambito = f"d.part_terminology_id in ({pts})" if filtrada and not todo else "true"
+            if base == "nexo" and tabla in PROPIOS_FUERA:
+                ambito = f"({ambito}) and {PROPIOS_FUERA[tabla]}"
             tmp = "tmp_" + tabla.split(".")[1]
             destino.execute(f"create temp table {tmp} (like {tabla} including defaults) on commit drop")
             lista = ", ".join(cols)
