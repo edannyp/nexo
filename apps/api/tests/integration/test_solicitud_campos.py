@@ -76,6 +76,8 @@ def test_02_todos_lo_ven_y_lo_capturan_sin_que_sea_requisito(entorno):
 
 
 def test_03_la_configuracion_ve_la_solicitud(entorno):
+    panorama = como(entorno, "op1").get("/api/v1/panorama?cat=25&linea=IMPORTADO").json()
+    assert panorama["atencion"]["campos_propuestos"] == 1                                # el Panorama la cuenta
     a = config(entorno)["Tipo de aleta"]
     assert (a["estado"], a["solicitado_por"], a["motivo_solicitud"], a["en_uso"]) == (
         "PROPUESTO", "op1", "Los clientes preguntan por la aleta ondulada", 1)
