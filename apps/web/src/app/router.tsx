@@ -7,6 +7,7 @@ import { Articulo } from '@/features/articulo/Articulo';
 import { CambiarContrasena } from '@/features/auth/CambiarContrasena';
 import { CalidadSap } from '@/features/calidad-sap/CalidadSap';
 import { Catalogo } from '@/features/catalogo/Catalogo';
+import { ConfigurarFicha } from '@/features/configuracion/ConfigurarFicha';
 import { Entrar } from '@/features/auth/Entrar';
 import { Explorar } from '@/features/explorar/Explorar';
 import { Fabricados } from '@/features/fabricados/Fabricados';
@@ -85,6 +86,7 @@ const PANTALLAS: Record<string, () => ReactNode> = {
   '/fabricados': () => <Fabricados />,
   '/catalogo': () => <Catalogo />,
   '/emparejamiento': () => <Emparejamiento />,
+  '/configuracion-ficha': () => <ConfigurarFicha />,
 };
 
 // Parámetros de búsqueda propios de algunas pantallas (además del filtro global de la raíz)
