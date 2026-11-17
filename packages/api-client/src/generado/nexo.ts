@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Nexo API
  * Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.
- * OpenAPI spec version: 0.9.2
+ * OpenAPI spec version: 0.10.0
  */
 import {
   useMutation,
@@ -272,6 +272,59 @@ export interface Atencion {
   reservas_por_vencer: number;
 }
 
+export type GrupoAtributo = typeof GrupoAtributo[keyof typeof GrupoAtributo];
+
+
+export const GrupoAtributo = {
+  MEDIDAS: 'MEDIDAS',
+  MATERIALES: 'MATERIALES',
+  CONSTRUCCION: 'CONSTRUCCION',
+  CONEXIONES: 'CONEXIONES',
+  INCLUYE: 'INCLUYE',
+  OTROS: 'OTROS',
+} as const;
+
+export type ConversionSap = typeof ConversionSap[keyof typeof ConversionSap];
+
+
+export const ConversionSap = {
+  NUMERO: 'NUMERO',
+  NUMERO_EN_TEXTO: 'NUMERO_EN_TEXTO',
+  PARTE_DE_MEDIDA: 'PARTE_DE_MEDIDA',
+  LISTA: 'LISTA',
+  TEXTO: 'TEXTO',
+  SI_NO: 'SI_NO',
+} as const;
+
+export interface OpcionConfig {
+  valid_value_id: number;
+  valor: string;
+  valor_es: string | null;
+  propia: boolean;
+  obsoleta: boolean;
+  en_uso: number;
+  homologados: string[];
+}
+
+export interface AtributoConfig {
+  paid: number;
+  nombre: string;
+  etiqueta: string | null;
+  propio: boolean;
+  tipo: string;
+  requiere_uom: boolean;
+  habilitado: boolean;
+  obligatorio: boolean;
+  grupo: GrupoAtributo;
+  orden: number | null;
+  columna_sap: string | null;
+  conversion: ConversionSap | null;
+  parte: number | null;
+  obsoleto: boolean;
+  en_uso: number;
+  opciones: OpcionConfig[];
+}
+
 export type TipoCampo = typeof TipoCampo[keyof typeof TipoCampo];
 
 
@@ -279,6 +332,7 @@ export const TipoCampo = {
   numero: 'numero',
   lista: 'lista',
   texto: 'texto',
+  si_no: 'si_no',
 } as const;
 
 export interface Opcion {
@@ -298,6 +352,7 @@ export interface AtributoFicha {
   paid: number;
   etiqueta: string;
   nombre_pies: string;
+  propio: boolean;
   grupo: string;
   obligatorio: boolean;
   tipo: TipoCampo;
@@ -347,6 +402,18 @@ export interface CambioPassword {
   nueva: string;
 }
 
+export interface CambiosAtributo {
+  habilitado?: boolean | null;
+  obligatorio?: boolean | null;
+  /** Vacío vuelve al nombre de PAdb */
+  etiqueta?: string | null;
+  grupo?: GrupoAtributo | null;
+  orden?: number | null;
+  columna_sap?: string | null;
+  conversion?: ConversionSap | null;
+  parte?: number | null;
+}
+
 export type Rol = typeof Rol[keyof typeof Rol];
 
 
@@ -363,6 +430,7 @@ export type Permiso = typeof Permiso[keyof typeof Permiso];
 export const Permiso = {
   VER_ANALISIS_VENTAS: 'VER_ANALISIS_VENTAS',
   EMPAREJAR_CATALOGO: 'EMPAREJAR_CATALOGO',
+  CONFIGURAR_FICHA: 'CONFIGURAR_FICHA',
 } as const;
 
 export interface CambiosUsuario {
@@ -455,6 +523,12 @@ export interface TareaVerificacion {
 export interface ColaVerificacion {
   tareas: TareaVerificacion[];
   por_origen: ColaVerificacionPorOrigen;
+}
+
+export interface ColumnaSap {
+  columna: string;
+  campo_sap: string | null;
+  descripcion: string | null;
 }
 
 export interface FilaComparacion {
@@ -651,6 +725,12 @@ export interface Ficha {
   atributos: AtributoFicha[];
 }
 
+export interface FichaConfig {
+  part_terminology_id: number;
+  categorias: string[];
+  atributos: AtributoConfig[];
+}
+
 export interface FotoPropia {
   id: number;
   url: string | null;
@@ -720,6 +800,15 @@ export interface HallazgosSap {
   hallazgos: Hallazgo[];
 }
 
+export interface Homologacion {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  valor_sap: string;
+  valid_value_id: number;
+}
+
 export interface Lista {
   estado: string;
   migracion: string;
@@ -761,6 +850,31 @@ export interface NuevaVista {
   /** Filtros, orden y columnas, tal como los usa la consola */
   parametros: NuevaVistaParametros;
   pantalla?: string;
+}
+
+export type TipoPropio = typeof TipoPropio[keyof typeof TipoPropio];
+
+
+export const TipoPropio = {
+  NUMERO: 'NUMERO',
+  LISTA: 'LISTA',
+  TEXTO: 'TEXTO',
+  SI_NO: 'SI_NO',
+} as const;
+
+export interface NuevoCampo {
+  /**
+     * @minLength 2
+     * @maxLength 60
+     */
+  nombre: string;
+  tipo: TipoPropio;
+  grupo?: GrupoAtributo;
+  /** Solo NUMERO: es una medida (se captura en mm, cm o pulgadas y se guarda en mm) */
+  medida?: boolean;
+  /** Solo LISTA: las opciones, en el orden en que se muestran */
+  opciones?: string[];
+  obligatorio?: boolean;
 }
 
 export interface NuevoUsuario {
@@ -978,6 +1092,19 @@ export interface SinFoto {
   clase: string | null;
 }
 
+export interface TextoOpcion {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  valor: string;
+}
+
+export interface Traduccion {
+  /** Vacío o null quita la traducción */
+  valor_es?: string | null;
+}
+
 export interface Transicion {
   destino: Estado;
   motivo?: string | null;
@@ -1002,6 +1129,12 @@ export interface UsuarioCreado {
   usuario: UsuarioAdmin;
   /** Se muestra una sola vez; el usuario debe cambiarla al entrar */
   password_temporal: string;
+}
+
+export interface ValorSap {
+  valor: string;
+  articulos: number;
+  valid_value_id: number | null;
 }
 
 export interface VehiculoExterno {
@@ -7628,3 +7761,1018 @@ export function useArticulosDeParte<TData = Awaited<ReturnType<typeof articulosD
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
+export const getListarColumnasSapUrl = () => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/columnas-sap`
+}
+
+/**
+ * @summary Columnas de SAP que pueden precargar un atributo
+ */
+export const listarColumnasSap = async ( options?: Parameters<typeof nexoFetch>[1]): Promise<ColumnaSap[]> => {
+
+  return nexoFetch<ColumnaSap[]>(getListarColumnasSapUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListarColumnasSapQueryKey = () => {
+    return [
+    `/api/v1/configuracion/ficha/columnas-sap`
+    ] as const;
+    }
+
+
+export const getListarColumnasSapQueryOptions = <TData = Awaited<ReturnType<typeof listarColumnasSap>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarColumnasSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarColumnasSapQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarColumnasSap>>> = ({ signal }) => listarColumnasSap({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarColumnasSap>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarColumnasSapQueryResult = NonNullable<Awaited<ReturnType<typeof listarColumnasSap>>>
+export type ListarColumnasSapQueryError = ErrorType<unknown>
+
+
+export function useListarColumnasSap<TData = Awaited<ReturnType<typeof listarColumnasSap>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarColumnasSap>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarColumnasSap>>,
+          TError,
+          Awaited<ReturnType<typeof listarColumnasSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarColumnasSap<TData = Awaited<ReturnType<typeof listarColumnasSap>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarColumnasSap>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarColumnasSap>>,
+          TError,
+          Awaited<ReturnType<typeof listarColumnasSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarColumnasSap<TData = Awaited<ReturnType<typeof listarColumnasSap>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarColumnasSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Columnas de SAP que pueden precargar un atributo
+ */
+
+export function useListarColumnasSap<TData = Awaited<ReturnType<typeof listarColumnasSap>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarColumnasSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarColumnasSapQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getObtenerConfiguracionFichaUrl = (partTerminologyId: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}`
+}
+
+/**
+ * @summary Atributos del tipo de parte (AutoCare y propios) con su configuración, opciones y homologación
+ */
+export const obtenerConfiguracionFicha = async (partTerminologyId: number, options?: Parameters<typeof nexoFetch>[1]): Promise<FichaConfig> => {
+
+  return nexoFetch<FichaConfig>(getObtenerConfiguracionFichaUrl(partTerminologyId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getObtenerConfiguracionFichaQueryKey = (partTerminologyId: number,) => {
+    return [
+    `/api/v1/configuracion/ficha/${partTerminologyId}`
+    ] as const;
+    }
+
+
+export const getObtenerConfiguracionFichaQueryOptions = <TData = Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError = ErrorType<HTTPValidationError>>(partTerminologyId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObtenerConfiguracionFichaQueryKey(partTerminologyId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>> = ({ signal }) => obtenerConfiguracionFicha(partTerminologyId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: partTerminologyId !== null && partTerminologyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObtenerConfiguracionFichaQueryResult = NonNullable<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>>
+export type ObtenerConfiguracionFichaQueryError = ErrorType<HTTPValidationError>
+
+
+export function useObtenerConfiguracionFicha<TData = Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerConfiguracionFicha>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerConfiguracionFicha>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerConfiguracionFicha<TData = Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obtenerConfiguracionFicha>>,
+          TError,
+          Awaited<ReturnType<typeof obtenerConfiguracionFicha>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObtenerConfiguracionFicha<TData = Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Atributos del tipo de parte (AutoCare y propios) con su configuración, opciones y homologación
+ */
+
+export function useObtenerConfiguracionFicha<TData = Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obtenerConfiguracionFicha>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObtenerConfiguracionFichaQueryOptions(partTerminologyId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getConfigurarAtributoUrl = (partTerminologyId: number,
+    paid: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}`
+}
+
+/**
+ * @summary Habilitar, obligatorio, etiqueta, grupo, orden y precarga desde SAP de un atributo
+ */
+export const configurarAtributo = async (partTerminologyId: number,
+    paid: number,
+    cambiosAtributo: CambiosAtributo, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<AtributoConfig>(getConfigurarAtributoUrl(partTerminologyId,paid),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cambiosAtributo)
+  }
+);}
+
+
+
+
+
+export const getConfigurarAtributoMutationKey = () => ['configurarAtributo'] as const;
+
+export const getConfigurarAtributoMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configurarAtributo>>, TError,ConfigurarAtributoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof configurarAtributo>>, TError,ConfigurarAtributoMutationVariables, TContext> => {
+
+const mutationKey = getConfigurarAtributoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof configurarAtributo>>, ConfigurarAtributoMutationVariables> = (props) => {
+          const {partTerminologyId,paid,data} = props ?? {};
+
+          return  configurarAtributo(partTerminologyId,paid,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfigurarAtributoMutationResult = NonNullable<Awaited<ReturnType<typeof configurarAtributo>>>
+    export type ConfigurarAtributoMutationBody = CambiosAtributo
+    export type ConfigurarAtributoMutationError = ErrorType<void>
+    export type ConfigurarAtributoMutationVariables = {partTerminologyId: number;paid: number;data: CambiosAtributo}
+
+    /**
+ * @summary Habilitar, obligatorio, etiqueta, grupo, orden y precarga desde SAP de un atributo
+ */
+export const useConfigurarAtributo = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configurarAtributo>>, TError,ConfigurarAtributoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof configurarAtributo>>,
+        TError,
+        ConfigurarAtributoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConfigurarAtributoMutationOptions(options), queryClient);
+    }
+
+export const getBorrarCampoPropioUrl = (partTerminologyId: number,
+    paid: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}`
+}
+
+/**
+ * @summary Borrar un campo propio que ningún artículo usa
+ */
+export const borrarCampoPropio = async (partTerminologyId: number,
+    paid: number, options?: Parameters<typeof nexoFetch>[1]): Promise<void> => {
+
+  return nexoFetch<void>(getBorrarCampoPropioUrl(partTerminologyId,paid),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getBorrarCampoPropioMutationKey = () => ['borrarCampoPropio'] as const;
+
+export const getBorrarCampoPropioMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof borrarCampoPropio>>, TError,BorrarCampoPropioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof borrarCampoPropio>>, TError,BorrarCampoPropioMutationVariables, TContext> => {
+
+const mutationKey = getBorrarCampoPropioMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof borrarCampoPropio>>, BorrarCampoPropioMutationVariables> = (props) => {
+          const {partTerminologyId,paid} = props ?? {};
+
+          return  borrarCampoPropio(partTerminologyId,paid,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BorrarCampoPropioMutationResult = NonNullable<Awaited<ReturnType<typeof borrarCampoPropio>>>
+
+    export type BorrarCampoPropioMutationError = ErrorType<void | HTTPValidationError>
+    export type BorrarCampoPropioMutationVariables = {partTerminologyId: number;paid: number}
+
+    /**
+ * @summary Borrar un campo propio que ningún artículo usa
+ */
+export const useBorrarCampoPropio = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof borrarCampoPropio>>, TError,BorrarCampoPropioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof borrarCampoPropio>>,
+        TError,
+        BorrarCampoPropioMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBorrarCampoPropioMutationOptions(options), queryClient);
+    }
+
+export const getCrearCampoPropioUrl = (partTerminologyId: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/propios`
+}
+
+/**
+ * @summary Crear un campo propio de Nexo (que no existe en AutoCare)
+ */
+export const crearCampoPropio = async (partTerminologyId: number,
+    nuevoCampo: NuevoCampo, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<AtributoConfig>(getCrearCampoPropioUrl(partTerminologyId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nuevoCampo)
+  }
+);}
+
+
+
+
+
+export const getCrearCampoPropioMutationKey = () => ['crearCampoPropio'] as const;
+
+export const getCrearCampoPropioMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crearCampoPropio>>, TError,CrearCampoPropioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof crearCampoPropio>>, TError,CrearCampoPropioMutationVariables, TContext> => {
+
+const mutationKey = getCrearCampoPropioMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crearCampoPropio>>, CrearCampoPropioMutationVariables> = (props) => {
+          const {partTerminologyId,data} = props ?? {};
+
+          return  crearCampoPropio(partTerminologyId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrearCampoPropioMutationResult = NonNullable<Awaited<ReturnType<typeof crearCampoPropio>>>
+    export type CrearCampoPropioMutationBody = NuevoCampo
+    export type CrearCampoPropioMutationError = ErrorType<void>
+    export type CrearCampoPropioMutationVariables = {partTerminologyId: number;data: NuevoCampo}
+
+    /**
+ * @summary Crear un campo propio de Nexo (que no existe en AutoCare)
+ */
+export const useCrearCampoPropio = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crearCampoPropio>>, TError,CrearCampoPropioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof crearCampoPropio>>,
+        TError,
+        CrearCampoPropioMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrearCampoPropioMutationOptions(options), queryClient);
+    }
+
+export const getAgregarOpcionUrl = (partTerminologyId: number,
+    paid: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/opciones`
+}
+
+/**
+ * @summary Agregar una opción a un campo propio de tipo lista
+ */
+export const agregarOpcion = async (partTerminologyId: number,
+    paid: number,
+    textoOpcion: TextoOpcion, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<AtributoConfig>(getAgregarOpcionUrl(partTerminologyId,paid),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(textoOpcion)
+  }
+);}
+
+
+
+
+
+export const getAgregarOpcionMutationKey = () => ['agregarOpcion'] as const;
+
+export const getAgregarOpcionMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof agregarOpcion>>, TError,AgregarOpcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof agregarOpcion>>, TError,AgregarOpcionMutationVariables, TContext> => {
+
+const mutationKey = getAgregarOpcionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof agregarOpcion>>, AgregarOpcionMutationVariables> = (props) => {
+          const {partTerminologyId,paid,data} = props ?? {};
+
+          return  agregarOpcion(partTerminologyId,paid,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AgregarOpcionMutationResult = NonNullable<Awaited<ReturnType<typeof agregarOpcion>>>
+    export type AgregarOpcionMutationBody = TextoOpcion
+    export type AgregarOpcionMutationError = ErrorType<HTTPValidationError>
+    export type AgregarOpcionMutationVariables = {partTerminologyId: number;paid: number;data: TextoOpcion}
+
+    /**
+ * @summary Agregar una opción a un campo propio de tipo lista
+ */
+export const useAgregarOpcion = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof agregarOpcion>>, TError,AgregarOpcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof agregarOpcion>>,
+        TError,
+        AgregarOpcionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAgregarOpcionMutationOptions(options), queryClient);
+    }
+
+export const getRenombrarOpcionUrl = (partTerminologyId: number,
+    paid: number,
+    validValueId: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/opciones/${validValueId}`
+}
+
+/**
+ * @summary Cambiar el texto de una opción de un campo propio (los artículos que la tienen la conservan)
+ */
+export const renombrarOpcion = async (partTerminologyId: number,
+    paid: number,
+    validValueId: number,
+    textoOpcion: TextoOpcion, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<AtributoConfig>(getRenombrarOpcionUrl(partTerminologyId,paid,validValueId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(textoOpcion)
+  }
+);}
+
+
+
+
+
+export const getRenombrarOpcionMutationKey = () => ['renombrarOpcion'] as const;
+
+export const getRenombrarOpcionMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renombrarOpcion>>, TError,RenombrarOpcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof renombrarOpcion>>, TError,RenombrarOpcionMutationVariables, TContext> => {
+
+const mutationKey = getRenombrarOpcionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renombrarOpcion>>, RenombrarOpcionMutationVariables> = (props) => {
+          const {partTerminologyId,paid,validValueId,data} = props ?? {};
+
+          return  renombrarOpcion(partTerminologyId,paid,validValueId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RenombrarOpcionMutationResult = NonNullable<Awaited<ReturnType<typeof renombrarOpcion>>>
+    export type RenombrarOpcionMutationBody = TextoOpcion
+    export type RenombrarOpcionMutationError = ErrorType<HTTPValidationError>
+    export type RenombrarOpcionMutationVariables = {partTerminologyId: number;paid: number;validValueId: number;data: TextoOpcion}
+
+    /**
+ * @summary Cambiar el texto de una opción de un campo propio (los artículos que la tienen la conservan)
+ */
+export const useRenombrarOpcion = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renombrarOpcion>>, TError,RenombrarOpcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof renombrarOpcion>>,
+        TError,
+        RenombrarOpcionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRenombrarOpcionMutationOptions(options), queryClient);
+    }
+
+export const getQuitarOpcionUrl = (partTerminologyId: number,
+    paid: number,
+    validValueId: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/opciones/${validValueId}`
+}
+
+/**
+ * @summary Quitar una opción de un campo propio que ningún artículo usa
+ */
+export const quitarOpcion = async (partTerminologyId: number,
+    paid: number,
+    validValueId: number, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+  return nexoFetch<AtributoConfig>(getQuitarOpcionUrl(partTerminologyId,paid,validValueId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getQuitarOpcionMutationKey = () => ['quitarOpcion'] as const;
+
+export const getQuitarOpcionMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof quitarOpcion>>, TError,QuitarOpcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof quitarOpcion>>, TError,QuitarOpcionMutationVariables, TContext> => {
+
+const mutationKey = getQuitarOpcionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof quitarOpcion>>, QuitarOpcionMutationVariables> = (props) => {
+          const {partTerminologyId,paid,validValueId} = props ?? {};
+
+          return  quitarOpcion(partTerminologyId,paid,validValueId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type QuitarOpcionMutationResult = NonNullable<Awaited<ReturnType<typeof quitarOpcion>>>
+
+    export type QuitarOpcionMutationError = ErrorType<void | HTTPValidationError>
+    export type QuitarOpcionMutationVariables = {partTerminologyId: number;paid: number;validValueId: number}
+
+    /**
+ * @summary Quitar una opción de un campo propio que ningún artículo usa
+ */
+export const useQuitarOpcion = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof quitarOpcion>>, TError,QuitarOpcionMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof quitarOpcion>>,
+        TError,
+        QuitarOpcionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getQuitarOpcionMutationOptions(options), queryClient);
+    }
+
+export const getValoresSapUrl = (partTerminologyId: number,
+    paid: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/valores-sap`
+}
+
+/**
+ * @summary Valores distintos que trae SAP en la columna de precarga del atributo, con cuántos artículos y su homologación
+ */
+export const valoresSap = async (partTerminologyId: number,
+    paid: number, options?: Parameters<typeof nexoFetch>[1]): Promise<ValorSap[]> => {
+
+  return nexoFetch<ValorSap[]>(getValoresSapUrl(partTerminologyId,paid),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getValoresSapQueryKey = (partTerminologyId: number,
+    paid: number,) => {
+    return [
+    `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/valores-sap`
+    ] as const;
+    }
+
+
+export const getValoresSapQueryOptions = <TData = Awaited<ReturnType<typeof valoresSap>>, TError = ErrorType<HTTPValidationError>>(partTerminologyId: number,
+    paid: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof valoresSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getValoresSapQueryKey(partTerminologyId,paid);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof valoresSap>>> = ({ signal }) => valoresSap(partTerminologyId,paid, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: partTerminologyId !== null && partTerminologyId !== undefined && paid !== null && paid !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof valoresSap>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ValoresSapQueryResult = NonNullable<Awaited<ReturnType<typeof valoresSap>>>
+export type ValoresSapQueryError = ErrorType<HTTPValidationError>
+
+
+export function useValoresSap<TData = Awaited<ReturnType<typeof valoresSap>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number,
+    paid: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof valoresSap>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof valoresSap>>,
+          TError,
+          Awaited<ReturnType<typeof valoresSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useValoresSap<TData = Awaited<ReturnType<typeof valoresSap>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number,
+    paid: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof valoresSap>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof valoresSap>>,
+          TError,
+          Awaited<ReturnType<typeof valoresSap>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useValoresSap<TData = Awaited<ReturnType<typeof valoresSap>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number,
+    paid: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof valoresSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Valores distintos que trae SAP en la columna de precarga del atributo, con cuántos artículos y su homologación
+ */
+
+export function useValoresSap<TData = Awaited<ReturnType<typeof valoresSap>>, TError = ErrorType<HTTPValidationError>>(
+ partTerminologyId: number,
+    paid: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof valoresSap>>, TError, TData>>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getValoresSapQueryOptions(partTerminologyId,paid,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getHomologarUrl = (partTerminologyId: number,
+    paid: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/homologacion`
+}
+
+/**
+ * @summary Reemplazar la homologación de valores de SAP a opciones del atributo (vale para todos los tipos de parte)
+ */
+export const homologar = async (partTerminologyId: number,
+    paid: number,
+    homologacion: Homologacion[], options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<AtributoConfig>(getHomologarUrl(partTerminologyId,paid),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(homologacion)
+  }
+);}
+
+
+
+
+
+export const getHomologarMutationKey = () => ['homologar'] as const;
+
+export const getHomologarMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof homologar>>, TError,HomologarMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof homologar>>, TError,HomologarMutationVariables, TContext> => {
+
+const mutationKey = getHomologarMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof homologar>>, HomologarMutationVariables> = (props) => {
+          const {partTerminologyId,paid,data} = props ?? {};
+
+          return  homologar(partTerminologyId,paid,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type HomologarMutationResult = NonNullable<Awaited<ReturnType<typeof homologar>>>
+    export type HomologarMutationBody = Homologacion[]
+    export type HomologarMutationError = ErrorType<HTTPValidationError>
+    export type HomologarMutationVariables = {partTerminologyId: number;paid: number;data: Homologacion[]}
+
+    /**
+ * @summary Reemplazar la homologación de valores de SAP a opciones del atributo (vale para todos los tipos de parte)
+ */
+export const useHomologar = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof homologar>>, TError,HomologarMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof homologar>>,
+        TError,
+        HomologarMutationVariables,
+        TContext
+      > => {
+      return useMutation(getHomologarMutationOptions(options), queryClient);
+    }
+
+export const getTraducirValorUrl = (validValueId: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/traducciones/${validValueId}`
+}
+
+/**
+ * @summary Traducir al español un valor de PIES (vacío la quita)
+ */
+export const traducirValor = async (validValueId: number,
+    traduccion: Traduccion, options?: Parameters<typeof nexoFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<void>(getTraducirValorUrl(validValueId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(traduccion)
+  }
+);}
+
+
+
+
+
+export const getTraducirValorMutationKey = () => ['traducirValor'] as const;
+
+export const getTraducirValorMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof traducirValor>>, TError,TraducirValorMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof traducirValor>>, TError,TraducirValorMutationVariables, TContext> => {
+
+const mutationKey = getTraducirValorMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof traducirValor>>, TraducirValorMutationVariables> = (props) => {
+          const {validValueId,data} = props ?? {};
+
+          return  traducirValor(validValueId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TraducirValorMutationResult = NonNullable<Awaited<ReturnType<typeof traducirValor>>>
+    export type TraducirValorMutationBody = Traduccion
+    export type TraducirValorMutationError = ErrorType<void | HTTPValidationError>
+    export type TraducirValorMutationVariables = {validValueId: number;data: Traduccion}
+
+    /**
+ * @summary Traducir al español un valor de PIES (vacío la quita)
+ */
+export const useTraducirValor = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof traducirValor>>, TError,TraducirValorMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof traducirValor>>,
+        TError,
+        TraducirValorMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTraducirValorMutationOptions(options), queryClient);
+    }
