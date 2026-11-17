@@ -233,6 +233,12 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
           'Agrupados (medidas, construcción, materiales…). El asterisco marca los obligatorios. Las medidas aceptan mm, cm o pulgadas y se guardan en mm.',
       },
       {
+        donde: '[data-recorrido="ficha-solicitar"]',
+        titulo: '¿Falta un dato?',
+        texto:
+          '«Solicitar un campo» lo agrega enseguida a la ficha de todos los artículos de este tipo, marcado «Propuesto». Se vuelve oficial cuando lo aprueba quien configura la ficha.',
+      },
+      {
         titulo: 'Guardar',
         texto:
           'Al cambiar algo aparece abajo la barra de guardado. Guarda con el botón o con Ctrl+S; si sales sin guardar, Nexo te avisa.',
@@ -414,6 +420,11 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
         titulo: 'Campos propios',
         texto:
           '«Nuevo campo propio» crea un dato que AutoCare no tiene: número o medida, lista de opciones, texto o Sí/No. Por ahora solo se usan en Nexo.',
+      },
+      {
+        titulo: 'Solicitudes',
+        texto:
+          'Los operadores pueden pedir un campo que falta desde la ficha del artículo. Queda «Propuesto» (ya se puede llenar, pero no es oficial ni obligatorio) hasta que lo apruebes o lo rechaces con un motivo en la pestaña Solicitudes.',
       },
     ],
   },

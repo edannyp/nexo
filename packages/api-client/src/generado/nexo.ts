@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Nexo API
  * Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.
- * OpenAPI spec version: 0.10.0
+ * OpenAPI spec version: 0.11.0
  */
 import {
   useMutation,
@@ -306,6 +306,15 @@ export interface OpcionConfig {
   homologados: string[];
 }
 
+export type EstadoCampo = typeof EstadoCampo[keyof typeof EstadoCampo];
+
+
+export const EstadoCampo = {
+  OFICIAL: 'OFICIAL',
+  PROPUESTO: 'PROPUESTO',
+  RECHAZADO: 'RECHAZADO',
+} as const;
+
 export interface AtributoConfig {
   paid: number;
   nombre: string;
@@ -323,6 +332,13 @@ export interface AtributoConfig {
   obsoleto: boolean;
   en_uso: number;
   opciones: OpcionConfig[];
+  estado: EstadoCampo;
+  motivo_solicitud: string | null;
+  solicitado_por: string | null;
+  solicitado_en: string | null;
+  revisado_por: string | null;
+  revisado_en: string | null;
+  motivo_rechazo: string | null;
 }
 
 export type TipoCampo = typeof TipoCampo[keyof typeof TipoCampo];
@@ -353,6 +369,8 @@ export interface AtributoFicha {
   etiqueta: string;
   nombre_pies: string;
   propio: boolean;
+  estado: EstadoCampo;
+  solicitado_por: string | null;
   grupo: string;
   obligatorio: boolean;
   tipo: TipoCampo;
@@ -722,6 +740,7 @@ export interface Ficha {
   version: number;
   editable: boolean;
   razon_no_editable: string | null;
+  puede_solicitar: boolean;
   atributos: AtributoFicha[];
 }
 
@@ -1012,6 +1031,15 @@ export interface Preferencias {
   linea: Linea;
 }
 
+export interface Rechazo {
+  /**
+     * Lo verá quien lo solicitó
+     * @minLength 3
+     * @maxLength 500
+     */
+  motivo: string;
+}
+
 export type Reserva = typeof Reserva[keyof typeof Reserva];
 
 
@@ -1090,6 +1118,27 @@ export interface SinFoto {
   descripcion: string | null;
   estado: string;
   clase: string | null;
+}
+
+export interface SolicitudCampo {
+  /**
+     * @minLength 2
+     * @maxLength 60
+     */
+  nombre: string;
+  tipo: TipoPropio;
+  grupo?: GrupoAtributo;
+  /** Solo NUMERO: es una medida (se captura en mm, cm o pulgadas y se guarda en mm) */
+  medida?: boolean;
+  /** Solo LISTA: las opciones, en el orden en que se muestran */
+  opciones?: string[];
+  obligatorio?: boolean;
+  /**
+     * Para qué se necesita: lo lee quien lo aprueba
+     * @minLength 3
+     * @maxLength 500
+     */
+  motivo: string;
 }
 
 export interface TextoOpcion {
@@ -4715,6 +4764,95 @@ export const useGuardarFicha = <TError = ErrorType<void>,
       return useMutation(getGuardarFichaMutationOptions(options), queryClient);
     }
 
+export const getSolicitarCampoUrl = (itemCode: string,) => {
+
+
+
+
+  return `/api/v1/articulos/${itemCode}/ficha/campos`
+}
+
+/**
+ * @summary Solicitar un campo que falta: queda propuesto en la ficha de todo el tipo de parte hasta que se apruebe
+ */
+export const solicitarCampo = async (itemCode: string,
+    solicitudCampo: SolicitudCampo, options?: Parameters<typeof nexoFetch>[1]): Promise<Ficha> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<Ficha>(getSolicitarCampoUrl(itemCode),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(solicitudCampo)
+  }
+);}
+
+
+
+
+
+export const getSolicitarCampoMutationKey = () => ['solicitarCampo'] as const;
+
+export const getSolicitarCampoMutationOptions = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof solicitarCampo>>, TError,SolicitarCampoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof solicitarCampo>>, TError,SolicitarCampoMutationVariables, TContext> => {
+
+const mutationKey = getSolicitarCampoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof solicitarCampo>>, SolicitarCampoMutationVariables> = (props) => {
+          const {itemCode,data} = props ?? {};
+
+          return  solicitarCampo(itemCode,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SolicitarCampoMutationResult = NonNullable<Awaited<ReturnType<typeof solicitarCampo>>>
+    export type SolicitarCampoMutationBody = SolicitudCampo
+    export type SolicitarCampoMutationError = ErrorType<void | HTTPValidationError>
+    export type SolicitarCampoMutationVariables = {itemCode: string;data: SolicitudCampo}
+
+    /**
+ * @summary Solicitar un campo que falta: queda propuesto en la ficha de todo el tipo de parte hasta que se apruebe
+ */
+export const useSolicitarCampo = <TError = ErrorType<void | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof solicitarCampo>>, TError,SolicitarCampoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof solicitarCampo>>,
+        TError,
+        SolicitarCampoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSolicitarCampoMutationOptions(options), queryClient);
+    }
+
 export const getListarMarcasUrl = (params: ListarMarcasParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -8146,7 +8284,7 @@ export const getCrearCampoPropioUrl = (partTerminologyId: number,) => {
 }
 
 /**
- * @summary Crear un campo propio de Nexo (que no existe en AutoCare)
+ * @summary Crear un campo propio de Nexo (que no existe en AutoCare); queda oficial
  */
 export const crearCampoPropio = async (partTerminologyId: number,
     nuevoCampo: NuevoCampo, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
@@ -8213,7 +8351,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CrearCampoPropioMutationVariables = {partTerminologyId: number;data: NuevoCampo}
 
     /**
- * @summary Crear un campo propio de Nexo (que no existe en AutoCare)
+ * @summary Crear un campo propio de Nexo (que no existe en AutoCare); queda oficial
  */
 export const useCrearCampoPropio = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crearCampoPropio>>, TError,CrearCampoPropioMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
@@ -8224,6 +8362,173 @@ export const useCrearCampoPropio = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCrearCampoPropioMutationOptions(options), queryClient);
+    }
+
+export const getAprobarCampoUrl = (partTerminologyId: number,
+    paid: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/aprobar`
+}
+
+/**
+ * @summary Aprobar un campo propuesto (o reconsiderar uno rechazado): queda oficial y en la ficha
+ */
+export const aprobarCampo = async (partTerminologyId: number,
+    paid: number, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+  return nexoFetch<AtributoConfig>(getAprobarCampoUrl(partTerminologyId,paid),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAprobarCampoMutationKey = () => ['aprobarCampo'] as const;
+
+export const getAprobarCampoMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof aprobarCampo>>, TError,AprobarCampoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof aprobarCampo>>, TError,AprobarCampoMutationVariables, TContext> => {
+
+const mutationKey = getAprobarCampoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof aprobarCampo>>, AprobarCampoMutationVariables> = (props) => {
+          const {partTerminologyId,paid} = props ?? {};
+
+          return  aprobarCampo(partTerminologyId,paid,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AprobarCampoMutationResult = NonNullable<Awaited<ReturnType<typeof aprobarCampo>>>
+
+    export type AprobarCampoMutationError = ErrorType<HTTPValidationError>
+    export type AprobarCampoMutationVariables = {partTerminologyId: number;paid: number}
+
+    /**
+ * @summary Aprobar un campo propuesto (o reconsiderar uno rechazado): queda oficial y en la ficha
+ */
+export const useAprobarCampo = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof aprobarCampo>>, TError,AprobarCampoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof aprobarCampo>>,
+        TError,
+        AprobarCampoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAprobarCampoMutationOptions(options), queryClient);
+    }
+
+export const getRechazarCampoUrl = (partTerminologyId: number,
+    paid: number,) => {
+
+
+
+
+  return `/api/v1/configuracion/ficha/${partTerminologyId}/${paid}/rechazar`
+}
+
+/**
+ * @summary Rechazar un campo propuesto con motivo: sale de la ficha y lo capturado se conserva oculto
+ */
+export const rechazarCampo = async (partTerminologyId: number,
+    paid: number,
+    rechazo: Rechazo, options?: Parameters<typeof nexoFetch>[1]): Promise<AtributoConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return nexoFetch<AtributoConfig>(getRechazarCampoUrl(partTerminologyId,paid),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(rechazo)
+  }
+);}
+
+
+
+
+
+export const getRechazarCampoMutationKey = () => ['rechazarCampo'] as const;
+
+export const getRechazarCampoMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rechazarCampo>>, TError,RechazarCampoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rechazarCampo>>, TError,RechazarCampoMutationVariables, TContext> => {
+
+const mutationKey = getRechazarCampoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rechazarCampo>>, RechazarCampoMutationVariables> = (props) => {
+          const {partTerminologyId,paid,data} = props ?? {};
+
+          return  rechazarCampo(partTerminologyId,paid,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RechazarCampoMutationResult = NonNullable<Awaited<ReturnType<typeof rechazarCampo>>>
+    export type RechazarCampoMutationBody = Rechazo
+    export type RechazarCampoMutationError = ErrorType<HTTPValidationError>
+    export type RechazarCampoMutationVariables = {partTerminologyId: number;paid: number;data: Rechazo}
+
+    /**
+ * @summary Rechazar un campo propuesto con motivo: sale de la ficha y lo capturado se conserva oculto
+ */
+export const useRechazarCampo = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rechazarCampo>>, TError,RechazarCampoMutationVariables, TContext>, request?: SecondParameter<typeof nexoFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rechazarCampo>>,
+        TError,
+        RechazarCampoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRechazarCampoMutationOptions(options), queryClient);
     }
 
 export const getAgregarOpcionUrl = (partTerminologyId: number,
