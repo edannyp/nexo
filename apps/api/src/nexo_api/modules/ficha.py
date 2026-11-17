@@ -2,6 +2,7 @@
 
 - Lectura: los atributos habilitados del tipo de parte, agrupados y en orden, con el valor de SAP como referencia, el valor en Nexo
   (sugerido o confirmado), las opciones de PIES traducidas y lo que falta.
+- Solicitar un campo que falta (ADR 0030): operadores y supervisores; queda PROPUESTO en la ficha de todo el tipo de parte.
 - Guardado (botón Guardar, decisión UX 1): todos los cambios de la pestaña juntos, solo por quien tiene la reserva, en Pendiente o
   Rechazado, con la versión que ve el usuario. Todo lo que se guarda queda confirmado por él.
 """
@@ -18,8 +19,10 @@ from sqlalchemy import Connection, text
 from ..auth.dependencias import Usuario, UsuarioActual
 from ..auth.registro import fijar_actor
 from ..core.bd import Conexion
+from ..core.errores import Problema
 from ..core.negocio import reglas_de_negocio
-from .edicion import ESTADOS_EDITABLES, bloquear_para_editar, razon_no_editable, subir_version
+from .configuracion_ficha import EstadoCampo, NuevoCampo, insertar_campo_propio
+from .edicion import ESTADOS_EDITABLES, ROLES_TRABAJO, bloquear_para_editar, razon_no_editable, subir_version
 from .edicion import articulo as _articulo
 
 router = APIRouter(prefix="/articulos/{item_code}/ficha", tags=["ficha"])
@@ -52,6 +55,8 @@ class AtributoFicha(BaseModel):
     etiqueta: str
     nombre_pies: str                 # nombre en PAdb; en los campos propios, "Campo propio de Nexo"
     propio: bool                     # campo propio de Nexo (no existe en AutoCare, ADR 0029)
+    estado: EstadoCampo              # OFICIAL o PROPUESTO (solicitado, aún en revisión; ADR 0030)
+    solicitado_por: str | None
     grupo: str
     obligatorio: bool
     tipo: TipoCampo
@@ -71,6 +76,7 @@ class Ficha(BaseModel):
     version: int
     editable: bool
     razon_no_editable: str | None
+    puede_solicitar: bool            # trabaja artículos (Operador o Supervisor) y el artículo tiene tipo de parte
     atributos: list[AtributoFicha]
 
 
@@ -84,6 +90,10 @@ class Cambio(ValorAtributo):
         if self.valor_texto is not None and not self.valor_texto.strip():
             raise ValueError("El texto no puede estar vacío.")
         return self
+
+
+class SolicitudCampo(NuevoCampo):
+    motivo: str = Field(min_length=3, max_length=500, description="Para qué se necesita: lo lee quien lo aprueba")
 
 
 class Guardado(BaseModel):
@@ -111,16 +121,18 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
     filas = c.execute(text("""
         select r.paid, coalesce(r.etiqueta, r.nombre) as etiqueta, r.nombre as nombre_pies, r.grupo::text as grupo, r.obligatorio,
                r.requiere_uom, r.uom_defecto, r.columna_sap, r.conversion::text as conversion, r.propio, r.tipo::text as tipo_propio,
+               r.estado::text as estado, us.nombre as solicitado_por,
                t.valor_num, t.uom_code, t.valid_value_id, t.valor_texto, t.origen::text as origen,
                t.confirmado_por is not null as confirmado, u.nombre as confirmado_por, t.confirmado_en,
                coalesce((select json_agg(json_build_object('valid_value_id', v.valid_value_id, 'valor', v.valor, 'valor_es', tr.valor_es)
-                                         order by v.valor)
+                                         order by case when v.propio then v.valid_value_id end, v.valor)
                          from meta.atributo_valor_permitido v left join meta.traduccion_valor tr using (valid_value_id)
                          where v.part_terminology_id = r.part_terminology_id and v.paid = r.paid
                            and (v.obsoleto_en is null or v.valid_value_id = t.valid_value_id)), '[]') as opciones
         from meta.atributo_config r
         left join app.articulo_atributo t on t.articulo_id = :id and t.paid = r.paid
         left join app.usuario u on u.id = t.confirmado_por
+        left join app.usuario us on us.id = r.solicitado_por
         -- Lo que AutoCare dejó obsoleto se muestra solo si el artículo ya tiene valor
         where r.part_terminology_id = :pt and r.habilitado and (r.obsoleto_en is null or t.id is not null)
         order by r.orden nulls last, r.paid
@@ -146,7 +158,7 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
         hay_valor = any(x is not None for x in (f.valor_num, f.valid_value_id, f.valor_texto))
         atributos.append(AtributoFicha(
             paid=f.paid, etiqueta=f.etiqueta, nombre_pies="Campo propio de Nexo" if f.propio else f.nombre_pies, propio=f.propio,
-            grupo=f.grupo, obligatorio=f.obligatorio, tipo=tipo,
+            estado=f.estado, solicitado_por=f.solicitado_por, grupo=f.grupo, obligatorio=f.obligatorio, tipo=tipo,
             requiere_uom=f.requiere_uom, uom_defecto=f.uom_defecto, opciones=[Opcion(**o) for o in f.opciones], sugerencias=sugerencias,
             valor_sap=_texto_sap(a._mapping[col]) if col else None,
             valor=ValorAtributo(valor_num=f.valor_num, uom_code=f.uom_code, valid_value_id=f.valid_value_id,
@@ -154,7 +166,8 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
             origen=f.origen, confirmado=f.confirmado, confirmado_por=f.confirmado_por, confirmado_en=f.confirmado_en,
         ))
     razon = razon_no_editable(a, usuario)
-    return Ficha(version=a.version, editable=razon is None, razon_no_editable=razon, atributos=atributos)
+    return Ficha(version=a.version, editable=razon is None, razon_no_editable=razon, atributos=atributos,
+                 puede_solicitar=bool(usuario.roles & ROLES_TRABAJO) and a.part_terminology_id is not None)
 
 
 @router.get("", response_model=Ficha, summary="Ficha de atributos del artículo (con las sugerencias de SAP)")
@@ -190,4 +203,19 @@ def guardar_ficha(item_code: str, datos: Guardado, usuario: UsuarioActual, c: Co
         if datos.quitar:
             c.execute(text("delete from app.articulo_atributo where articulo_id = :a and paid = any(:p)"), {"a": a.id, "p": datos.quitar})
         subir_version(c, a.id)
+    return cargar_ficha(c, item_code, usuario)
+
+
+@router.post("/campos", response_model=Ficha, status_code=201,
+             summary="Solicitar un campo que falta: queda propuesto en la ficha de todo el tipo de parte hasta que se apruebe",
+             responses={403: {"description": "Solo Operador o Supervisor"}, 409: {"description": "Ya existe o ya se rechazó"}})
+def solicitar_campo(item_code: str, datos: SolicitudCampo, usuario: UsuarioActual, c: Conexion) -> Ficha:
+    if not usuario.roles & ROLES_TRABAJO:
+        raise Problema(403, "Solo quien trabaja artículos solicita campos", "Necesitas el rol Operador o Supervisor.")
+    a = _articulo(c, item_code)
+    c.rollback()
+    if a.part_terminology_id is None:
+        raise Problema(422, "El artículo no tiene tipo de parte", "Sin tipo de parte no hay ficha a la que agregar el campo.")
+    insertar_campo_propio(c, a.part_terminology_id, datos.model_copy(update={"obligatorio": False}), usuario.id,
+                          EstadoCampo.PROPUESTO, " ".join(datos.motivo.split()))
     return cargar_ficha(c, item_code, usuario)
