@@ -1,27 +1,40 @@
 import {
   getObtenerConfiguracionFichaQueryKey,
+  useAprobarCampo,
   useConfigurarAtributo,
   useListarCategorias,
   useObtenerConfiguracionFicha,
+  useRechazarCampo,
   type AtributoConfig,
 } from '@nexo/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Settings2 } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 
 import { useFiltro } from '@/app/contexto-filtro';
 import { nombreCategoria } from '@/app/FiltroGlobal';
 import { cn } from '@/shared/cn';
 import { useRecorrido } from '@/shared/recorrido';
-import { Aviso, Boton, Insignia } from '@/shared/ui';
+import { momento } from '@/shared/formato';
+import { Aviso, Boton, Dialogo, Insignia } from '@/shared/ui';
 
 import { etiquetaDe, nombreGrupo, nombreTipo, textoError } from './comun';
 import { DialogoAtributo } from './DialogoAtributo';
 import { DialogoNuevoCampo } from './DialogoNuevoCampo';
 
-type Vista = 'ficha' | 'catalogo';
+type Vista = 'ficha' | 'solicitudes' | 'catalogo';
 
-function Fila({ a, alAbrir, accion }: { a: AtributoConfig; alAbrir: () => void; accion?: ReactNode }) {
+function Fila({
+  a,
+  alAbrir,
+  accion,
+  debajo,
+}: {
+  a: AtributoConfig;
+  alAbrir: () => void;
+  accion?: ReactNode;
+  debajo?: ReactNode;
+}) {
   return (
     <li className={cn('flex flex-wrap items-center gap-3 px-4 py-2.5', a.obsoleto && 'opacity-60')}>
       <button type="button" onClick={alAbrir} className="min-w-0 flex-1 text-left text-sm">
@@ -33,6 +46,10 @@ function Fila({ a, alAbrir, accion }: { a: AtributoConfig; alAbrir: () => void; 
             </span>
           )}
           {a.propio && <Insignia className="border-primario/50 text-primario">Propio</Insignia>}
+          {a.estado === 'PROPUESTO' && (
+            <Insignia className="border-por-validar/50 text-por-validar">Propuesto</Insignia>
+          )}
+          {a.estado === 'RECHAZADO' && <Insignia className="border-rechazado/50 text-rechazado">Rechazado</Insignia>}
           {a.obsoleto && <Insignia>Obsoleto en AutoCare</Insignia>}
         </span>
         <span className="block text-xs text-suave">
@@ -46,7 +63,147 @@ function Fila({ a, alAbrir, accion }: { a: AtributoConfig; alAbrir: () => void; 
       <Boton variante="fantasma" className="h-8 px-2" onClick={alAbrir} aria-label={`Configurar ${etiquetaDe(a)}`}>
         <Settings2 className="size-4" aria-hidden />
       </Boton>
+      {debajo && <div className="-mt-2 w-full">{debajo}</div>}
     </li>
+  );
+}
+
+/** Campos que pidió quien trabaja artículos (ADR 0030): aprobar (queda oficial) o rechazar con motivo. */
+function Solicitudes({
+  pt,
+  atributos,
+  alAbrir,
+  alCambiar,
+}: {
+  pt: number;
+  atributos: AtributoConfig[];
+  alAbrir: (paid: number) => void;
+  alCambiar: () => void;
+}) {
+  const aprobar = useAprobarCampo({ mutation: { onSuccess: alCambiar } });
+  const rechazar = useRechazarCampo({ mutation: { onSuccess: () => (setRechazando(null), alCambiar()) } });
+  const [rechazando, setRechazando] = useState<AtributoConfig | null>(null);
+  const [motivo, setMotivo] = useState('');
+  const pendientes = atributos.filter((a) => a.estado === 'PROPUESTO');
+  const rechazadas = atributos.filter((a) => a.estado === 'RECHAZADO');
+  const enviarRechazo = (e: FormEvent) => {
+    e.preventDefault();
+    if (rechazando) rechazar.mutate({ partTerminologyId: pt, paid: rechazando.paid, data: { motivo: motivo.trim() } });
+  };
+  const detalle = (a: AtributoConfig) => (
+    <p className="mt-1 text-xs text-suave">
+      Lo pidió {a.solicitado_por ?? '—'}
+      {a.solicitado_en && ` el ${momento(a.solicitado_en)}`}
+      {a.motivo_solicitud && <span className="block text-texto">«{a.motivo_solicitud}»</span>}
+    </p>
+  );
+
+  return (
+    <section aria-label="Solicitudes de campos" className="space-y-4">
+      {(aprobar.error || rechazar.error) && (
+        <Aviso tono="error" titulo={textoError(aprobar.error ?? rechazar.error) ?? ''} />
+      )}
+      <div className="rounded-lg border border-borde bg-superficie">
+        <p className="border-b border-borde px-4 py-2 text-xs text-suave">
+          Ya están en la ficha como «Propuesto» y se pueden llenar. Revisa el nombre, el tipo y las opciones con el
+          engrane antes de aprobar.
+        </p>
+        {pendientes.length === 0 ? (
+          <p className="p-6 text-center text-sm text-suave">No hay solicitudes por revisar.</p>
+        ) : (
+          <ul className="divide-y divide-borde">
+            {pendientes.map((a) => (
+              <Fila
+                key={a.paid}
+                a={a}
+                alAbrir={() => alAbrir(a.paid)}
+                accion={
+                  <div className="flex gap-2">
+                    <Boton
+                      className="h-8 px-3 text-xs"
+                      cargando={aprobar.isPending && aprobar.variables?.paid === a.paid}
+                      onClick={() => aprobar.mutate({ partTerminologyId: pt, paid: a.paid })}
+                    >
+                      Aprobar
+                    </Boton>
+                    <Boton
+                      variante="secundario"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => (setMotivo(''), setRechazando(a))}
+                    >
+                      Rechazar
+                    </Boton>
+                  </div>
+                }
+                debajo={detalle(a)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+      {rechazadas.length > 0 && (
+        <details className="rounded-lg border border-borde bg-superficie">
+          <summary className="cursor-pointer px-4 py-2 text-sm">Rechazadas ({rechazadas.length})</summary>
+          <ul className="divide-y divide-borde border-t border-borde">
+            {rechazadas.map((a) => (
+              <Fila
+                key={a.paid}
+                a={a}
+                alAbrir={() => alAbrir(a.paid)}
+                accion={
+                  <Boton
+                    variante="secundario"
+                    className="h-8 px-3 text-xs"
+                    cargando={aprobar.isPending && aprobar.variables?.paid === a.paid}
+                    onClick={() => aprobar.mutate({ partTerminologyId: pt, paid: a.paid })}
+                    title="Aprobarlo ahora: vuelve a la ficha con lo que ya se había capturado"
+                  >
+                    Reconsiderar
+                  </Boton>
+                }
+                debajo={
+                  <>
+                    {detalle(a)}
+                    <p className="text-xs text-rechazado">
+                      Rechazado por {a.revisado_por ?? '—'}: {a.motivo_rechazo}
+                    </p>
+                  </>
+                }
+              />
+            ))}
+          </ul>
+        </details>
+      )}
+      <Dialogo
+        abierto={!!rechazando}
+        alCerrar={() => setRechazando(null)}
+        titulo={rechazando ? `Rechazar «${etiquetaDe(rechazando)}»` : ''}
+      >
+        <form onSubmit={enviarRechazo} className="space-y-3">
+          <p className="text-sm text-suave">
+            Sale de la ficha. Lo que ya se capturó ({rechazando?.en_uso ?? 0} artículos) se conserva oculto por si se
+            reconsidera.
+          </p>
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium">Motivo (lo verá quien lo pidió)</span>
+            <textarea
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              rows={3}
+              required
+              minLength={3}
+              maxLength={500}
+              autoFocus
+              placeholder="Ej.: ya existe como «Tipo de panal»"
+              className="w-full rounded-md border border-borde bg-superficie p-2 text-base sm:text-sm"
+            />
+          </label>
+          <Boton type="submit" variante="peligro" className="w-full" cargando={rechazar.isPending}>
+            Rechazar
+          </Boton>
+        </form>
+      </Dialogo>
+    </section>
   );
 }
 
@@ -71,8 +228,9 @@ export function ConfigurarFicha() {
 
   const atributos = q.data?.atributos ?? [];
   const enFicha = atributos.filter((a) => a.habilitado);
+  const solicitudes = atributos.filter((a) => a.estado === 'PROPUESTO').length;
   const catalogo = atributos
-    .filter((a) => !a.habilitado)
+    .filter((a) => !a.habilitado && a.estado === 'OFICIAL')
     .filter(
       (a) => !texto.trim() || `${a.nombre} ${a.etiqueta ?? ''}`.toLowerCase().includes(texto.trim().toLowerCase()),
     );
@@ -112,7 +270,11 @@ export function ConfigurarFicha() {
             {(
               [
                 ['ficha', `En la ficha (${enFicha.length})`],
-                ['catalogo', `Catálogo AutoCare (${atributos.length - enFicha.length})`],
+                ['solicitudes', `Solicitudes (${solicitudes})`],
+                [
+                  'catalogo',
+                  `Catálogo AutoCare (${atributos.filter((a) => !a.habilitado && a.estado === 'OFICIAL').length})`,
+                ],
               ] as const
             ).map(([id, etiqueta]) => (
               <button
@@ -128,7 +290,9 @@ export function ConfigurarFicha() {
             ))}
           </div>
 
-          {vista === 'ficha' ? (
+          {vista === 'solicitudes' ? (
+            <Solicitudes pt={pt} atributos={atributos} alAbrir={setAbierto} alCambiar={refrescar} />
+          ) : vista === 'ficha' ? (
             <section aria-label="Atributos en la ficha" className="rounded-lg border border-borde bg-superficie">
               <p className="border-b border-borde px-4 py-2 text-xs text-suave">
                 En el orden en que los ve el operador. * = obligatorio para enviar a revisión.
@@ -151,7 +315,12 @@ export function ConfigurarFicha() {
                               type="checkbox"
                               className="size-4"
                               checked={a.obligatorio}
-                              disabled={cambiar.isPending}
+                              disabled={cambiar.isPending || a.estado === 'PROPUESTO'}
+                              title={
+                                a.estado === 'PROPUESTO'
+                                  ? 'Apruébalo primero: un campo propuesto no es obligatorio'
+                                  : undefined
+                              }
                               onChange={(e) =>
                                 cambiar.mutate({
                                   partTerminologyId: pt,
@@ -167,12 +336,15 @@ export function ConfigurarFicha() {
                             className="h-8 px-2 text-xs"
                             disabled={cambiar.isPending}
                             onClick={() =>
-                              confirm(
-                                `¿Quitar «${etiquetaDe(a)}» de la ficha? Los valores ya capturados se conservan, pero dejan de verse.`,
-                              ) && cambiar.mutate({ partTerminologyId: pt, paid: a.paid, data: { habilitado: false } })
+                              a.estado === 'PROPUESTO'
+                                ? setVista('solicitudes')
+                                : confirm(
+                                    `¿Quitar «${etiquetaDe(a)}» de la ficha? Los valores ya capturados se conservan, pero dejan de verse.`,
+                                  ) &&
+                                  cambiar.mutate({ partTerminologyId: pt, paid: a.paid, data: { habilitado: false } })
                             }
                           >
-                            Quitar
+                            {a.estado === 'PROPUESTO' ? 'Revisar' : 'Quitar'}
                           </Boton>
                         </div>
                       }

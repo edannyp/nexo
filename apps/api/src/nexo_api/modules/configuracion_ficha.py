@@ -4,10 +4,13 @@
 - Campos propios de Nexo, que AutoCare no tiene: número (con o sin medida en mm), lista de opciones, texto libre o sí/no. Sus
   códigos empiezan en 1 000 000 y la carga de AutoCare no los toca. Por ahora solo viven en Nexo.
 - Homologación de valores de SAP a opciones (`meta.valor_sap_pies`) y traducción al español de los valores de PIES.
+- Solicitudes (ADR 0030): los campos que propone quien trabaja artículos quedan PROPUESTOS hasta que aquí se aprueban (OFICIAL) o se
+  rechazan con motivo (RECHAZADO: salen de la ficha y lo capturado se conserva).
 
 La configuración no cambia lo ya capturado: un atributo deshabilitado deja de mostrarse, pero sus valores se conservan.
 """
 
+from datetime import datetime
 from enum import StrEnum
 from typing import Annotated
 
@@ -33,6 +36,12 @@ class GrupoAtributo(StrEnum):
     CONEXIONES = "CONEXIONES"
     INCLUYE = "INCLUYE"
     OTROS = "OTROS"
+
+
+class EstadoCampo(StrEnum):
+    OFICIAL = "OFICIAL"
+    PROPUESTO = "PROPUESTO"
+    RECHAZADO = "RECHAZADO"
 
 
 class TipoPropio(StrEnum):
@@ -90,6 +99,13 @@ class AtributoConfig(BaseModel):
     obsoleto: bool
     en_uso: int                      # artículos de este tipo de parte con un valor
     opciones: list[OpcionConfig]
+    estado: EstadoCampo              # OFICIAL, PROPUESTO (solicitado, en revisión) o RECHAZADO (ADR 0030)
+    motivo_solicitud: str | None
+    solicitado_por: str | None
+    solicitado_en: datetime | None
+    revisado_por: str | None
+    revisado_en: datetime | None
+    motivo_rechazo: str | None
 
 
 class FichaConfig(BaseModel):
@@ -129,6 +145,10 @@ class NuevoCampo(BaseModel):
         return " ".join(v.split())
 
 
+class Rechazo(BaseModel):
+    motivo: str = Field(min_length=3, max_length=500, description="Lo verá quien lo solicitó")
+
+
 class TextoOpcion(BaseModel):
     valor: str = Field(min_length=1, max_length=60)
 
@@ -154,6 +174,8 @@ class Traduccion(BaseModel):
 _ATRIBUTOS = """
     select r.paid, r.nombre, r.etiqueta, r.propio, r.tipo::text as tipo, r.requiere_uom, r.habilitado, r.obligatorio,
            r.grupo::text as grupo, r.orden, r.columna_sap, r.conversion::text as conversion, r.parte, r.obsoleto_en is not null as obsoleto,
+           r.estado::text as estado, r.motivo_solicitud, us.nombre as solicitado_por, r.solicitado_en, ur.nombre as revisado_por,
+           r.revisado_en, r.motivo_rechazo,
            (select count(*) from app.articulo_atributo t join app.articulo a on a.id = t.articulo_id
             where t.paid = r.paid and a.part_terminology_id = r.part_terminology_id) as en_uso,
            coalesce((select json_agg(json_build_object(
@@ -168,6 +190,8 @@ _ATRIBUTOS = """
                      from meta.atributo_valor_permitido v left join meta.traduccion_valor tr using (valid_value_id)
                      where v.part_terminology_id = r.part_terminology_id and v.paid = r.paid), '[]') as opciones
     from meta.atributo_config r
+    left join app.usuario us on us.id = r.solicitado_por
+    left join app.usuario ur on ur.id = r.revisado_por
     where r.part_terminology_id = :pt {filtro}
     order by not r.habilitado, r.orden nulls last, coalesce(r.etiqueta, r.nombre)
 """
@@ -187,7 +211,9 @@ def _atributo(f) -> AtributoConfig:
     return AtributoConfig(
         paid=f.paid, nombre=f.nombre, etiqueta=f.etiqueta, propio=f.propio, tipo=_tipo(f), requiere_uom=f.requiere_uom,
         habilitado=f.habilitado, obligatorio=f.obligatorio, grupo=f.grupo, orden=f.orden, columna_sap=f.columna_sap,
-        conversion=f.conversion, parte=f.parte, obsoleto=f.obsoleto, en_uso=f.en_uso, opciones=[OpcionConfig(**o) for o in f.opciones])
+        conversion=f.conversion, parte=f.parte, obsoleto=f.obsoleto, en_uso=f.en_uso, opciones=[OpcionConfig(**o) for o in f.opciones],
+        estado=f.estado, motivo_solicitud=f.motivo_solicitud, solicitado_por=f.solicitado_por, solicitado_en=f.solicitado_en,
+        revisado_por=f.revisado_por, revisado_en=f.revisado_en, motivo_rechazo=f.motivo_rechazo)
 
 
 def _leer(c: Connection, pt: int, paid: int) -> AtributoConfig:
@@ -242,6 +268,10 @@ def configurar_atributo(part_terminology_id: int, paid: int, datos: CambiosAtrib
         raise Problema(422, "AutoCare ya no usa ese atributo", "No se puede habilitar un atributo obsoleto.")
     if nuevo["obligatorio"] and not nuevo["habilitado"]:
         raise Problema(422, "Solo un atributo habilitado puede ser obligatorio")
+    if nuevo["obligatorio"] and actual.estado == EstadoCampo.PROPUESTO:
+        raise Problema(422, "Un campo propuesto no puede ser obligatorio", "Apruébalo primero para que sea oficial.")
+    if nuevo["habilitado"] and actual.estado == EstadoCampo.RECHAZADO:
+        raise Problema(422, "Ese campo fue rechazado", "Apruébalo (reconsiderar) para volver a ponerlo en la ficha.")
     # Precarga desde SAP: columna y conversión van juntas (sin columna, sin precarga)
     if "columna_sap" in puestos and not datos.columna_sap:
         nuevo |= {"columna_sap": None, "conversion": None, "parte": None}
@@ -284,12 +314,10 @@ def _propio(c: Connection, pt: int, paid: int) -> AtributoConfig:
     return a
 
 
-@router.post("/ficha/{part_terminology_id}/propios", response_model=AtributoConfig, status_code=201,
-             summary="Crear un campo propio de Nexo (que no existe en AutoCare)",
-             responses={409: {"description": "Ya hay un campo con ese nombre"}, 422: {"description": "Datos no válidos"}})
-def crear_campo_propio(part_terminology_id: int, datos: NuevoCampo, usuario: Configurador, c: Conexion) -> AtributoConfig:
-    obtener_configuracion_ficha(part_terminology_id, usuario, c)          # el tipo de parte existe
-    c.rollback()
+def insertar_campo_propio(c: Connection, pt: int, datos: NuevoCampo, actor: int, estado: EstadoCampo = EstadoCampo.OFICIAL,
+                          motivo: str | None = None) -> int:
+    """Valida y crea un campo propio habilitado al final de la ficha (con sus opciones). Abre su propia transacción; devuelve el paid.
+    PROPUESTO = solicitado por quien trabaja artículos (ADR 0030): nunca obligatorio."""
     opciones = [" ".join(o.split()) for o in datos.opciones if o.strip()]
     if datos.tipo == TipoPropio.LISTA and not opciones:
         raise Problema(422, "Una lista necesita opciones", "Escribe al menos una opción.")
@@ -299,25 +327,78 @@ def crear_campo_propio(part_terminology_id: int, datos: NuevoCampo, usuario: Con
         raise Problema(422, "Hay opciones repetidas")
     if datos.medida and datos.tipo != TipoPropio.NUMERO:
         raise Problema(422, "Solo un número puede ser una medida")
-    if c.execute(text("""select 1 from meta.atributo_config where part_terminology_id = :pt
-                         and upper(coalesce(etiqueta, nombre)) = upper(:n)"""), {"pt": part_terminology_id, "n": datos.nombre}).first():
-        c.rollback()
-        raise Problema(409, "Ya hay un atributo con ese nombre", f"«{datos.nombre}» ya está en la ficha de este tipo de parte.")
+    previo = c.execute(text("""select estado::text as estado, motivo_rechazo from meta.atributo_config where part_terminology_id = :pt
+                               and upper(coalesce(etiqueta, nombre)) = upper(:n)"""), {"pt": pt, "n": datos.nombre}).first()
     c.rollback()
+    if previo is not None:
+        if previo.estado == EstadoCampo.RECHAZADO:
+            raise Problema(409, "Ese campo ya se solicitó y no se aprobó", f"Motivo: {previo.motivo_rechazo}")
+        raise Problema(409, "Ya hay un atributo con ese nombre", f"«{datos.nombre}» ya está en la ficha de este tipo de parte.")
+    propuesto = estado == EstadoCampo.PROPUESTO
     with c.begin():
-        fijar_actor(c, usuario.id)
+        fijar_actor(c, actor)
         paid = c.execute(text("""
             insert into meta.atributo_config (part_terminology_id, paid, nombre, etiqueta, tipo, requiere_uom, uom_defecto, habilitado,
-                                              obligatorio, grupo, orden)
+                                              obligatorio, grupo, orden, estado, motivo_solicitud, solicitado_por, solicitado_en)
             values (:pt, nextval('meta.codigo_propio'), :n, :n, cast(:tipo as meta.tipo_atributo), :medida, :uom, true, :obl,
                     cast(:grupo as meta.grupo_atributo),
-                    (select coalesce(max(orden), 0) + 1 from meta.atributo_config where part_terminology_id = :pt and habilitado))
+                    (select coalesce(max(orden), 0) + 1 from meta.atributo_config where part_terminology_id = :pt and habilitado),
+                    cast(:estado as meta.estado_campo), :motivo, :sol, case when cast(:sol as bigint) is not null then now() end)
             returning paid
-        """), {"pt": part_terminology_id, "n": datos.nombre, "tipo": datos.tipo.value, "medida": datos.medida,
-               "uom": "MM" if datos.medida else None, "obl": datos.obligatorio, "grupo": datos.grupo.value}).scalar_one()
+        """), {"pt": pt, "n": datos.nombre, "tipo": datos.tipo.value, "medida": datos.medida, "uom": "MM" if datos.medida else None,
+               "obl": datos.obligatorio and not propuesto, "grupo": datos.grupo.value, "estado": estado.value, "motivo": motivo,
+               "sol": actor if propuesto else None}).scalar_one()
         for o in opciones:
             c.execute(text("""insert into meta.atributo_valor_permitido (part_terminology_id, paid, valid_value_id, valor)
-                              values (:pt, :paid, nextval('meta.codigo_propio'), :v)"""), {"pt": part_terminology_id, "paid": paid, "v": o})
+                              values (:pt, :paid, nextval('meta.codigo_propio'), :v)"""), {"pt": pt, "paid": paid, "v": o})
+    return paid
+
+
+@router.post("/ficha/{part_terminology_id}/propios", response_model=AtributoConfig, status_code=201,
+             summary="Crear un campo propio de Nexo (que no existe en AutoCare); queda oficial",
+             responses={409: {"description": "Ya hay un campo con ese nombre"}, 422: {"description": "Datos no válidos"}})
+def crear_campo_propio(part_terminology_id: int, datos: NuevoCampo, usuario: Configurador, c: Conexion) -> AtributoConfig:
+    obtener_configuracion_ficha(part_terminology_id, usuario, c)          # el tipo de parte existe
+    c.rollback()
+    paid = insertar_campo_propio(c, part_terminology_id, datos, usuario.id)
+    return _leer(c, part_terminology_id, paid)
+
+
+# ---------------------------------------------------------------------------------------------------------------------------
+# Solicitudes: aprobar o rechazar (ADR 0030)
+# ---------------------------------------------------------------------------------------------------------------------------
+@router.post("/ficha/{part_terminology_id}/{paid}/aprobar", response_model=AtributoConfig,
+             summary="Aprobar un campo propuesto (o reconsiderar uno rechazado): queda oficial y en la ficha")
+def aprobar_campo(part_terminology_id: int, paid: int, usuario: Configurador, c: Conexion) -> AtributoConfig:
+    a = _leer(c, part_terminology_id, paid)
+    c.rollback()
+    if a.estado == EstadoCampo.OFICIAL:
+        raise Problema(409, "Ese campo ya es oficial")
+    with c.begin():
+        fijar_actor(c, usuario.id)
+        c.execute(text("""
+            update meta.atributo_config set estado = 'OFICIAL', habilitado = true, motivo_rechazo = null, revisado_por = :u,
+              revisado_en = now(), actualizado_en = now(),
+              orden = coalesce(orden, (select coalesce(max(orden), 0) + 1 from meta.atributo_config
+                                       where part_terminology_id = :pt and habilitado))
+            where part_terminology_id = :pt and paid = :paid"""), {"pt": part_terminology_id, "paid": paid, "u": usuario.id})
+    return _leer(c, part_terminology_id, paid)
+
+
+@router.post("/ficha/{part_terminology_id}/{paid}/rechazar", response_model=AtributoConfig,
+             summary="Rechazar un campo propuesto con motivo: sale de la ficha y lo capturado se conserva oculto")
+def rechazar_campo(part_terminology_id: int, paid: int, datos: Rechazo, usuario: Configurador, c: Conexion) -> AtributoConfig:
+    a = _leer(c, part_terminology_id, paid)
+    c.rollback()
+    if a.estado != EstadoCampo.PROPUESTO:
+        raise Problema(409, "Solo se rechaza un campo propuesto", "Un campo oficial se quita de la ficha en lugar de rechazarse.")
+    with c.begin():
+        fijar_actor(c, usuario.id)
+        c.execute(text("""
+            update meta.atributo_config set estado = 'RECHAZADO', habilitado = false, obligatorio = false, motivo_rechazo = :m,
+              revisado_por = :u, revisado_en = now(), actualizado_en = now()
+            where part_terminology_id = :pt and paid = :paid"""),
+                  {"pt": part_terminology_id, "paid": paid, "u": usuario.id, "m": " ".join(datos.motivo.split())})
     return _leer(c, part_terminology_id, paid)
 
 

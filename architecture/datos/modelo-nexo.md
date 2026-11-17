@@ -39,6 +39,8 @@
 > - `0018_permiso_emparejar.sql`: permiso `EMPAREJAR_CATALOGO`; emparejar sale del workflow (ADR 0028).
 > - `0019_ficha_configurable.sql`: permiso `CONFIGURAR_FICHA`, campos propios de Nexo (`atributo_config.tipo`, `propio`; códigos
 >   desde 1 000 000 con `meta.codigo_propio`), conversión `SI_NO` y validación por tipo (ADR 0029).
+> - `0020_solicitud_de_campos.sql`: `atributo_config.estado` (`OFICIAL`, `PROPUESTO`, `RECHAZADO`), quién lo solicitó y quién lo
+>   revisó; un propuesto no es obligatorio y un rechazado sale de la ficha (ADR 0030).
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones
@@ -52,6 +54,8 @@
     `SI_NO`);
   - **campos propios** (ADR 0029): atributos que AutoCare no tiene, con `tipo` (`NUMERO`, `LISTA`, `TEXTO`, `SI_NO`) y códigos desde
     1 000 000 (`propio`); sus opciones van en `meta.atributo_valor_permitido` con el mismo rango. La carga de AutoCare no los toca.
+  - `estado` (ADR 0030): los campos propios que solicita quien trabaja artículos quedan `PROPUESTO` (se capturan, no son
+    obligatorios) hasta que se aprueban (`OFICIAL`) o se rechazan con motivo (`RECHAZADO`, fuera de la ficha; lo capturado se conserva).
   Los cambios quedan en `audit.auditoria_evento`. Ficha inicial del radiador (2172), 11 habilitados y obligatorios: Alto, Largo, Ancho,
   Filas, Tipo de panal, Tipo flujo, Material panal, Material tanque, Largo tanque, Ancho tanque, Diámetro entrada.
 - `meta.atributo_valor_permitido`: valores válidos de PAdb por tipo de parte y atributo (listas de la APP y validación).

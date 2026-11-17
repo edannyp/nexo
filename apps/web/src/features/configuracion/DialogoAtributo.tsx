@@ -405,6 +405,17 @@ export function DialogoAtributo({
             )}
             <span>{a.en_uso} artículos con valor</span>
           </p>
+          {a.estado === 'PROPUESTO' && (
+            <Aviso tono="info" titulo={`Propuesto por ${a.solicitado_por ?? '—'}: aún no es oficial`}>
+              {a.motivo_solicitud && <>«{a.motivo_solicitud}». </>}Ajusta aquí lo que haga falta y apruébalo o recházalo
+              en la pestaña Solicitudes.
+            </Aviso>
+          )}
+          {a.estado === 'RECHAZADO' && (
+            <Aviso tono="info" titulo={`Rechazado por ${a.revisado_por ?? '—'}`}>
+              {a.motivo_rechazo} Para usarlo, reconsidéralo en la pestaña Solicitudes.
+            </Aviso>
+          )}
           {a.obsoleto && (
             <Aviso tono="info" titulo="AutoCare ya no usa este atributo">
               Los artículos que ya lo tienen lo conservan, pero no se puede asignar de nuevo.
