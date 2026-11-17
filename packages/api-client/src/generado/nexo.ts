@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Nexo API
  * Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.
- * OpenAPI spec version: 0.11.0
+ * OpenAPI spec version: 0.12.0
  */
 import {
   useMutation,
@@ -270,6 +270,7 @@ export interface Atencion {
   hallazgos_sap: number;
   reservados: number;
   reservas_por_vencer: number;
+  campos_propuestos: number;
 }
 
 export type GrupoAtributo = typeof GrupoAtributo[keyof typeof GrupoAtributo];

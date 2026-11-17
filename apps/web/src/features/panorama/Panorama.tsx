@@ -303,7 +303,7 @@ export function Panorama() {
               detalle={`${numero(d.cobertura.fotos)} fotos`}
             />
           </div>
-          <DiagramaProceso porEstado={d.por_estado} />
+          <DiagramaProceso d={d} />
           <div data-recorrido="panorama-graficos" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Avance d={d} />
             <Atencion d={d} verCalidad={tieneRol(usuario, ['SUPERVISOR', 'ADMINISTRADOR'])} />

@@ -3,6 +3,9 @@
 Flujo con **doble control** (ADR 0012): el operador completa y un supervisor valida. Emparejar con el catálogo maestro **no** es
 parte de este flujo: se hace aparte, con el permiso `EMPAREJAR_CATALOGO`, en cualquier estado y sin cambiarlo (ADR 0028).
 
+Los procesos de apoyo (ficha de atributos y emparejamiento) no cambian el estado del artículo; sus diagramas BPMN están en
+Panorama → Procesos, junto al de este flujo.
+
 ```mermaid
 stateDiagram-v2
     [*] --> PENDIENTE : ETL inserta desde SAP (fn_procesar_staging)
@@ -30,7 +33,7 @@ stateDiagram-v2
 3. **Doble control**: quien valida (`POR_VALIDAR → VALIDADO`) no puede ser el mismo usuario que envió el artículo a `POR_VALIDAR`.
 4. **Para enviar a `POR_VALIDAR`** el artículo debe tener: tipo de parte (PCdb), el **vehículo principal** confirmado
    (ADR 0025; antes bastaba una aplicación vehicular o un emparejamiento), y los atributos del tipo de parte marcados `habilitado` y `obligatorio` en `meta.atributo_config` (ADR 0019), todo **confirmado** por el
-   operador. La equivalencia **no** es requisito: el código equivalente de los fabricados se captura en la revisión de fabricados y
+   operador. Un campo **propuesto** (solicitado desde la ficha y aún sin aprobar, ADR 0030) nunca es obligatorio: no bloquea el envío. La equivalencia **no** es requisito: el código equivalente de los fabricados se captura en la revisión de fabricados y
    se valida con foto propia, sin afectar el estado (ADR 0018).
    Al confirmar la equivalencia, el Fabricado hereda la parte emparejada y recibe las aplicaciones del Importado como sugerencias.
    Una aplicación **de vehículo** solo se confirma con **submodelo y motor** (decisión UX 4, 2026-10-19; la base lo exige desde la migración 0009: `aplicacion_vehiculo_completa`).

@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexo API",
     "description": "Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.",
-    "version": "0.11.0"
+    "version": "0.12.0"
   },
   "paths": {
     "/api/v1/salud": {
@@ -5225,6 +5225,10 @@
           "reservas_por_vencer": {
             "type": "integer",
             "title": "Reservas Por Vencer"
+          },
+          "campos_propuestos": {
+            "type": "integer",
+            "title": "Campos Propuestos"
           }
         },
         "type": "object",
@@ -5233,7 +5237,8 @@
           "verificaciones_abiertas",
           "hallazgos_sap",
           "reservados",
-          "reservas_por_vencer"
+          "reservas_por_vencer",
+          "campos_propuestos"
         ],
         "title": "Atencion"
       },
