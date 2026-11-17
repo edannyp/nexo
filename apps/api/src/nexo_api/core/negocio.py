@@ -24,7 +24,7 @@ ERRORES = {
     "RESERVA_PERDIDA": (409, "El artículo ya no está reservado por ti"),
     "RESERVADO_POR_OTRO": (409, "Está reservado por otro usuario"),
     "ATRIBUTO_NO_HABILITADO": (422, "Ese atributo no se usa en este tipo de parte"),
-    "VALOR_NO_VALIDO": (422, "Ese valor no está en la lista de PIES"),
+    "VALOR_NO_VALIDO": (422, "Ese valor no es válido para el atributo"),
     "ATRIBUTO_OBSOLETO": (422, "AutoCare ya no usa ese atributo para este tipo de parte"),
     "REQUIERE_UOM": (422, "Falta la unidad de la medida"),
     "TAREA_NO_ABIERTA": (409, "Esa verificación ya se resolvió"),

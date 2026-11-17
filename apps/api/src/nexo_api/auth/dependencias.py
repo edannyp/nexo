@@ -29,6 +29,7 @@ class Rol(StrEnum):
 class Permiso(StrEnum):
     VER_ANALISIS_VENTAS = "VER_ANALISIS_VENTAS"
     EMPAREJAR_CATALOGO = "EMPAREJAR_CATALOGO"
+    CONFIGURAR_FICHA = "CONFIGURAR_FICHA"
 
 
 @dataclass(frozen=True)
