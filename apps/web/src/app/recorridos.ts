@@ -37,7 +37,7 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
         donde: '[data-recorrido="panorama-proceso"]',
         titulo: 'Los procesos',
         texto:
-          'Tres diagramas en notación BPMN. Artículo: SAP lo trae, un operador lo completa, otro supervisor lo valida y el proceso de salida lo actualiza en SAP. Ficha de atributos: cómo se pide un campo y cómo se vuelve oficial. Emparejamiento: el enlace con el catálogo maestro, aparte del artículo. Despliégalo con un clic en el título o ábrelo con «Ver en grande»; las cifras son las de hoy.',
+          'Dos diagramas en notación BPMN. Artículo: SAP lo trae, un operador lo completa, otro supervisor lo valida y el proceso de salida lo actualiza en SAP. Ficha de atributos: cómo se pide un campo y cómo se vuelve oficial. Despliégalo con un clic en el título o ábrelo con «Ver en grande»; las cifras son las de hoy.',
       },
       {
         donde: '[data-recorrido="panorama-graficos"]',

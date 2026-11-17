@@ -2,7 +2,6 @@
  * Procesos de Nexo en BPMN, con cifras en vivo del tipo de artículo elegido:
  * - Artículo: de SAP a SAP con doble control (context/workflow-estados.md, ADR 0012 y 0025).
  * - Ficha de atributos: qué datos se capturan, campos solicitados y oficiales (ADR 0019, 0029 y 0030).
- * - Emparejamiento: enlazar con el catálogo maestro, fuera del proceso del artículo (ADR 0028).
  */
 import type { Estado, Panorama } from '@nexo/api-client';
 
@@ -25,7 +24,7 @@ const NOMBRE: Record<Estado, string> = {
   SINCRONIZADO: 'Sincronizado',
 };
 
-export type Proceso = 'articulo' | 'ficha' | 'emparejamiento';
+export type Proceso = 'articulo' | 'ficha';
 export const PROCESOS: { id: Proceso; nombre: string; resumen: string; nota: string }[] = [
   {
     id: 'articulo',
@@ -38,12 +37,6 @@ export const PROCESOS: { id: Proceso; nombre: string; resumen: string; nota: str
     nombre: 'Ficha de atributos',
     resumen: 'Qué datos se capturan: campos solicitados y oficiales.',
     nota: 'Revisar y aprobar requiere el permiso «Configurar la ficha de atributos». Un campo propuesto nunca es obligatorio.',
-  },
-  {
-    id: 'emparejamiento',
-    nombre: 'Emparejamiento',
-    resumen: 'Enlace con el catálogo maestro, aparte del artículo.',
-    nota: 'Requiere el permiso «Emparejar con el catálogo maestro». No reserva el artículo ni cambia su estado.',
   },
 ];
 
@@ -352,141 +345,7 @@ function ProcesoFicha({ d }: { d: Panorama }) {
   );
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Emparejamiento
-// ---------------------------------------------------------------------------------------------------------------------
-const C_EMPAREJAMIENTO: Carril[] = [
-  { nombre: 'Quien empareja', alto: 170 },
-  { nombre: 'Catálogo maestro', alto: 130 },
-  { nombre: 'Supervisor', alto: 130 },
-];
-
-function ProcesoEmparejamiento({ d }: { d: Panorama }) {
-  const em = centro(C_EMPAREJAMIENTO, 0);
-  const cat = centro(C_EMPAREJAMIENTO, 1);
-  const sup = centro(C_EMPAREJAMIENTO, 2);
-  return (
-    <Lienzo
-      carriles={C_EMPAREJAMIENTO}
-      titulo="Proceso de emparejamiento en BPMN: enlazar el artículo con el catálogo maestro, sin cambiar su estado"
-    >
-      {/* Quien tiene el permiso: sin reservar y sin cambiar el estado del artículo */}
-      <Evento x={95} cy={em} lineas={['Artículo sin', 'enlace']} />
-      <Flujo
-        puntos={[
-          [111, em],
-          [160, em],
-        ]}
-      />
-      <Tarea
-        x={260}
-        cy={em}
-        lineas={['Revisar candidatos', '(medidas, números, vehículos)']}
-        insignia={{
-          texto: 'Sin emparejar',
-          cantidad: Math.max(0, d.activos - d.cobertura.emparejados),
-          color: 'var(--color-pendiente)',
-        }}
-        ancho={200}
-      />
-      <Flujo
-        puntos={[
-          [360, em],
-          [398, em],
-        ]}
-      />
-      <Decision x={420} cy={em} pregunta="¿Coincide?" />
-      <Flujo
-        puntos={[
-          [420, em + 22],
-          [420, em + 39],
-        ]}
-        etiqueta="no"
-        dx={8}
-        dy={14}
-      />
-      <Evento x={420} cy={em + 55} fin lineas={[]} />
-      <Nota x={444} y={em + 52} lineas={['búsqueda manual,', 'o queda sin enlace']} />
-      <Flujo
-        puntos={[
-          [442, em],
-          [495, em],
-        ]}
-        etiqueta="sí"
-        dx={8}
-      />
-      <Tarea x={580} cy={em} lineas={['Vincular', '(★ la principal)']} ancho={170} />
-      <Flujo
-        puntos={[
-          [665, em],
-          [718, em],
-        ]}
-      />
-      <Decision x={740} cy={em} pregunta="¿Pendiente o Rechazado?" />
-      <Flujo
-        puntos={[
-          [762, em],
-          [815, em],
-        ]}
-        etiqueta="sí"
-        dx={8}
-      />
-      <Tarea x={900} cy={em} lineas={['Traer sugerencias a', 'ficha y aplicaciones']} ancho={170} />
-      <Flujo
-        puntos={[
-          [985, em],
-          [1044, em],
-        ]}
-      />
-      <Evento x={1060} cy={em} fin lineas={['Enlazado', '(estado igual)']} />
-      <Flujo
-        puntos={[
-          [740, em + 22],
-          [740, em + 60],
-          [1110, em + 60],
-          [1110, em],
-          [1078, em],
-        ]}
-        etiqueta="no: solo se vincula"
-        dx={8}
-        dy={28}
-      />
-
-      {/* Catálogo maestro (otro proceso): propone candidatos y avisa cambios */}
-      <Tarea x={260} cy={cat} lineas={['Diagramas y proveedores', '(Consolidación, otro proceso)']} ancho={210} />
-      <Flujo
-        puntos={[
-          [260, cat - 29],
-          [260, em + 52],
-        ]}
-        etiqueta="propone candidatos"
-        dx={8}
-        dy={-14}
-      />
-      <Evento x={480} cy={cat} lineas={['La parte se fusiona,', 'se descarta o cambia']} />
-
-      {/* Supervisor: verificación de lo ya enlazado */}
-      <Flujo
-        puntos={[
-          [496, cat],
-          [580, cat],
-          [580, sup - 29],
-        ]}
-      />
-      <Tarea x={580} cy={sup} lineas={['Verificación:', 'cambio de catálogo']} ancho={170} />
-      <Flujo
-        puntos={[
-          [665, sup],
-          [760, sup],
-        ]}
-      />
-      <Tarea x={880} cy={sup} lineas={['Reenlazar en Emparejamiento', '(o confirmar que sigue bien)']} ancho={230} />
-    </Lienzo>
-  );
-}
-
 export function DibujoProceso({ proceso, d }: { proceso: Proceso; d: Panorama }) {
   if (proceso === 'ficha') return <ProcesoFicha d={d} />;
-  if (proceso === 'emparejamiento') return <ProcesoEmparejamiento d={d} />;
   return <ProcesoArticulo d={d} />;
 }

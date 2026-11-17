@@ -3,8 +3,8 @@
 Flujo con **doble control** (ADR 0012): el operador completa y un supervisor valida. Emparejar con el catálogo maestro **no** es
 parte de este flujo: se hace aparte, con el permiso `EMPAREJAR_CATALOGO`, en cualquier estado y sin cambiarlo (ADR 0028).
 
-Los procesos de apoyo (ficha de atributos y emparejamiento) no cambian el estado del artículo; sus diagramas BPMN están en
-Panorama → Procesos, junto al de este flujo.
+Los procesos de apoyo (ficha de atributos y emparejamiento) no cambian el estado del artículo. El BPMN de este flujo y el de la
+ficha de atributos están en Panorama → Procesos.
 
 ```mermaid
 stateDiagram-v2
