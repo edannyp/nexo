@@ -18,6 +18,7 @@ const PANTALLAS = [
   'catalogo',
   'emparejamiento',
   'emparejar',
+  'configurar-ficha',
   'fotos',
   'calidad-sap',
   'ventas',

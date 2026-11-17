@@ -91,6 +91,8 @@ Nexo crea una verificación `CAMBIO_CATALOGO` por artículo afectado; un supervi
   actualiza `U_Marca`, `U_Linea`, `U_anio1` y `U_anio2`; un código `null` no se escribe.
 - **Descripción de Nexo (ADR 0027):** `app.articulo.descripcion_nexo` (patrón de SAP sin abreviar). Si se escribe en `ItemName` se
   decide con este proyecto.
+- **Atributos:** `app.articulo_atributo` confirmados. Los **campos propios** de Nexo (`meta.atributo_config.propio`, códigos desde
+  1 000 000, ADR 0029) **no se envían** por ahora: no existen en AutoCare ni en SAP. Si alguno debe salir, se decide con este proyecto.
 - **Transición:** `VALIDADO → SINCRONIZADO` = el artículo **ya se actualizó en SAP** (2026-10-19).
 - **Otro proyecto (pregunta 25):** define qué campos escribe en SAP y debe evitar que el siguiente lote del ETL reabra el artículo por
   `HASH_CAMBIO`, por ejemplo registrando el hash esperado al marcar `SINCRONIZADO`.

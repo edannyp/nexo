@@ -28,6 +28,7 @@ const ROLES: { valor: Rol; nombre: string; descripcion: string }[] = [
 const PERMISOS: { valor: Permiso; nombre: string }[] = [
   { valor: 'VER_ANALISIS_VENTAS', nombre: 'Ver análisis de ventas' },
   { valor: 'EMPAREJAR_CATALOGO', nombre: 'Emparejar con el catálogo maestro' },
+  { valor: 'CONFIGURAR_FICHA', nombre: 'Configurar la ficha de atributos' },
 ];
 
 const fecha = new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium', timeStyle: 'short' });

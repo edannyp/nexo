@@ -5,6 +5,7 @@ import {
   Factory,
   LayoutDashboard,
   Link2,
+  ListChecks,
   Play,
   Settings,
   ShieldCheck,
@@ -113,6 +114,16 @@ export const SECCIONES: Seccion[] = [
     descripcion: 'Hallazgos de datos que deben corregirse en SAP.',
   },
   {
+    ruta: '/configuracion-ficha',
+    permiso: 'CONFIGURAR_FICHA',
+    etiqueta: 'Ficha de atributos',
+    icono: ListChecks,
+    paso: 3,
+    restringida: true,
+    descripcion:
+      'Qué atributos lleva la ficha de cada tipo de parte, campos propios y homologación (requiere permiso).',
+  },
+  {
     ruta: '/ventas',
     permiso: 'VER_ANALISIS_VENTAS',
     etiqueta: 'Ventas',
@@ -127,7 +138,7 @@ export const SECCIONES: Seccion[] = [
     etiqueta: 'Administración',
     icono: Settings,
     paso: 3,
-    descripcion: 'Usuarios, ficha de atributos, traducciones y homologación.',
+    descripcion: 'Usuarios, roles y permisos.',
   },
 ];
 

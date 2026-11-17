@@ -45,6 +45,7 @@ export function mostrar(a: AtributoFicha, v?: ValorAtributo | null): string {
   }
   if (v.valor_num != null)
     return `${numero(v.valor_num).replace(/,/g, '')}${v.uom_code ? ` ${v.uom_code.toLowerCase()}` : ''}`;
+  if (a.tipo === 'si_no') return v.valor_texto === 'SI' ? 'Sí' : v.valor_texto === 'NO' ? 'No' : '';
   return v.valor_texto ?? '';
 }
 
@@ -61,6 +62,8 @@ function aCambio(a: AtributoFicha, b: Borrador): Cambio | { error: string } | nu
   if (b.quitar) return null;
   if (a.tipo === 'lista')
     return b.valid_value_id ? { paid: a.paid, valid_value_id: b.valid_value_id } : { error: 'Elige una opción.' };
+  if (a.tipo === 'si_no')
+    return b.texto === 'SI' || b.texto === 'NO' ? { paid: a.paid, valor_texto: b.texto } : { error: 'Elige Sí o No.' };
   if (a.tipo === 'numero') {
     if (a.requiere_uom) {
       const mm = aMilimetros(b.texto, b.unidad);
@@ -119,6 +122,24 @@ function Campo({
     />
   );
   const etiqueta = `${a.etiqueta} (valor en Nexo)`;
+  if (a.tipo === 'si_no') {
+    return (
+      <div className="relative">
+        {lapiz}
+        <select
+          aria-label={etiqueta}
+          disabled={!editable}
+          value={b.quitar ? '' : b.texto}
+          onChange={(e) => alCambiar({ ...b, quitar: false, texto: e.target.value })}
+          className={conLapiz}
+        >
+          <option value="">—</option>
+          <option value="SI">Sí</option>
+          <option value="NO">No</option>
+        </select>
+      </div>
+    );
+  }
   if (a.tipo === 'lista') {
     return (
       <div className="relative">

@@ -69,5 +69,5 @@
   una sola vez. Primer administrador por línea de comandos: `python -m nexo_api.cli crear-admin`.
 - **Preferencias**: `GET/PUT /preferencias` guarda el filtro global del usuario en el servidor.
 - **Autorización**: por rol (`OPERADOR`, `SUPERVISOR`, `ADMINISTRADOR`, `FOTOS`) y por permiso especial por usuario
-  (`VER_ANALISIS_VENTAS`, ADR 0022; `EMPAREJAR_CATALOGO`, ADR 0028); `403` problem+json si falta. La consola oculta las secciones que el rol no ve y la API
+  (`VER_ANALISIS_VENTAS`, ADR 0022; `EMPAREJAR_CATALOGO`, ADR 0028; `CONFIGURAR_FICHA`, ADR 0029); `403` problem+json si falta. La consola oculta las secciones que el rol no ve y la API
   siempre vuelve a verificar.
