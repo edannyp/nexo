@@ -101,7 +101,7 @@ def test_05_validaciones(entorno):
     vieja = op1.put(URL, json={"version": v - 1, "cambios": []})
     assert vieja.status_code == 409 and vieja.json()["title"] == "Otro usuario cambió este artículo"
     fuera = op1.put(URL, json={"version": v, "cambios": [{"paid": a["Material panal"]["paid"], "valid_value_id": 999}]})
-    assert fuera.status_code == 422 and fuera.json()["title"] == "Ese valor no está en la lista de PIES"
+    assert fuera.status_code == 422 and fuera.json()["title"] == "Ese valor no es válido para el atributo"
     sin_uom = op1.put(URL, json={"version": v, "cambios": [{"paid": a["Alto"]["paid"], "valor_num": 400}]})
     assert sin_uom.status_code == 422 and sin_uom.json()["title"] == "Falta la unidad de la medida"
     dos = op1.put(URL, json={"version": v, "cambios": [{"paid": a["Alto"]["paid"], "valor_num": 1, "valor_texto": "x"}]})

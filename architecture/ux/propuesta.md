@@ -63,6 +63,7 @@
 | `/fotos` | Subida y estado de fotos | Fotos, Administrador |
 | `/calidad-sap` | Hallazgos para corregir en SAP | Supervisor, Administrador |
 | `/emparejamiento` | Enlazar artículos con su diagrama del catálogo maestro, fuera del workflow | Con permiso `EMPAREJAR_CATALOGO` (ADR 0028) |
+| `/configuracion-ficha` | Ficha de atributos por tipo de parte: AutoCare, campos propios, precarga, homologación y traducciones | Con permiso `CONFIGURAR_FICHA` (ADR 0029) |
 | `/ventas` | Análisis de ventas por artículo y tipo | Con permiso `VER_ANALISIS_VENTAS` (ADR 0022) |
 | `/admin/*` | Usuarios, ficha de atributos, homologación | Administrador |
 

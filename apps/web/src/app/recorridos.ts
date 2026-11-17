@@ -390,6 +390,34 @@ export const RECORRIDOS: Record<string, DefinicionRecorrido> = {
     ],
   },
 
+  'configurar-ficha': {
+    titulo: 'Ficha de atributos',
+    pasos: [
+      {
+        titulo: 'Qué se captura de cada pieza',
+        texto:
+          'Aquí se decide qué atributos lleva la ficha del tipo de parte elegido arriba (Radiadores, Condensadores…), cuáles son obligatorios para enviar a revisión y de qué columna de SAP se precargan. Requiere un permiso especial.',
+      },
+      {
+        donde: '[aria-label="Qué atributos ver"]',
+        titulo: 'En la ficha y catálogo',
+        texto:
+          '«En la ficha» es lo que ve el operador, en orden. «Catálogo AutoCare» tiene todos los demás atributos que AutoCare admite para este tipo de parte: agrégalos con un clic.',
+      },
+      {
+        donde: 'section[aria-label="Atributos en la ficha"]',
+        titulo: 'Configurar',
+        texto:
+          'Marca o desmarca «Obligatorio», quita lo que no se usa (lo capturado se conserva) o abre el engrane para cambiar nombre, grupo, orden, precarga de SAP, traducciones y homologación.',
+      },
+      {
+        titulo: 'Campos propios',
+        texto:
+          '«Nuevo campo propio» crea un dato que AutoCare no tiene: número o medida, lista de opciones, texto o Sí/No. Por ahora solo se usan en Nexo.',
+      },
+    ],
+  },
+
   emparejamiento: {
     titulo: 'Emparejamiento',
     pasos: [

@@ -36,15 +36,22 @@
 >   modelo y año del catálogo; requisito `VEHICULO_PRINCIPAL`; hallazgo `VEHICULO_DISTINTO`; vista `app.v_vehiculo_principal`.
 > - `0017_descripcion_nexo.sql`: descripción armada por Nexo (ADR 0027): `articulo.descripcion_nexo` y `descripcion_nexo_manual`,
 >   `app.fn_descripcion_nexo` (patrón de SAP sin abreviar desde el vehículo principal) y el motor copiado en `articulo_aplicacion`.
+> - `0018_permiso_emparejar.sql`: permiso `EMPAREJAR_CATALOGO`; emparejar sale del workflow (ADR 0028).
+> - `0019_ficha_configurable.sql`: permiso `CONFIGURAR_FICHA`, campos propios de Nexo (`atributo_config.tipo`, `propio`; códigos
+>   desde 1 000 000 con `meta.codigo_propio`), conversión `SI_NO` y validación por tipo (ADR 0029).
 > Pruebas: `cd apps/api && uv run pytest`. La tabla de abajo queda como referencia; el DDL es la fuente de verdad.
 
 ## Configuración sin migraciones
 - `meta.atributo_config` (ADR 0019): **todos** los atributos que PAdb admite para cada tipo de parte en alcance (los carga
-  `uv run db/ref/cargar_ref.py nexo`; los nuevos entran deshabilitados). Un administrador configura:
+  `uv run db/ref/cargar_ref.py nexo`; los nuevos entran deshabilitados). Se configura desde la consola (**Ficha de atributos**,
+  permiso `CONFIGURAR_FICHA`, ADR 0029):
   - `habilitado`: se usa en la APP; solo se capturan atributos habilitados (trigger `validar` en `app.articulo_atributo`);
   - `obligatorio`: bloquea `POR_VALIDAR` hasta que el operador lo confirma (exige `habilitado`);
   - `etiqueta` (vocabulario del negocio), `grupo` (MEDIDAS, MATERIALES, CONSTRUCCION, CONEXIONES, INCLUYE, OTROS), `orden`, `uom_defecto`;
-  - precarga desde SAP: `columna_sap` + `conversion` (`NUMERO`, `NUMERO_EN_TEXTO`, `LISTA`, `TEXTO`, `PARTE_DE_MEDIDA` con `parte`).
+  - precarga desde SAP: `columna_sap` + `conversion` (`NUMERO`, `NUMERO_EN_TEXTO`, `LISTA`, `TEXTO`, `PARTE_DE_MEDIDA` con `parte`,
+    `SI_NO`);
+  - **campos propios** (ADR 0029): atributos que AutoCare no tiene, con `tipo` (`NUMERO`, `LISTA`, `TEXTO`, `SI_NO`) y códigos desde
+    1 000 000 (`propio`); sus opciones van en `meta.atributo_valor_permitido` con el mismo rango. La carga de AutoCare no los toca.
   Los cambios quedan en `audit.auditoria_evento`. Ficha inicial del radiador (2172), 11 habilitados y obligatorios: Alto, Largo, Ancho,
   Filas, Tipo de panal, Tipo flujo, Material panal, Material tanque, Largo tanque, Ancho tanque, Diámetro entrada.
 - `meta.atributo_valor_permitido`: valores válidos de PAdb por tipo de parte y atributo (listas de la APP y validación).

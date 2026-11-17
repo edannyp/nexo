@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexo API",
     "description": "Puente de gobernanza del artículo entre SAP, AutoCare y el catálogo maestro.",
-    "version": "0.9.2"
+    "version": "0.10.0"
   },
   "paths": {
     "/api/v1/salud": {
@@ -3500,6 +3500,580 @@
           }
         }
       }
+    },
+    "/api/v1/configuracion/ficha/columnas-sap": {
+      "get": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Columnas de SAP que pueden precargar un atributo",
+        "operationId": "listar_columnas_sap",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ColumnaSap"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Columnas Sap"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}": {
+      "get": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Atributos del tipo de parte (AutoCare y propios) con su configuración, opciones y homologación",
+        "operationId": "obtener_configuracion_ficha",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/{paid}": {
+      "patch": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Habilitar, obligatorio, etiqueta, grupo, orden y precarga desde SAP de un atributo",
+        "operationId": "configurar_atributo",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosAtributo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Configuración no válida"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Borrar un campo propio que ningún artículo usa",
+        "operationId": "borrar_campo_propio",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Ya está en uso: se deshabilita en lugar de borrarse"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/propios": {
+      "post": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Crear un campo propio de Nexo (que no existe en AutoCare)",
+        "operationId": "crear_campo_propio",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoCampo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay un campo con ese nombre"
+          },
+          "422": {
+            "description": "Datos no válidos"
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/{paid}/opciones": {
+      "post": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Agregar una opción a un campo propio de tipo lista",
+        "operationId": "agregar_opcion",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextoOpcion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/{paid}/opciones/{valid_value_id}": {
+      "patch": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Cambiar el texto de una opción de un campo propio (los artículos que la tienen la conservan)",
+        "operationId": "renombrar_opcion",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          },
+          {
+            "name": "valid_value_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Valid Value Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextoOpcion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Quitar una opción de un campo propio que ningún artículo usa",
+        "operationId": "quitar_opcion",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          },
+          {
+            "name": "valid_value_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Valid Value Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La opción está en uso"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/{paid}/valores-sap": {
+      "get": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Valores distintos que trae SAP en la columna de precarga del atributo, con cuántos artículos y su homologación",
+        "operationId": "valores_sap",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ValorSap"
+                  },
+                  "title": "Response Valores Sap"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/ficha/{part_terminology_id}/{paid}/homologacion": {
+      "put": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Reemplazar la homologación de valores de SAP a opciones del atributo (vale para todos los tipos de parte)",
+        "operationId": "homologar",
+        "parameters": [
+          {
+            "name": "part_terminology_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Terminology Id"
+            }
+          },
+          {
+            "name": "paid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Paid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Homologacion"
+                },
+                "title": "Pares"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/traducciones/{valid_value_id}": {
+      "put": {
+        "tags": [
+          "configuracion"
+        ],
+        "summary": "Traducir al español un valor de PIES (vacío la quita)",
+        "operationId": "traducir_valor",
+        "parameters": [
+          {
+            "name": "valid_value_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Valid Value Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Traduccion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No es un valor de PIES"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4493,6 +5067,130 @@
         ],
         "title": "Atencion"
       },
+      "AtributoConfig": {
+        "properties": {
+          "paid": {
+            "type": "integer",
+            "title": "Paid"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "etiqueta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etiqueta"
+          },
+          "propio": {
+            "type": "boolean",
+            "title": "Propio"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "requiere_uom": {
+            "type": "boolean",
+            "title": "Requiere Uom"
+          },
+          "habilitado": {
+            "type": "boolean",
+            "title": "Habilitado"
+          },
+          "obligatorio": {
+            "type": "boolean",
+            "title": "Obligatorio"
+          },
+          "grupo": {
+            "$ref": "#/components/schemas/GrupoAtributo"
+          },
+          "orden": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orden"
+          },
+          "columna_sap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Columna Sap"
+          },
+          "conversion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversionSap"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parte": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte"
+          },
+          "obsoleto": {
+            "type": "boolean",
+            "title": "Obsoleto"
+          },
+          "en_uso": {
+            "type": "integer",
+            "title": "En Uso"
+          },
+          "opciones": {
+            "items": {
+              "$ref": "#/components/schemas/OpcionConfig"
+            },
+            "type": "array",
+            "title": "Opciones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paid",
+          "nombre",
+          "etiqueta",
+          "propio",
+          "tipo",
+          "requiere_uom",
+          "habilitado",
+          "obligatorio",
+          "grupo",
+          "orden",
+          "columna_sap",
+          "conversion",
+          "parte",
+          "obsoleto",
+          "en_uso",
+          "opciones"
+        ],
+        "title": "AtributoConfig"
+      },
       "AtributoFicha": {
         "properties": {
           "paid": {
@@ -4506,6 +5204,10 @@
           "nombre_pies": {
             "type": "string",
             "title": "Nombre Pies"
+          },
+          "propio": {
+            "type": "boolean",
+            "title": "Propio"
           },
           "grupo": {
             "type": "string",
@@ -4612,6 +5314,7 @@
           "paid",
           "etiqueta",
           "nombre_pies",
+          "propio",
           "grupo",
           "obligatorio",
           "tipo",
@@ -4735,6 +5438,104 @@
           "nueva"
         ],
         "title": "CambioPassword"
+      },
+      "CambiosAtributo": {
+        "properties": {
+          "habilitado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Habilitado"
+          },
+          "obligatorio": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obligatorio"
+          },
+          "etiqueta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etiqueta",
+            "description": "Vacío vuelve al nombre de PAdb"
+          },
+          "grupo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GrupoAtributo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "orden": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 999.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orden"
+          },
+          "columna_sap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Columna Sap"
+          },
+          "conversion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversionSap"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parte": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte"
+          }
+        },
+        "type": "object",
+        "title": "CambiosAtributo"
       },
       "CambiosUsuario": {
         "properties": {
@@ -4988,6 +5789,43 @@
         ],
         "title": "ColaVerificacion"
       },
+      "ColumnaSap": {
+        "properties": {
+          "columna": {
+            "type": "string",
+            "title": "Columna"
+          },
+          "campo_sap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campo Sap"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "columna",
+          "campo_sap",
+          "descripcion"
+        ],
+        "title": "ColumnaSap"
+      },
       "Comparacion": {
         "properties": {
           "parte": {
@@ -5122,6 +5960,18 @@
           "version"
         ],
         "title": "Confirmar"
+      },
+      "ConversionSap": {
+        "type": "string",
+        "enum": [
+          "NUMERO",
+          "NUMERO_EN_TEXTO",
+          "PARTE_DE_MEDIDA",
+          "LISTA",
+          "TEXTO",
+          "SI_NO"
+        ],
+        "title": "ConversionSap"
       },
       "Creadas": {
         "properties": {
@@ -5659,6 +6509,35 @@
         ],
         "title": "Ficha"
       },
+      "FichaConfig": {
+        "properties": {
+          "part_terminology_id": {
+            "type": "integer",
+            "title": "Part Terminology Id"
+          },
+          "categorias": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Categorias"
+          },
+          "atributos": {
+            "items": {
+              "$ref": "#/components/schemas/AtributoConfig"
+            },
+            "type": "array",
+            "title": "Atributos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "part_terminology_id",
+          "categorias",
+          "atributos"
+        ],
+        "title": "FichaConfig"
+      },
       "FilaComparacion": {
         "properties": {
           "paid": {
@@ -5961,6 +6840,18 @@
         "title": "GrupoAplicacion",
         "description": "Un mismo vehículo (marca, modelo, submodelo, motor) en uno o varios años."
       },
+      "GrupoAtributo": {
+        "type": "string",
+        "enum": [
+          "MEDIDAS",
+          "MATERIALES",
+          "CONSTRUCCION",
+          "CONEXIONES",
+          "INCLUYE",
+          "OTROS"
+        ],
+        "title": "GrupoAtributo"
+      },
       "Guardado": {
         "properties": {
           "version": {
@@ -6134,6 +7025,26 @@
           "aplicaciones_sugeridas"
         ],
         "title": "Herencia"
+      },
+      "Homologacion": {
+        "properties": {
+          "valor_sap": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Valor Sap"
+          },
+          "valid_value_id": {
+            "type": "integer",
+            "title": "Valid Value Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valor_sap",
+          "valid_value_id"
+        ],
+        "title": "Homologacion"
       },
       "ImagenCatalogo": {
         "properties": {
@@ -6309,6 +7220,49 @@
         ],
         "title": "NuevaVista"
       },
+      "NuevoCampo": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 2,
+            "title": "Nombre"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoPropio"
+          },
+          "grupo": {
+            "$ref": "#/components/schemas/GrupoAtributo",
+            "default": "OTROS"
+          },
+          "medida": {
+            "type": "boolean",
+            "title": "Medida",
+            "description": "Solo NUMERO: es una medida (se captura en mm, cm o pulgadas y se guarda en mm)",
+            "default": false
+          },
+          "opciones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Opciones",
+            "description": "Solo LISTA: las opciones, en el orden en que se muestran",
+            "default": []
+          },
+          "obligatorio": {
+            "type": "boolean",
+            "title": "Obligatorio",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre",
+          "tipo"
+        ],
+        "title": "NuevoCampo"
+      },
       "NuevoUsuario": {
         "properties": {
           "usuario": {
@@ -6420,6 +7374,59 @@
           "valor_es"
         ],
         "title": "Opcion"
+      },
+      "OpcionConfig": {
+        "properties": {
+          "valid_value_id": {
+            "type": "integer",
+            "title": "Valid Value Id"
+          },
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          },
+          "valor_es": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Es"
+          },
+          "propia": {
+            "type": "boolean",
+            "title": "Propia"
+          },
+          "obsoleta": {
+            "type": "boolean",
+            "title": "Obsoleta"
+          },
+          "en_uso": {
+            "type": "integer",
+            "title": "En Uso"
+          },
+          "homologados": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Homologados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_value_id",
+          "valor",
+          "valor_es",
+          "propia",
+          "obsoleta",
+          "en_uso",
+          "homologados"
+        ],
+        "title": "OpcionConfig"
       },
       "OpcionVehiculo": {
         "properties": {
@@ -6776,7 +7783,8 @@
         "type": "string",
         "enum": [
           "VER_ANALISIS_VENTAS",
-          "EMPAREJAR_CATALOGO"
+          "EMPAREJAR_CATALOGO",
+          "CONFIGURAR_FICHA"
         ],
         "title": "Permiso"
       },
@@ -7576,14 +8584,59 @@
         ],
         "title": "TarjetaImportado"
       },
+      "TextoOpcion": {
+        "properties": {
+          "valor": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valor"
+        ],
+        "title": "TextoOpcion"
+      },
       "TipoCampo": {
         "type": "string",
         "enum": [
           "numero",
           "lista",
-          "texto"
+          "texto",
+          "si_no"
         ],
         "title": "TipoCampo"
+      },
+      "TipoPropio": {
+        "type": "string",
+        "enum": [
+          "NUMERO",
+          "LISTA",
+          "TEXTO",
+          "SI_NO"
+        ],
+        "title": "TipoPropio"
+      },
+      "Traduccion": {
+        "properties": {
+          "valor_es": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Es",
+            "description": "Vacío o null quita la traducción"
+          }
+        },
+        "type": "object",
+        "title": "Traduccion"
       },
       "Traidos": {
         "properties": {
@@ -7883,6 +8936,36 @@
         },
         "type": "object",
         "title": "ValorAtributo"
+      },
+      "ValorSap": {
+        "properties": {
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          },
+          "articulos": {
+            "type": "integer",
+            "title": "Articulos"
+          },
+          "valid_value_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Value Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valor",
+          "articulos",
+          "valid_value_id"
+        ],
+        "title": "ValorSap"
       },
       "VehiculoExterno": {
         "properties": {

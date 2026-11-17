@@ -31,6 +31,7 @@ class TipoCampo(StrEnum):
     NUMERO = "numero"
     LISTA = "lista"
     TEXTO = "texto"
+    SI_NO = "si_no"          # campo propio: valor_texto SI o NO (ADR 0029)
 
 
 class Opcion(BaseModel):
@@ -49,7 +50,8 @@ class ValorAtributo(BaseModel):
 class AtributoFicha(BaseModel):
     paid: int
     etiqueta: str
-    nombre_pies: str
+    nombre_pies: str                 # nombre en PAdb; en los campos propios, "Campo propio de Nexo"
+    propio: bool                     # campo propio de Nexo (no existe en AutoCare, ADR 0029)
     grupo: str
     obligatorio: bool
     tipo: TipoCampo
@@ -108,7 +110,7 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
             c.execute(text("select app.fn_precargar_atributos_sap(:id)"), {"id": a.id})
     filas = c.execute(text("""
         select r.paid, coalesce(r.etiqueta, r.nombre) as etiqueta, r.nombre as nombre_pies, r.grupo::text as grupo, r.obligatorio,
-               r.requiere_uom, r.uom_defecto, r.columna_sap, r.conversion::text as conversion,
+               r.requiere_uom, r.uom_defecto, r.columna_sap, r.conversion::text as conversion, r.propio, r.tipo::text as tipo_propio,
                t.valor_num, t.uom_code, t.valid_value_id, t.valor_texto, t.origen::text as origen,
                t.confirmado_por is not null as confirmado, u.nombre as confirmado_por, t.confirmado_en,
                coalesce((select json_agg(json_build_object('valid_value_id', v.valid_value_id, 'valor', v.valor, 'valor_es', tr.valor_es)
@@ -128,7 +130,9 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
     atributos = []
     for f in filas:
         col = f.columna_sap if f.columna_sap and _IDENTIFICADOR.match(f.columna_sap) and f.columna_sap in columnas else None
-        if f.opciones:
+        if f.tipo_propio:
+            tipo = TipoCampo[f.tipo_propio]
+        elif f.opciones:
             tipo = TipoCampo.LISTA
         elif f.conversion in ("NUMERO", "NUMERO_EN_TEXTO", "PARTE_DE_MEDIDA") or f.requiere_uom:
             tipo = TipoCampo.NUMERO
@@ -141,7 +145,8 @@ def cargar_ficha(c: Connection, item_code: str, usuario: Usuario) -> Ficha:
                 group by 1 order by count(*) desc limit 30"""), {"pt": a.part_terminology_id}).scalars())
         hay_valor = any(x is not None for x in (f.valor_num, f.valid_value_id, f.valor_texto))
         atributos.append(AtributoFicha(
-            paid=f.paid, etiqueta=f.etiqueta, nombre_pies=f.nombre_pies, grupo=f.grupo, obligatorio=f.obligatorio, tipo=tipo,
+            paid=f.paid, etiqueta=f.etiqueta, nombre_pies="Campo propio de Nexo" if f.propio else f.nombre_pies, propio=f.propio,
+            grupo=f.grupo, obligatorio=f.obligatorio, tipo=tipo,
             requiere_uom=f.requiere_uom, uom_defecto=f.uom_defecto, opciones=[Opcion(**o) for o in f.opciones], sugerencias=sugerencias,
             valor_sap=_texto_sap(a._mapping[col]) if col else None,
             valor=ValorAtributo(valor_num=f.valor_num, uom_code=f.uom_code, valid_value_id=f.valid_value_id,

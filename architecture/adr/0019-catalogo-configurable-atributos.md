@@ -1,6 +1,7 @@
 # 0019. Catálogo configurable de atributos PIES por tipo de parte
 
-- **Estado:** Aceptada e implementada en `apps/api/alembic/sql/0004_catalogo_atributos.sql` (2026-10-19).
+- **Estado:** Aceptada e implementada en `apps/api/alembic/sql/0004_catalogo_atributos.sql` (2026-10-19). La pantalla de
+  configuración y los campos propios llegaron con el ADR 0029.
 - **Fecha:** 2026-10-19
 
 ## Contexto
