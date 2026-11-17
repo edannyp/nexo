@@ -46,7 +46,7 @@ function Pestanas({ proceso, alElegir }: { proceso: Proceso; alElegir: (p: Proce
 }
 
 /**
- * Tarjeta «Procesos» de Panorama: el del artículo, el de la ficha de atributos y el de emparejamiento, en BPMN con cifras del tipo
+ * Tarjeta «Procesos» de Panorama: el del artículo y el de la ficha de atributos, en BPMN con cifras del tipo
  * elegido. Plegable (cerrada al entrar, recuerda la última elección y el último proceso visto); «Ver en grande» abre un diálogo.
  */
 export function DiagramaProceso({ d }: { d: Panorama }) {
@@ -83,7 +83,7 @@ export function DiagramaProceso({ d }: { d: Panorama }) {
           <span className="min-w-0">
             <span className="block text-sm font-medium">Procesos</span>
             <span className="block text-xs text-suave">
-              Artículo, ficha de atributos y emparejamiento.{' '}
+              Artículo y ficha de atributos.{' '}
               {abierto ? 'Las cifras son las de hoy en el tipo elegido.' : 'Despliega para ver los diagramas.'}
             </span>
           </span>
